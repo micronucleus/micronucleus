@@ -63,7 +63,7 @@ typedef union longConverter{
 
 // outstanding events for the mainloop to deal with
 static uchar events = 0;
-#define EVENT_ERASE_APPLICATION 1
+#define EVENT_PAGE_NEEDS_ERASE 1
 #define EVENT_WRITE_PAGE 2
 #define EVENT_EXIT_BOOTLOADER 4
 
@@ -112,7 +112,7 @@ static const uchar      currentRequest = 0;
 
 #define fireEvent(event) events |= (event)
 #define isEvent(event)   (events & (event))
-#define clearEvents()    events = 0 
+#define clearEvents()    events = 0
 
 /* ------------------------------------------------------------------------ */
 
@@ -140,42 +140,33 @@ static void writeFlashPage(void) {
     );                                           \
 }))
 
-static void writeWordToPageBuffer(uint16_t data)
-{
+static void writeWordToPageBuffer(uint16_t data) {
     // first two interrupt vectors get replaced with a jump to the bootloader vector table
-    if(currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2))
+    if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
         data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+    }
 
-    // write 2's complement of checksum
-#ifdef APPCHECKSUM
-    if(currentAddress == BOOTLOADER_ADDRESS - APPCHECKSUM_POSITION)
-        data = (uint8_t)(~checksum + 1);
-#endif
-
-    if(currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)
+    if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
-
-    if(currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET)
+    }
+    
+    if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
-
-#ifdef APPCHECKSUM
-    // only calculate checksum when we are writing new data to flash (ignore when writing vectors after bootloader programming)
-    checksum += (uint8_t)(data/256) + (uint8_t)(data);
-#endif
-
+    }
+    
     // clear page buffer as a precaution before filling the buffer on the first page
     // TODO: maybe clear on the first byte of every page?
-    if(currentAddress == 0x0000)
-        __boot_page_fill_clear();
+    if (currentAddress == 0x0000) __boot_page_fill_clear();
     
     cli();
     boot_page_fill(currentAddress, data);
     sei();
-
+    
 	// only need to erase if there is data already in the page that doesn't match what we're programming    
-	if(pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF)
-        needToErase = 1;
-
+	if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
+        fireEvent(EVENT_PAGE_NEEDS_ERASE);
+    }
+    
     currentAddress += 2;
 }
 
@@ -212,41 +203,14 @@ static void eraseApplication(void)
 #	endif
 #endif
 
-/* ------------------------------------------------------------------------ */
 
-#ifdef APPCHECKSUM
-// sum all bytes from 0x0000 through the previously saved checksum, should equal 0 for valid app
-static inline int testForValidApplication(void)
-{
-    uint16_t i;
-    uint8_t checksum = 0;
-    for(i=0; i<BOOTLOADER_ADDRESS - 5; i++)
-    {
-        checksum += pgm_read_byte(i);
-    }
-
-    if(checksum == 0x00)
-        return 1;
-    else
-    return 0;
-}
-#endif
-
-/* ------------------------------------------------------------------------ */
-
-#ifndef TINY85MODE
-static void (*nullVector)(void) __attribute__((__noreturn__));
-#endif
-
-static inline __attribute__((noreturn)) void leaveBootloader(void)
-{
+static inline __attribute__((noreturn)) void leaveBootloader(void) {
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
-
-#ifdef TINY85MODE
+    
 	// make sure remainder of flash is erased and write checksum and application reset vectors
     if(appWriteComplete)
     {
@@ -256,32 +220,13 @@ static inline __attribute__((noreturn)) void leaveBootloader(void)
             fillFlashWithVectors();
         }
     }
-#else
-    GICR = (1 << IVCE);     /* enable change of interrupt vectors */
-    GICR = (0 << IVSEL);    /* move interrupts to application flash section */
-#endif
-
-    // TODO: watchdog reset instead to reset registers?
-#ifdef APPCHECKSUM
-    if(!testForValidApplication())
-        asm volatile ("rjmp __vectors");
-#endif
-
-#ifdef TINY85MODE
+    
     // clear magic word from bottom of stack before jumping to the app
     *(uint8_t*)(RAMEND) = 0x00;
     *(uint8_t*)(RAMEND-1) = 0x00;
 
     // jump to application reset vector at end of flash
     asm volatile ("rjmp __vectors - 4");
-#else
-/* We must go through a global function pointer variable instead of writing
- *  ((void (*)(void))0)();
- * because the compiler optimizes a constant 0 to "rcall 0" which is not
- * handled correctly by the assembler.
- */
-    nullVector();
-#endif
 }
 
 /* ------------------------------------------------------------------------ */
@@ -604,7 +549,7 @@ int __attribute__((noreturn)) main(void) {
             _delay_us(100);
             idlePolls++;
             
-            if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
+            if (isEvent(EVENT_PAGE_NEEDS_ERASE)) tiny85PageErase();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
 #if BOOTLOADER_CAN_EXIT
