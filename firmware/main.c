@@ -77,6 +77,8 @@ static uchar state = 0;
 #define STATE_NEW_PAGE 1
 #define STATE_CONTINUING_PAGE 2
 
+static uchar didWriteSomething = 0; // becomes 1 when some programming happened
+
 //static uchar            flashPageLoaded = 0;
 //#if HAVE_CHIP_ERASE
 //static uchar            eraseRequested = 0;
@@ -124,16 +126,19 @@ static const uchar      currentRequest = 0;
 
 /* ------------------------------------------------------------------------ */
 
-static void writeFlashPage(void) {
-    if (needToErase) {
-        boot_page_erase(currentAddress - 2);
-        boot_spm_busy_wait();
-    }
+// TODO: inline these?
+static void eraseFlashPage(void) {
+    cli();
+    boot_page_erase(currentAddress - 2);
+    boot_spm_busy_wait();
+    sei();
+}
 
+static void writeFlashPage(void) {
+    cli();
     boot_page_write(currentAddress - 2);
     boot_spm_busy_wait(); // Wait until the memory is written.
-
-    needToErase = 0;
+    sei();
 }
 
 #define __boot_page_fill_clear()   \
@@ -170,7 +175,8 @@ static void writeWordToPageBuffer(uint16_t data) {
     boot_page_fill(currentAddress, data);
     sei();
     
-	// only need to erase if there is data already in the page that doesn't match what we're programming    
+	// only need to erase if there is data already in the page that doesn't match what we're programming
+	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
 	if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
         fireEvent(EVENT_PAGE_NEEDS_ERASE);
     }
@@ -182,8 +188,7 @@ static void fillFlashWithVectors(void)
 {
     int16_t i;
 
-    // fill all or remainder of page starting at currentAddress with 0xFFs, unless we're
-    //   at a special address that needs a vector replaced
+    // fill all or remainder of page with 0xFFFF
     for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
         writeWordToPageBuffer(0xFFFF);
     }
@@ -218,11 +223,9 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
     USB_INTR_CFG = 0;       /* also reset config bits */
     
 	// make sure remainder of flash is erased and write checksum and application reset vectors
-    if(appWriteComplete)
-    {
-        currentAddress = writeSize;
-        while(currentAddress < BOOTLOADER_ADDRESS)
-        {
+	if (didWriteSomething) {
+    //if(appWriteComplete) {
+        while(currentAddress < BOOTLOADER_ADDRESS) {
             fillFlashWithVectors();
         }
     }
@@ -454,23 +457,20 @@ uchar usbFunctionWrite(uchar *data, uchar length) {
 
 /* ------------------------------------------------------------------------ */
 
-#ifdef TINY85MODE
 void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
 
 // put the word "B007" at the bottom of the stack (RAMEND - RAMEND-1)
-void ma (void)
+void PushMagicWord (void)
 {
     asm volatile("ldi r16, 0xB0"::);
     asm volatile("push r16"::);
     asm volatile("ldi r16, 0x07"::);
     asm volatile("push r16"::);
 }
-#endif
 
 /* ------------------------------------------------------------------------ */
 
-static inline void initForUsbConnectivity(void)
-{
+static inline void initForUsbConnectivity(void) {
     usbInit();
     /* enforce USB re-enumerate: */
     usbDeviceDisconnect();  /* do this while interrupts are disabled */
@@ -479,74 +479,30 @@ static inline void initForUsbConnectivity(void)
     sei();
 }
 
-#ifdef TINY85MODE
-static inline void tiny85FlashInit(void)
-{
-    // check for erased first page (no bootloader interrupt vectors), add vectors if missing
-    if(pgm_read_word(RESET_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1 ||
-            pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1)
-    {
-        // TODO: actually need to erase here?  how could we end up with missing vectors but application data higher up?
-#	if HAVE_CHIP_ERASE
-        eraseApplication();
-#	else
+static inline void tiny85FlashWrites(void) {
+    _delay_ms(2); // TODO: why is this here?
+    // write page to flash, interrupts will be disabled for > 4.5ms including erase
+    
+    if (currentAddress % SPM_PAGESIZE) {
         fillFlashWithVectors();
-#	endif
+    } else {
+        writeFlashPage();
     }
-
-    // TODO: necessary to reset currentAddress?
-    currentAddress = 0;
-#   ifdef APPCHECKSUM
-        checksum = 0;
-#   endif
+    
+    // if (isLastPage) {
+    //     // store number of bytes written so rest of flash can be filled later
+    //     writeSize = currentAddress;
+    //     appWriteComplete = 1;
+    // }
 }
-
-static inline void tiny85FlashWrites(void)
-{
-#if HAVE_CHIP_ERASE
-    if(eraseRequested)
-    {
-        _delay_ms(2);
-        cli();
-        eraseApplication();
-        sei();
-
-#ifdef APPCHECKSUM
-        checksum = 0;
-#endif
-        eraseRequested = 0;
-    }
-#endif
-    if(flashPageLoaded)
-    {
-        _delay_ms(2);
-        // write page to flash, interrupts will be disabled for several milliseconds
-        cli();
-
-        if(currentAddress % SPM_PAGESIZE)
-            fillFlashWithVectors();
-        else
-            writeFlashPage();
-
-        sei();
-
-        flashPageLoaded = 0;
-        if(isLastPage)
-        {
-            // store number of bytes written so rest of flash can be filled later
-            writeSize = currentAddress;
-            appWriteComplete = 1;
-        }
-    }
-}
-#endif
 
 int __attribute__((noreturn)) main(void) {
     uint16_t idlePolls = 0;
 
     /* initialize  */
     wdt_disable();      /* main app may have enabled watchdog */
-    tiny85FlashInit();
+    //tiny85FlashInit();
+    currentAddress = 0; // TODO: think about if this is necessary
     bootLoaderInit();
     //odDebugInit();
     ////DBG1(0x00, 0, 0);
@@ -559,7 +515,10 @@ int __attribute__((noreturn)) main(void) {
             _delay_us(100);
             idlePolls++;
             
-            if (isEvent(EVENT_PAGE_NEEDS_ERASE)) tiny85PageErase();
+            // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
+            // and usually both of these will activate in the same loop, so host
+            // needs to wait > 9ms before next usb request
+            if (isEvent(EVENT_PAGE_NEEDS_ERASE)) eraseFlashPage();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
 #if BOOTLOADER_CAN_EXIT
