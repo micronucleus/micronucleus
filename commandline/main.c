@@ -142,13 +142,13 @@ typedef struct deviceInfo{
 typedef struct deviceData{
     char    reportId;
     char    address[3];
-    char    data[128];
+    char    data[64];
 }deviceData_t;
 
 static int uploadData(char *dataBuffer, int startAddr, int endAddr)
 {
 usbDevice_t *dev = NULL;
-int         err = 0, len, mask, pageSize, deviceSize;
+int         err = 0, len, pageSize, deviceSize;
 union{
     char            bytes[1];
     deviceInfo_t    info;
@@ -179,29 +179,25 @@ union{
             err = -1;
             goto errorOccurred;
         }
-        if(pageSize < 128){
-            mask = 127;
-        }else{
-            mask = pageSize - 1;
-        }
-        startAddr &= ~mask;                  /* round down */
-        endAddr = (endAddr + mask) & ~mask;  /* round up */
+        
+        startAddr -= startAddr % pageSize; // round down to start of page
+        endAddr = (endAddr - (endAddr % pageSize)) + pageSize;  // round up to next whole page
         printf("Uploading %d (0x%x) bytes starting at %d (0x%x)\n", endAddr - startAddr, endAddr - startAddr, startAddr, startAddr);
         while(startAddr < endAddr){
             buffer.data.reportId = 2;
-            memcpy(buffer.data.data, dataBuffer + startAddr, 128);
+            memcpy(buffer.data.data, dataBuffer + startAddr, pageSize);
             setUsbInt(buffer.data.address, startAddr, 3);
-            printf("\r0x%05x ... 0x%05x", startAddr, startAddr + (int)sizeof(buffer.data.data));
+            printf("\r0x%05x ... 0x%05x", startAddr, startAddr + pageSize);
             fflush(stdout);
             if((err = usbSetReport(dev, USB_HID_REPORT_TYPE_FEATURE, buffer.bytes, sizeof(buffer.data))) != 0){
                 fprintf(stderr, "Error uploading data block: %s\n", usbErrorMessage(err));
                 goto errorOccurred;
             }
-            startAddr += sizeof(buffer.data.data);
+            startAddr += pageSize;
             
-            // special tiny85 chillout session - chip freezes after write, so we
+            // special tiny85 chillout session - chip freezes during write, so we
             // need to make sure we don't send it any requests while it's busy
-            // erasing or writing
+            // erasing and writing
             usleep(TINY85_POSTWRITE_DELAY); // regular page write duration
         }
         printf("\n");
