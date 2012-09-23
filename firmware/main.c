@@ -8,6 +8,8 @@
  * License: GNU GPL v2 (see License.txt)
  * This Revision: $Id: main.c 786 2010-05-30 20:41:40Z cs $
  */
+ 
+#define UBOOT_VERSION 1
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -23,7 +25,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
-#define UBOOT_VERSION 1
 // how many milliseconds should host wait till it sends another write?
 // this needs to be above 9, but 20 is only sensible for testing
 #define UBOOT_WRITE_SLEEP 12
@@ -59,11 +60,11 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 #define addr_t uint
 
-typedef union longConverter{
-    addr_t  l;
-    uint    w[sizeof(addr_t)/2];
-    uchar   b[sizeof(addr_t)];
-} longConverter_t;
+// typedef union longConverter{
+//     addr_t  l;
+//     uint    w[sizeof(addr_t)/2];
+//     uchar   b[sizeof(addr_t)];
+// } longConverter_t;
 
 //////// Stuff Bluebie Added
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - 6)
@@ -170,8 +171,7 @@ static void fillFlashWithVectors(void) {
 
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
-    static uchar replyBuffer[5] = {
-        UBOOT_VERSION,
+    static uchar replyBuffer[4] = {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
@@ -180,7 +180,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
     
     if (rq->bRequest == 0) { // get device info
         usbMsgPtr = replyBuffer;
-        return 5;
+        return 4;
       
     } else if (rq->bRequest == 1) { // write page
         writeLength = rq->wValue.word;

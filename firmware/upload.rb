@@ -24,13 +24,12 @@ class MicroBoot
 
   def info
     unless defined? @info
-      result = control_transfer(function: :get_info, dataIn: 5)
-      version, flash_length, page_size, write_sleep = result.unpack('CS>CC')
+      result = control_transfer(function: :get_info, dataIn: 4)
+      flash_length, page_size, write_sleep = result.unpack('S>CC')
 
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-        version: version,
         write_sleep: write_sleep.to_f / 1000.0
       }
     end

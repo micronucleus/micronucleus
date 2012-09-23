@@ -274,47 +274,46 @@ LOAD /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a
  *(.fini0)
                 0x00001fec                _etext = .
 
-.data           0x00800060        0x8 load address 0x00001fec
+.data           0x00800060        0x6 load address 0x00001fec
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
- .data          0x00800060        0x7 main.o
+ .data          0x00800060        0x6 main.o
                 0x00800060                usbTxLen
  *(.data*)
  *(.rodata)
  *(.rodata*)
  *(.gnu.linkonce.d*)
-                0x00800068                . = ALIGN (0x2)
- *fill*         0x00800067        0x1 00
-                0x00800068                _edata = .
-                0x00800068                PROVIDE (__data_end, .)
+                0x00800066                . = ALIGN (0x2)
+                0x00800066                _edata = .
+                0x00800066                PROVIDE (__data_end, .)
 
-.bss            0x00800068       0x35
-                0x00800068                PROVIDE (__bss_start, .)
+.bss            0x00800066       0x35
+                0x00800066                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x00800068        0xb main.o
+ .bss           0x00800066        0xb main.o
  *(.bss*)
  *(COMMON)
- COMMON         0x00800073       0x2a main.o
-                0x00800073                usbTxBuf
-                0x0080007e                usbDeviceAddr
-                0x0080007f                usbRxToken
-                0x00800080                usbInputBufOffset
-                0x00800081                usbMsgPtr
-                0x00800083                usbRxLen
-                0x00800084                usbNewDeviceAddr
-                0x00800085                usbCurrentTok
-                0x00800086                usbConfiguration
-                0x00800087                usbRxBuf
-                0x0080009d                PROVIDE (__bss_end, .)
+ COMMON         0x00800071       0x2a main.o
+                0x00800071                usbTxBuf
+                0x0080007c                usbDeviceAddr
+                0x0080007d                usbRxToken
+                0x0080007e                usbInputBufOffset
+                0x0080007f                usbMsgPtr
+                0x00800081                usbRxLen
+                0x00800082                usbNewDeviceAddr
+                0x00800083                usbCurrentTok
+                0x00800084                usbConfiguration
+                0x00800085                usbRxBuf
+                0x0080009b                PROVIDE (__bss_end, .)
                 0x00001fec                __data_load_start = LOADADDR (.data)
-                0x00001ff4                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x00001ff2                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0080009d        0x0
-                0x0080009d                PROVIDE (__noinit_start, .)
+.noinit         0x0080009b        0x0
+                0x0080009b                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x0080009d                PROVIDE (__noinit_end, .)
-                0x0080009d                _end = .
-                0x0080009d                PROVIDE (__heap_start, .)
+                0x0080009b                PROVIDE (__noinit_end, .)
+                0x0080009b                _end = .
+                0x0080009b                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)

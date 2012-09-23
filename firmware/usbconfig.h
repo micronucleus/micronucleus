@@ -189,7 +189,7 @@
  * you may use one of obdev's free shared VID/PID pairs. See the file
  * USB-IDs-for-free.txt for details!
  */
-#define USB_CFG_DEVICE_VERSION  0x01, 0x00
+#define USB_CFG_DEVICE_VERSION UBOOT_VERSION, 0x01
 /* Version number of the device: Minor number first, then major number.
  */
 #define USB_CFG_VENDOR_NAME 'c','r','e','a','t','i','v','e','p','o','n','y','.','c','o','m'
