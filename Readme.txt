@@ -1,3 +1,40 @@
+microBoot tiny85 Note
+=====================
+This is a brand new project by bluebie, which merges code from embedded-creations'
+wonderful USBaspLoader-tiny85 project with bits from obdev's bootloadHID and bits
+of my own invention to create a minimalist bootloader for tiny85 chips. It's hot
+off the presses, and so this readme and everything else is already way out of date
+
+Some quick notes:
+The stuff in commandline is a slightly modified version of bootloadHID's commandline
+folder - it's irrelevent for now - don't use that stuff!
+To upload to the device, pop in to 'firmware', and install ruby 1.9 on your system
+(I recommend using homebrew on Macs), then install libusb 1.x and then the libusb
+rubygem. You'll then be able to use my two experimental scripts 'upload.rb' and 'dump.rb'
+to upload binary files via bootloader (not hex) and dump to binary files over a
+littlewire/usbtiny isp. I used ruby for rapid prototyping - I think it'd be better
+to port this stuff to C, modifying obdev's commandline app to do it or something like
+that.
+
+Another note - the nyan-cat binaries require you connect a piezo speaker between pb0
+and pb1. Upload and enjoy!
+
+And now back to your regular broadcast...
+
+
+
+---------------------------------------------------------------------------------------
+=======================================================================================
+!!%$!^%%$!#%$@#!%$@!$#@!%$#@%!#@%$!@$%#@!$%%!$#^&%$!%(*$!^%#!$@!#%$*^%!!&^%!%@$#!^!%@%$
+@#$%^&*%#$%^#($)#*&($^#^*%&%%&@$*#($^&^*@$#&%^*%&($^&#^*%&$(^^%@$&^*#%@%&$^#*%^*%&^@$%&
+&$%#$&^&$%@&#$*^*##*$##^$&#^%$^&*$&^&^%$#^%$&*$&#^%$*^$#^&%$*%#^$&^*%$#^$*^$$&*%#$^%$*%
+=======================================================================================
+---------------------------------------------------------------------------------------
+
+
+
+
+
 USBaspLoader-tiny85 is a modification to the USBaspLoader project giving 
 support for the ATtiny85 microcontroller.  This is a signification modification
 as the tiny85 has very limited boot loader support in the hardware.  The 
