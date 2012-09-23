@@ -84,44 +84,30 @@ static uchar didWriteSomething = 0; // becomes 1 when some programming happened
 //static uchar            eraseRequested = 0;
 //#endif
 //static uchar            appWriteComplete = 0;
-static uint16_t         writeSize;
+//static uint16_t         writeSize;
 static uint16_t         vectorTemp[2];
-//static uchar 			needToErase = 0;
-//#endif
-
-// #ifdef APPCHECKSUM
-// static uchar            connectedToPc = 0;
-// static uint16_t         checksum = 0;
-// #endif
-
-//static uchar            requestBootLoaderExit;
 static longConverter_t  currentAddress; /* in bytes */
-static uchar            bytesRemaining;
-static uchar            isLastPage;
 
-//#if HAVE_EEPROM_PAGED_ACCESS
-//static uchar            currentRequest;
-//#else
-static const uchar      currentRequest = 0;
-//#endif
 
-// static const uchar  signatureBytes[4] = {
-// #ifdef SIGNATURE_BYTES
-//     SIGNATURE_BYTES
-// #elif defined (__AVR_ATmega8__) || defined (__AVR_ATmega8HVA__)
-//     0x1e, 0x93, 0x07, 0
-// #elif defined (__AVR_ATmega48__) || defined (__AVR_ATmega48P__)
-//     0x1e, 0x92, 0x05, 0
-// #elif defined (__AVR_ATmega88__) || defined (__AVR_ATmega88P__)
-//     0x1e, 0x93, 0x0a, 0
-// #elif defined (__AVR_ATmega168__) || defined (__AVR_ATmega168P__)
-//     0x1e, 0x94, 0x06, 0
-// #elif defined (__AVR_ATmega328P__)
-//     0x1e, 0x95, 0x0f, 0
-// #else
-// #   error "Device signature is not known, please edit main.c!"
-// #endif
-// };
+PROGMEM char usbHidReportDescriptor[33] = {
+    0x06, 0x00, 0xff,              // USAGE_PAGE (Generic Desktop)
+    0x09, 0x01,                    // USAGE (Vendor Usage 1)
+    0xa1, 0x01,                    // COLLECTION (Application)
+    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
+    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
+    0x75, 0x08,                    //   REPORT_SIZE (8)
+
+    0x85, 0x01,                    //   REPORT_ID (1)
+    0x95, 0x06,                    //   REPORT_COUNT (6)
+    0x09, 0x00,                    //   USAGE (Undefined)
+    0xb2, 0x02, 0x01,              //   FEATURE (Data,Var,Abs,Buf)
+
+    0x85, 0x02,                    //   REPORT_ID (2)
+    0x95, 0x83,                    //   REPORT_COUNT (131)
+    0x09, 0x00,                    //   USAGE (Undefined)
+    0xb2, 0x02, 0x01,              //   FEATURE (Data,Var,Abs,Buf)
+    0xc0                           // END_COLLECTION
+};
 
 
 /* ------------------------------------------------------------------------ */
@@ -225,7 +211,7 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
 	// make sure remainder of flash is erased and write checksum and application reset vectors
 	if (didWriteSomething) {
     //if(appWriteComplete) {
-        while(currentAddress < BOOTLOADER_ADDRESS) {
+        while (currentAddress < BOOTLOADER_ADDRESS) {
             fillFlashWithVectors();
         }
     }
@@ -475,8 +461,7 @@ uchar usbFunctionWrite(uchar *data, uchar length) {
 void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
 
 // put the word "B007" at the bottom of the stack (RAMEND - RAMEND-1)
-void PushMagicWord (void)
-{
+void PushMagicWord (void) {
     asm volatile("ldi r16, 0xB0"::);
     asm volatile("push r16"::);
     asm volatile("ldi r16, 0x07"::);
@@ -503,12 +488,6 @@ static inline void tiny85FlashWrites(void) {
     } else {
         writeFlashPage();
     }
-    
-    // if (isLastPage) {
-    //     // store number of bytes written so rest of flash can be filled later
-    //     writeSize = currentAddress;
-    //     appWriteComplete = 1;
-    // }
 }
 
 int __attribute__((noreturn)) main(void) {
@@ -536,13 +515,14 @@ int __attribute__((noreturn)) main(void) {
             if (isEvent(EVENT_PAGE_NEEDS_ERASE)) eraseFlashPage();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
-#if BOOTLOADER_CAN_EXIT
-            // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
-            if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
-                _delay_ms(10);
-                break;
-            }
-#endif
+#           if BOOTLOADER_CAN_EXIT
+                // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
+                if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
+                    _delay_ms(10);
+                    break;
+                }
+#           endif
+            
             clearEvents();
             
         } while(bootLoaderCondition());  /* main event loop */
