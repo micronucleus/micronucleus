@@ -442,6 +442,21 @@ uchar usbFunctionWrite(uchar *data, uchar length) {
     }
     
     do {
+        // remember vectors or the tinyvector table 
+        if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+            vectorTemp[0] = *(short *)data;
+        }
+        
+        if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
+            vectorTemp[1] = *(short *)data;
+        }
+        
+        // make sure we don't write over the bootloader!
+        if (currentAddress >= BOOTLOADER_ADDRESS - 6) {
+            __boot_page_fill_clear();
+            return isLast;
+        }
+        
         writeWordToPageBuffer(*(uint16_t *) data);
         currentAddress += 2; // advance progmem address
         data += 2; // advance data pointer
