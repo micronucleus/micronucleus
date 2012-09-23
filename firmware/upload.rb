@@ -109,7 +109,6 @@ thinklet.program = test_data
 
 puts "That seems to have gone well! Telling thinklet to run program..."
 
-sleep(0.5)
 
 thinklet.finished # let thinklet know it can go do other things now if it likes
 puts "All done!"

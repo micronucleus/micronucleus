@@ -158,7 +158,7 @@ LOAD /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00001500      0x8d6
+.text           0x00001500      0x8f8
  *(.vectors)
  .vectors       0x00001500       0x1e /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/../../../../avr/lib/avr25/crttn85.o
                 0x00001500                __vectors
@@ -241,17 +241,17 @@ LOAD /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a
                 0x000015de                usbCrc16Append
                 0x000015e6                usbMeasureFrameLength
                 0x0000160c                __vector_2
- .text          0x000018c8      0x496 main.o
-                0x000019a4                main
- .text          0x00001d5e       0x74 libs-device/osccal.o
-                0x00001d5e                calibrateOscillator
-                0x00001dd2                . = ALIGN (0x2)
+ .text          0x000018c8      0x4b8 main.o
+                0x000019aa                main
+ .text          0x00001d80       0x74 libs-device/osccal.o
+                0x00001d80                calibrateOscillator
+                0x00001df4                . = ALIGN (0x2)
  *(.text.*)
-                0x00001dd2                . = ALIGN (0x2)
+                0x00001df4                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00001dd2        0x0 /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a(_exit.o)
-                0x00001dd2                exit
-                0x00001dd2                _exit
+ .fini9         0x00001df4        0x0 /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a(_exit.o)
+                0x00001df4                exit
+                0x00001df4                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -270,11 +270,11 @@ LOAD /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00001dd2        0x4 /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a(_exit.o)
+ .fini0         0x00001df4        0x4 /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a(_exit.o)
  *(.fini0)
-                0x00001dd6                _etext = .
+                0x00001df8                _etext = .
 
-.data           0x00800060        0x8 load address 0x00001dd6
+.data           0x00800060        0x8 load address 0x00001df8
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  .data          0x00800060        0x7 main.o
@@ -288,33 +288,33 @@ LOAD /usr/local/CrossPack-AVR-20120217/lib/gcc/avr/4.5.1/avr25/libgcc.a
                 0x00800068                _edata = .
                 0x00800068                PROVIDE (__data_end, .)
 
-.bss            0x00800068       0x34
+.bss            0x00800068       0x35
                 0x00800068                PROVIDE (__bss_start, .)
  *(.bss)
- .bss           0x00800068        0xa main.o
+ .bss           0x00800068        0xb main.o
  *(.bss*)
  *(COMMON)
- COMMON         0x00800072       0x2a main.o
-                0x00800072                usbTxBuf
-                0x0080007d                usbDeviceAddr
-                0x0080007e                usbRxToken
-                0x0080007f                usbInputBufOffset
-                0x00800080                usbMsgPtr
-                0x00800082                usbRxLen
-                0x00800083                usbNewDeviceAddr
-                0x00800084                usbCurrentTok
-                0x00800085                usbConfiguration
-                0x00800086                usbRxBuf
-                0x0080009c                PROVIDE (__bss_end, .)
-                0x00001dd6                __data_load_start = LOADADDR (.data)
-                0x00001dde                __data_load_end = (__data_load_start + SIZEOF (.data))
+ COMMON         0x00800073       0x2a main.o
+                0x00800073                usbTxBuf
+                0x0080007e                usbDeviceAddr
+                0x0080007f                usbRxToken
+                0x00800080                usbInputBufOffset
+                0x00800081                usbMsgPtr
+                0x00800083                usbRxLen
+                0x00800084                usbNewDeviceAddr
+                0x00800085                usbCurrentTok
+                0x00800086                usbConfiguration
+                0x00800087                usbRxBuf
+                0x0080009d                PROVIDE (__bss_end, .)
+                0x00001df8                __data_load_start = LOADADDR (.data)
+                0x00001e00                __data_load_end = (__data_load_start + SIZEOF (.data))
 
-.noinit         0x0080009c        0x0
-                0x0080009c                PROVIDE (__noinit_start, .)
+.noinit         0x0080009d        0x0
+                0x0080009d                PROVIDE (__noinit_start, .)
  *(.noinit*)
-                0x0080009c                PROVIDE (__noinit_end, .)
-                0x0080009c                _end = .
-                0x0080009c                PROVIDE (__heap_start, .)
+                0x0080009d                PROVIDE (__noinit_end, .)
+                0x0080009d                _end = .
+                0x0080009d                PROVIDE (__heap_start, .)
 
 .eeprom         0x00810000        0x0
  *(.eeprom*)

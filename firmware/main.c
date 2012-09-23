@@ -121,6 +121,7 @@ static inline void eraseFlashPage(void) {
 }
 
 static void writeFlashPage(void) {
+    didWriteSomething = 1;
     cli();
     boot_page_write(currentAddress - 2);
     boot_spm_busy_wait(); // Wait until the memory is written.
@@ -181,29 +182,6 @@ static void fillFlashWithVectors(void) {
     }
 
     writeFlashPage();
-}
-
-
-static inline __attribute__((noreturn)) void leaveBootloader(void) {
-    //DBG1(0x01, 0, 0);
-    bootLoaderExit();
-    cli();
-    USB_INTR_ENABLE = 0;
-    USB_INTR_CFG = 0;       /* also reset config bits */
-    
-	// make sure remainder of flash is erased and write checksum and application reset vectors
-	if (didWriteSomething) {
-        while (currentAddress < BOOTLOADER_ADDRESS) {
-            fillFlashWithVectors();
-        }
-    }
-    
-    // clear magic word from bottom of stack before jumping to the app
-    *(uint8_t*)(RAMEND) = 0x00;
-    *(uint8_t*)(RAMEND-1) = 0x00;
-
-    // jump to application reset vector at end of flash
-    asm volatile ("rjmp __vectors - 4");
 }
 
 /* ------------------------------------------------------------------------ */
@@ -317,6 +295,28 @@ static inline void tiny85FlashWrites(void) {
     } else {
         writeFlashPage();
     }
+}
+
+static inline __attribute__((noreturn)) void leaveBootloader(void) {
+    //DBG1(0x01, 0, 0);
+    bootLoaderExit();
+    cli();
+    USB_INTR_ENABLE = 0;
+    USB_INTR_CFG = 0;       /* also reset config bits */
+
+    // make sure remainder of flash is erased and write checksum and application reset vectors
+    if (didWriteSomething) {
+        while (currentAddress < BOOTLOADER_ADDRESS) {
+            fillFlashWithVectors();
+        }
+    }
+
+    // clear magic word from bottom of stack before jumping to the app
+    *(uint8_t*)(RAMEND) = 0x00;
+    *(uint8_t*)(RAMEND-1) = 0x00;
+
+    // jump to application reset vector at end of flash
+    asm volatile ("rjmp __vectors - 4");
 }
 
 int __attribute__((noreturn)) main(void) {
