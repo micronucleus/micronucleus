@@ -5,6 +5,7 @@ class MicroBoot
   Functions = [
     :get_info,
     :write_page,
+    :erase_application,
     :run_program
   ]
   
@@ -30,7 +31,7 @@ class MicroBoot
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-        write_sleep: write_sleep.to_f / 1000.0,
+        write_sleep: 0.020, #write_sleep.to_f / 1000.0,
         version: "#{@device.bcdDevice >> 8}.#{@device.bcdDevice & 0xFF}",
         version_numeric: @device.bcdDevice
       }
@@ -38,10 +39,19 @@ class MicroBoot
     @info
   end
   
+  def erase!
+    info = self.info
+    control_transfer(function: :erase_application)
+    sleep(info[:write_sleep] * ((info[:flash_length] / info[:page_size]) + 1)) # sleep for as many pages as the chip has
+  end
+  
   # upload a new program
   def program= bytestring
+    info = self.info
     raise "Program too long!" if bytestring.bytesize > info[:flash_length]
     bytes = bytestring.bytes.to_a
+    
+    erase!
     
     address = 0
     bytes.each_slice(info[:page_size]) do |bytes|

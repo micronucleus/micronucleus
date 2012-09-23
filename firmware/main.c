@@ -26,7 +26,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "usbdrv/usbdrv.c"
 
 // how many milliseconds should host wait till it sends another write?
-// this needs to be above 9, 12 is too low to be reliable, 15 seems to work, 20 seems safer
+// this needs to be above 9, 12 is too low to be reliable, 15 seems to work reliably, 20 seems safe
 #define UBOOT_WRITE_SLEEP 20
 
 /* ------------------------------------------------------------------------ */
@@ -71,7 +71,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 // outstanding events for the mainloop to deal with
 static uchar events = 0; // bitmap of events to run
-#define EVENT_PAGE_NEEDS_ERASE 1
+#define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE 2
 #define EVENT_EXIT_BOOTLOADER 4
 
@@ -96,11 +96,17 @@ static addr_t  currentAddress; /* in bytes */
 
 /* ------------------------------------------------------------------------ */
 
-static inline void eraseFlashPage(void) {
-    cli();
-    boot_page_erase(currentAddress - 2);
-    boot_spm_busy_wait();
-    sei();
+static inline void eraseApplication(void) {
+    // erase all pages starting from end of application section down to page 1 (leaving page 0)
+    currentAddress = BOOTLOADER_ADDRESS - SPM_PAGESIZE;
+    while (currentAddress) {
+        cli();
+        boot_page_erase(currentAddress);
+        boot_spm_busy_wait();
+        sei();
+        
+        currentAddress -= SPM_PAGESIZE;
+    }
 }
 
 static void writeFlashPage(void) {
@@ -149,9 +155,9 @@ static void writeWordToPageBuffer(uint16_t data) {
 	// only need to erase if there is data already in the page that doesn't match what we're programming
 	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
 	//if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
-    if ((pgm_read_word(currentAddress) & data) != data) {
-        fireEvent(EVENT_PAGE_NEEDS_ERASE);
-    }
+    //if ((pgm_read_word(currentAddress) & data) != data) {
+    //    fireEvent(EVENT_PAGE_NEEDS_ERASE);
+    //}
     
     currentAddress += 2;
 }
@@ -185,7 +191,10 @@ static uchar usbFunctionSetup(uchar data[8]) {
     } else if (rq->bRequest == 1) { // write page
         writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
+        
         return USB_NO_MSG; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
+    } else if (rq->bRequest == 2) { // erase application
+        fireEvent(EVENT_ERASE_APPLICATION);
         
     } else { // exit bootloader
 #if BOOTLOADER_CAN_EXIT
@@ -306,7 +315,6 @@ int __attribute__((noreturn)) main(void) {
     /* initialize  */
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
-    currentAddress = 0; // TODO: think about if this is necessary
     bootLoaderInit();
     
     
@@ -322,7 +330,7 @@ int __attribute__((noreturn)) main(void) {
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
             // and usually both of these will activate in the same loop, so host
             // needs to wait > 9ms before next usb request
-            if (isEvent(EVENT_PAGE_NEEDS_ERASE)) eraseFlashPage();
+            if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
 #           if BOOTLOADER_CAN_EXIT

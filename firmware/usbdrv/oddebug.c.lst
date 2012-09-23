@@ -1,4 +1,4 @@
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s 			page 1
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s 			page 1
 
 
    1               		.file	"oddebug.c"
@@ -8,16 +8,16 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s 			page
    5               	__CCP__ = 0x34
    6               	__tmp_reg__ = 0
    7               	__zero_reg__ = 1
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s 			page 2
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s 			page 2
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 oddebug.c
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:2      *ABS*:0000003f __SREG__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:3      *ABS*:0000003e __SP_H__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:4      *ABS*:0000003d __SP_L__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:5      *ABS*:00000034 __CCP__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:6      *ABS*:00000000 __tmp_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccJG9zbW.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:2      *ABS*:0000003f __SREG__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:3      *ABS*:0000003e __SP_H__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:4      *ABS*:0000003d __SP_L__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:5      *ABS*:00000034 __CCP__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccoH6fZ5.s:7      *ABS*:00000001 __zero_reg__
 
 NO UNDEFINED SYMBOLS
