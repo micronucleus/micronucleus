@@ -113,14 +113,14 @@ these macros are defined, the boot loader uses them.
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
 
-#define HAVE_EEPROM_PAGED_ACCESS    0
+//#define HAVE_EEPROM_PAGED_ACCESS    0
 /* If HAVE_EEPROM_PAGED_ACCESS is defined to 1, page mode access to EEPROM is
  * compiled in. Whether page mode or byte mode access is used by AVRDUDE
  * depends on the target device. Page mode is only used if the device supports
  * it, e.g. for the ATMega88, 168 etc. You can save quite a bit of memory by
  * disabling page mode EEPROM access. Costs ~ 138 bytes.
  */
-#define HAVE_EEPROM_BYTE_ACCESS     0
+//#define HAVE_EEPROM_BYTE_ACCESS     0
 /* If HAVE_EEPROM_BYTE_ACCESS is defined to 1, byte mode access to EEPROM is
  * compiled in. Byte mode is only used if the device (as identified by its
  * signature) does not support page mode for EEPROM. It is required for
@@ -131,11 +131,11 @@ these macros are defined, the boot loader uses them.
  * programmer closes the connection to the device. Costs ~36 bytes.
  * Required for TINY85MODE
  */
-#define HAVE_CHIP_ERASE             0
+//#define HAVE_CHIP_ERASE             0
 /* If this macro is defined to 1, the boot loader implements the Chip Erase
  * ISP command. Otherwise pages are erased on demand before they are written.
  */
-#define SIGNATURE_BYTES             0x1e, 0x93, 0x0b, 0     /* ATtiny85 */
+//#define SIGNATURE_BYTES             0x1e, 0x93, 0x0b, 0     /* ATtiny85 */
 /* This macro defines the signature bytes returned by the emulated USBasp to
  * the programmer software. They should match the actual device at least in
  * memory size and features. If you don't define this, values for ATMega8,
@@ -174,9 +174,6 @@ these macros are defined, the boot loader uses them.
 #   define MCUCSR   MCUSR
 #endif
 
-// shouldn't be disabled on tiny85 as corruption is very dangerous
-#define APPCHECKSUM
-
 /* tiny85 Architecture Specifics */
 #ifdef __AVR_ATtiny85__
 #   define TINY85MODE
@@ -204,18 +201,9 @@ these macros are defined, the boot loader uses them.
 #endif
 
 
-/* Application Checksum Section */
-#ifdef APPCHECKSUM
 /* max 6200ms to not overflow idlePolls variable */
-#   define AUTO_EXIT_MS    5000
-
-/* number of bytes before the boot loader vectors to store the application checksum */
-#   define APPCHECKSUM_POSITION    6
-
-#   define AUTO_EXIT_CONDITION()   (validApp && !connectedToPc && (idlePolls > (AUTO_EXIT_MS * 10UL)))
-#else
-#   define AUTO_EXIT_CONDITION()   0
-#endif
+#define AUTO_EXIT_MS    5000
+#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
 
 
 /* ----------------------- Optional MCU Description ------------------------ */

@@ -14,7 +14,7 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <avr/boot.h>
-#include <avr/eeprom.h>
+//#include <avr/eeprom.h>
 #include <util/delay.h>
 #include <string.h>
 
@@ -61,6 +61,9 @@ typedef union longConverter{
     uchar   b[sizeof(addr_t)];
 } longConverter_t;
 
+//////// Stuff Bluebie Added
+#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - 6)
+
 // outstanding events for the mainloop to deal with
 static uchar events = 0; // bitmap of events to run
 #define EVENT_PAGE_NEEDS_ERASE 1
@@ -77,16 +80,12 @@ static uchar state = 0;
 #define STATE_NEW_PAGE 1
 #define STATE_CONTINUING_PAGE 2
 
-static uchar didWriteSomething = 0; // becomes 1 when some programming happened
+// becomes 1 when some programming happened
+// lets leaveBootloader know if needs to finish up the programming
+static uchar didWriteSomething = 0;
 
-//static uchar            flashPageLoaded = 0;
-//#if HAVE_CHIP_ERASE
-//static uchar            eraseRequested = 0;
-//#endif
-//static uchar            appWriteComplete = 0;
-//static uint16_t         writeSize;
 static uint16_t         vectorTemp[2];
-static longConverter_t  currentAddress; /* in bytes */
+static addr_t  currentAddress; /* in bytes */
 
 
 PROGMEM char usbHidReportDescriptor[33] = {
@@ -440,7 +439,7 @@ uchar usbFunctionWrite(uchar *data, uchar length) {
         // make sure we don't write over the bootloader!
         if (currentAddress >= BOOTLOADER_ADDRESS - 6) {
             __boot_page_fill_clear();
-            return isLast;
+            break;
         }
         
         writeWordToPageBuffer(*(uint16_t *) data);
@@ -449,11 +448,11 @@ uchar usbFunctionWrite(uchar *data, uchar length) {
         length -= 2;
     } while(length);
     
+    // if we have now reached another page boundary, we're done
+    uchar isLast = !(currentAddress % SPM_PAGESIZE == 0);
+    if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
-    isLast = !(currentAddress % SPM_PAGESIZE == 0); // if we have now reached another page boundary, we're done
-    if (isLast) fireEvent(EVENT_PAGE_WRITE);
-    
-    return isLast;
+    return isLast; // let vusb know we're done with this request
 }
 
 /* ------------------------------------------------------------------------ */
@@ -508,6 +507,8 @@ int __attribute__((noreturn)) main(void) {
             usbPoll();
             _delay_us(100);
             idlePolls++;
+            
+            if (events) idlePolls = 0;
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
             // and usually both of these will activate in the same loop, so host
