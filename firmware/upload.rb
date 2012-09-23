@@ -98,7 +98,7 @@ thinklet = thinklets.first
 
 puts "First thinklet: #{thinklet.info.inspect}"
 
-test_data = ("---- Hello World! ----" * 10).encode("BINARY")
+test_data = ("---- Hello World! ----" * 1).encode("BINARY")
 puts "Attempting to write '#{test_data}' to first thinklet's program memory"
 thinklet.program = test_data
 

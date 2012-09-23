@@ -22,8 +22,28 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
-#include "libs-device/osccal.c"
 
+#define UBOOT_VERSION 1
+// how many milliseconds should host wait till it sends another write?
+// this needs to be above 9, but 20 is only sensible for testing
+#define UBOOT_WRITE_SLEEP 20
+
+// set a pin on DDRB to be an input or an output - i.e. becomeOutput(pin(3));
+#define bit(number) _BV(number)
+#define pin(number) _BV(number)
+#define inputs(pinmap) DDRB &= ~(pinmap)
+#define outputs(pinmap) DDRB |= (pinmap)
+
+// turn some pins on or off
+#define pinsOn(pinmap) PORTB |= (pinmap)
+#define pinsOff(pinmap) PORTB &= ~(pinmap)
+#define pinsToggle(pinmap) PORTB ^= pinmap
+
+// turn a single pin on or off
+#define pinOn(pin) pinsOn(bit(pin))
+#define pinOff(pin) pinsOff(bit(pin))
+// TODO: Should be called pinToggle
+#define toggle(pin) pinsToggle(bit(pin))
 
 /* ------------------------------------------------------------------------ */
 
@@ -75,39 +95,19 @@ static uchar events = 0; // bitmap of events to run
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
-// state for uploading process
-static uchar state = 0;
-#define STATE_UNDEFINED 0
-#define STATE_NEW_PAGE 1
-#define STATE_CONTINUING_PAGE 2
+static uchar writeLength;
 
 // becomes 1 when some programming happened
 // lets leaveBootloader know if needs to finish up the programming
 static uchar didWriteSomething = 0;
 
+
+
+
+
+
 static uint16_t         vectorTemp[2];
 static addr_t  currentAddress; /* in bytes */
-
-
-PROGMEM char usbHidReportDescriptor[33] = {
-    0x06, 0x00, 0xff,              // USAGE_PAGE (Generic Desktop)
-    0x09, 0x01,                    // USAGE (Vendor Usage 1)
-    0xa1, 0x01,                    // COLLECTION (Application)
-    0x15, 0x00,                    //   LOGICAL_MINIMUM (0)
-    0x26, 0xff, 0x00,              //   LOGICAL_MAXIMUM (255)
-    0x75, 0x08,                    //   REPORT_SIZE (8)
-
-    0x85, 0x01,                    //   REPORT_ID (1)
-    0x95, 0x06,                    //   REPORT_COUNT (6)
-    0x09, 0x00,                    //   USAGE (Undefined)
-    0xb2, 0x02, 0x01,              //   FEATURE (Data,Var,Abs,Buf)
-
-    0x85, 0x02,                    //   REPORT_ID (2)
-    0x95, 0x83,                    //   REPORT_COUNT (131)
-    0x09, 0x00,                    //   USAGE (Undefined)
-    0xb2, 0x02, 0x01,              //   FEATURE (Data,Var,Abs,Buf)
-    0xc0                           // END_COLLECTION
-};
 
 
 /* ------------------------------------------------------------------------ */
@@ -153,6 +153,7 @@ static void writeWordToPageBuffer(uint16_t data) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
     }
     
+    
     // clear page buffer as a precaution before filling the buffer on the first page
     // TODO: maybe clear on the first byte of every page?
     if (currentAddress == 0x0000) __boot_page_fill_clear();
@@ -164,7 +165,7 @@ static void writeWordToPageBuffer(uint16_t data) {
 	// only need to erase if there is data already in the page that doesn't match what we're programming
 	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
 	//if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
-    if (pgm_read_word(currentAddress) & data != data) {
+    if ((pgm_read_word(currentAddress) & data) != data) {
         fireEvent(EVENT_PAGE_NEEDS_ERASE);
     }
     
@@ -192,7 +193,6 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
     
 	// make sure remainder of flash is erased and write checksum and application reset vectors
 	if (didWriteSomething) {
-    //if(appWriteComplete) {
         while (currentAddress < BOOTLOADER_ADDRESS) {
             fillFlashWithVectors();
         }
@@ -209,58 +209,38 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
 /* ------------------------------------------------------------------------ */
 
 static uchar usbFunctionSetup(uchar data[8]) {
-   usbRequest_t *rq = (void *)data;
-   static uchar replyBuffer[7] = { // TODO: Adjust this buffer size when trimming off those two useless bytes
-      1, // report ID
-      SPM_PAGESIZE & 0xff,
-      0, // also completely useless on tiny85's - they'll never have more than 64 byte pagesize
-      ((uint)PROGMEM_SIZE) & 0xff,
-      (((uint)PROGMEM_SIZE) >> 8) & 0xff,
-      0,
-      0 // TODO: remove these last ones that don't do anything for these small chips ?
-   };
-
-   if (rq->bRequest == USBRQ_HID_SET_REPORT) {
-      if (rq->wValue.bytes[0] == 2) {
-         //offset = 0;
-         state = STATE_NEW_PAGE;
-         return USB_NO_MSG;
-      }
+    usbRequest_t *rq = (void *)data;
+    static uchar replyBuffer[5] = { // TODO: Adjust this buffer size when trimming off those two useless bytes
+        UBOOT_VERSION,
+        (((uint)PROGMEM_SIZE) >> 8) & 0xff,
+        ((uint)PROGMEM_SIZE) & 0xff,
+        SPM_PAGESIZE,
+        UBOOT_WRITE_SLEEP
+    };
+    
+    if (rq->bRequest == 0) { // get device info
+        usbMsgPtr = replyBuffer;
+        return 5;
+      
+    } else if (rq->bRequest == 1) { // write page
+        pinOff(0);
+        writeLength = rq->wValue.word;
+        currentAddress = rq->wIndex.word;
+        return 0xFF; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
+        
+    } else { // exit bootloader
 #if BOOTLOADER_CAN_EXIT
-      else {
-         fireEvent(EVENT_EXIT_BOOTLOADER);
-      }
+        fireEvent(EVENT_EXIT_BOOTLOADER);
 #endif
-   } else if (rq->bRequest == USBRQ_HID_GET_REPORT) {
-      usbMsgPtr = replyBuffer;
-      return 7; // TODO: Adjust this to match replyBuffer's size after trimming two useless bytes
-   }
-   return 0;
+    }
+    
+    return 0;
 }
 
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length) {
-    union {
-        addr_t  l;
-        uint    s[sizeof(addr_t)/2];
-        uchar   c[sizeof(addr_t)];
-    } address;
-    
-    // if we are the first functionWrite for this page, update our write address
-    if (state == STATE_NEW_PAGE) {
-        address.l = currentAddress;
-        
-        //DBG1(0x30, data, 3);
-        address.c[0] = data[1];
-        address.c[1] = data[2];
-        data += 4;
-        length -= 4;
-        
-        currentAddress = address.l;
-        
-        state = STATE_CONTINUING_PAGE;
-    }
+    writeLength -= length;
     
     do {
         // remember vectors or the tinyvector table 
@@ -284,8 +264,9 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
         length -= 2;
     } while(length);
     
+    // TODO: Isn't this always last?
     // if we have now reached another page boundary, we're done
-    uchar isLast = !(currentAddress % SPM_PAGESIZE == 0);
+    uchar isLast = (writeLength == 0);
     if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
     return isLast; // let vusb know we're done with this request
@@ -314,6 +295,20 @@ static inline void initForUsbConnectivity(void) {
     sei();
 }
 
+static inline void tiny85FlashInit(void) {
+    // check for erased first page (no bootloader interrupt vectors), add vectors if missing
+    // this needs to happen for usb communication to work later - essential to first run after bootloader
+    // being installed
+    if(pgm_read_word(RESET_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1 ||
+            pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1) {
+
+        fillFlashWithVectors();
+    }
+
+    // TODO: necessary to reset currentAddress?
+    currentAddress = 0;
+}
+
 static inline void tiny85FlashWrites(void) {
     _delay_ms(2); // TODO: why is this here?
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
@@ -330,13 +325,16 @@ int __attribute__((noreturn)) main(void) {
 
     /* initialize  */
     wdt_disable();      /* main app may have enabled watchdog */
-    //tiny85FlashInit();
+    tiny85FlashInit();
     currentAddress = 0; // TODO: think about if this is necessary
     bootLoaderInit();
     //odDebugInit();
     ////DBG1(0x00, 0, 0);
-
-
+    
+    outputs(pin(0) | pin(1));
+    pinOn(0);
+    pinOff(1);
+    
     if (bootLoaderCondition()){
         initForUsbConnectivity();
         do {
