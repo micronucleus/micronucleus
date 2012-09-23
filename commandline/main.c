@@ -19,9 +19,9 @@
 #define IDENT_PRODUCT_NUM       1503
 #define IDENT_PRODUCT_STRING    "HIDBoot"
 
-// extra delays before more USB requests for tiny85 compatibility
-#define TINY85_POSTWRITE_DELAY 8000
-#define TINY85_FIRSTWRITE_DELAY 500000
+// extra delays before more USB requests for tiny85 compatibility while chip frozen
+// this number could be lower than 16000 - minimum will be greater than 9000 (erase and write)
+#define TINY85_POSTWRITE_DELAY 16000
 
 /* ------------------------------------------------------------------------- */
 
@@ -154,7 +154,6 @@ union{
     deviceInfo_t    info;
     deviceData_t    data;
 }           buffer;
-unsigned char firstWrite = 1; // track first page write request, accept extra delay
 
     if((err = usbOpenDevice(&dev, IDENT_VENDOR_NUM, IDENT_VENDOR_STRING, IDENT_PRODUCT_NUM, IDENT_PRODUCT_STRING, 1)) != 0){
         fprintf(stderr, "Error opening HIDBoot device: %s\n", usbErrorMessage(err));
@@ -203,9 +202,7 @@ unsigned char firstWrite = 1; // track first page write request, accept extra de
             // special tiny85 chillout session - chip freezes after write, so we
             // need to make sure we don't send it any requests while it's busy
             // erasing or writing
-            if (firstWrite) usleep(TINY85_FIRSTWRITE_DELAY); // progmem erase extra time
             usleep(TINY85_POSTWRITE_DELAY); // regular page write duration
-            firstWrite = 0;
         }
         printf("\n");
     }
