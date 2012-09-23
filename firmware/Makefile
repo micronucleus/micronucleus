@@ -19,7 +19,7 @@ F_CPU = 16500000
 DEVICE = attiny85
 # BOOTLOADER_ADDRESS is 1800 for 8k devices, 3800 for 16k and 7800 for 32k.
 # 	Can be on the start of any flash page for ATtiny85, but must be set low enough so there is space for the full boot loader
-BOOTLOADER_ADDRESS = 1500
+BOOTLOADER_ADDRESS = 1700
 FUSEOPT = $(FUSEOPT_t85)
 LOCKOPT = -U lock:w:0x2f:m
 

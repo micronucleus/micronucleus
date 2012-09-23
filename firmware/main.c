@@ -26,24 +26,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #define UBOOT_VERSION 1
 // how many milliseconds should host wait till it sends another write?
 // this needs to be above 9, but 20 is only sensible for testing
-#define UBOOT_WRITE_SLEEP 20
-
-// set a pin on DDRB to be an input or an output - i.e. becomeOutput(pin(3));
-#define bit(number) _BV(number)
-#define pin(number) _BV(number)
-#define inputs(pinmap) DDRB &= ~(pinmap)
-#define outputs(pinmap) DDRB |= (pinmap)
-
-// turn some pins on or off
-#define pinsOn(pinmap) PORTB |= (pinmap)
-#define pinsOff(pinmap) PORTB &= ~(pinmap)
-#define pinsToggle(pinmap) PORTB ^= pinmap
-
-// turn a single pin on or off
-#define pinOn(pin) pinsOn(bit(pin))
-#define pinOff(pin) pinsOff(bit(pin))
-// TODO: Should be called pinToggle
-#define toggle(pin) pinsToggle(bit(pin))
+#define UBOOT_WRITE_SLEEP 12
 
 /* ------------------------------------------------------------------------ */
 
@@ -112,7 +95,6 @@ static addr_t  currentAddress; /* in bytes */
 
 /* ------------------------------------------------------------------------ */
 
-// TODO: inline these?
 static inline void eraseFlashPage(void) {
     cli();
     boot_page_erase(currentAddress - 2);
@@ -188,7 +170,7 @@ static void fillFlashWithVectors(void) {
 
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
-    static uchar replyBuffer[5] = { // TODO: Adjust this buffer size when trimming off those two useless bytes
+    static uchar replyBuffer[5] = {
         UBOOT_VERSION,
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
@@ -201,7 +183,6 @@ static uchar usbFunctionSetup(uchar data[8]) {
         return 5;
       
     } else if (rq->bRequest == 1) { // write page
-        pinOff(0);
         writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
         return USB_NO_MSG; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
@@ -287,7 +268,7 @@ static inline void tiny85FlashInit(void) {
 }
 
 static inline void tiny85FlashWrites(void) {
-    _delay_ms(2); // TODO: why is this here?
+    _delay_ms(2); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
     
     if (currentAddress % SPM_PAGESIZE) {
@@ -327,12 +308,7 @@ int __attribute__((noreturn)) main(void) {
     tiny85FlashInit();
     currentAddress = 0; // TODO: think about if this is necessary
     bootLoaderInit();
-    //odDebugInit();
-    ////DBG1(0x00, 0, 0);
     
-    outputs(pin(0) | pin(1));
-    pinOn(0);
-    pinOff(1);
     
     if (bootLoaderCondition()){
         initForUsbConnectivity();
