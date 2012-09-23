@@ -26,8 +26,8 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "usbdrv/usbdrv.c"
 
 // how many milliseconds should host wait till it sends another write?
-// this needs to be above 9, but 20 is only sensible for testing
-#define UBOOT_WRITE_SLEEP 12
+// this needs to be above 9, 12 is too low to be reliable, 15 seems to work, 20 seems safer
+#define UBOOT_WRITE_SLEEP 20
 
 /* ------------------------------------------------------------------------ */
 

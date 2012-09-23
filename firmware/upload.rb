@@ -90,6 +90,64 @@ class MicroBoot
   end
 end
 
+class HexProgram
+  def initialize input
+    @bytes = Hash.new(0xFF)
+    input = input.read if input.is_a? IO
+    parse input
+  end
+  
+  def binary
+    highest_address = @bytes.keys.max
+    
+    bytestring = Array.new(highest_address + 1) { |index|
+      @bytes[index]
+    }.pack('C*')
+  end
+  
+  protected
+  
+  def parse input_text
+    input_text.each_line do |line|
+      next unless line.start_with? ':'
+      line.chomp!
+      length = line[1..2].to_i(16) # usually 16 or 32
+      address = line[3..6].to_i(16) # 16-bit start address
+      record_type = line[7..8].to_i(16)
+      data = line[9.. 9 + (length * 2)]
+      checksum = line[9 + (length * 2).. 10 + (length * 2)].to_i(16)
+      checksum_section = line[1...9 + (length * 2)]
+      
+      checksum_calculated = checksum_section.chars.to_a.each_slice(2).map { |slice|
+        slice.join('').to_i(16)
+      }.reduce(0, &:+)
+      
+      checksum_calculated = (((checksum_calculated % 256) ^ 0xFF) + 1) % 256
+      
+      raise "Hex file checksum mismatch @ #{line}" unless checksum == checksum_calculated
+      
+      if record_type == 0 # data record
+        data_bytes = data.chars.each_slice(2).map { |slice| slice.join('').to_i(16) }
+        data_bytes.each_with_index do |byte, index|
+          @bytes[address + index] = byte
+        end
+      end
+    end
+  end
+end
+
+if ARGV[0]
+  if ARGV[0].end_with? '.hex'
+    puts "parsing input file as intel hex"
+    test_data = HexProgram.new(open ARGV[0]).binary
+  else
+    puts "parsing input file as raw binary"
+    test_data = open(ARGV[0]).read
+  end
+else
+  raise "Pass intel hex or raw binary as argument to script"
+end
+
 puts "Finding devices"
 thinklets = MicroBoot.all
 puts "Found #{thinklets.length} thinklet"
@@ -99,11 +157,7 @@ thinklet = thinklets.first
 
 puts "First thinklet: #{thinklet.info.inspect}"
 
-if ARGV.first
-  test_data = open(ARGV.first).read
-else
-  test_data = ("---- Hello World! ----" * 1).encode("BINARY")
-end
+
 puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
 puts "Bytes: #{test_data.bytes.to_a.inspect}"
 thinklet.program = test_data

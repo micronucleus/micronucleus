@@ -1,4 +1,4 @@
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s 			page 1
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s 			page 1
 
 
    1               		.file	"osccal.c"
@@ -58,7 +58,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s 			page
   55 0046 8C17      		cp r24,r28
   56 0048 9D07      		cpc r25,r29
   57 004a 04F4      		brge .L6
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s 			page 2
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s 			page 2
 
 
   58 004c 01B7      		in r16,81-32
@@ -85,18 +85,18 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s 			page
   79 0070 FF90      		pop r15
   80 0072 0895      		ret
   81               		.size	calibrateOscillator, .-calibrateOscillator
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s 			page 3
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s 			page 3
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 osccal.c
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:2      *ABS*:0000003f __SREG__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:3      *ABS*:0000003e __SP_H__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:4      *ABS*:0000003d __SP_L__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:5      *ABS*:00000034 __CCP__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:6      *ABS*:00000000 __tmp_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:7      *ABS*:00000001 __zero_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc42bZUQ.s:11     .text:00000000 calibrateOscillator
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:2      *ABS*:0000003f __SREG__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:3      *ABS*:0000003e __SP_H__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:4      *ABS*:0000003d __SP_L__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:5      *ABS*:00000034 __CCP__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccrIFbGt.s:11     .text:00000000 calibrateOscillator
 
 UNDEFINED SYMBOLS
 usbMeasureFrameLength
