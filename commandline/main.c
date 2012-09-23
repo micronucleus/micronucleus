@@ -15,9 +15,9 @@
 #include "usbcalls.h"
 
 #define IDENT_VENDOR_NUM        0x16c0
-#define IDENT_VENDOR_STRING     "obdev.at"
+#define IDENT_VENDOR_STRING     "creativepony.com"
 #define IDENT_PRODUCT_NUM       1503
-#define IDENT_PRODUCT_STRING    "HIDBoot"
+#define IDENT_PRODUCT_STRING    "uBoot"
 
 // extra delays before more USB requests for tiny85 compatibility while chip frozen
 // this number could be lower than 16000 - minimum will be greater than 9000 (erase and write)
