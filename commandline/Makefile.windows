@@ -1,0 +1,18 @@
+# Name: Makefile.windows
+# Project: Automator
+# Author: Christian Starkjohann
+# Creation Date: 2006-02-20
+# Tabsize: 4
+# Copyright: (c) 2006 by OBJECTIVE DEVELOPMENT Software GmbH
+# License: Proprietary, free under certain conditions. See Documentation.
+# This Revision: $Id$
+
+# You may use this file with
+#   make -f Makefile.windows
+# on Windows with MinGW instead of editing the main Makefile.
+
+include Makefile
+
+USBFLAGS=
+USBLIBS=    -lhid -lusb -lsetupapi
+EXE_SUFFIX= .exe
