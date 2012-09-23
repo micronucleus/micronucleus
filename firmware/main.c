@@ -23,18 +23,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
-/* ------------------------------------------------------------------------ */
-
-/* Request constants used by USBasp */
-#define USBASP_FUNC_CONNECT         1
-#define USBASP_FUNC_DISCONNECT      2
-#define USBASP_FUNC_TRANSMIT        3
-#define USBASP_FUNC_READFLASH       4
-#define USBASP_FUNC_ENABLEPROG      5
-#define USBASP_FUNC_WRITEFLASH      6
-#define USBASP_FUNC_READEEPROM      7
-#define USBASP_FUNC_WRITEEEPROM     8
-#define USBASP_FUNC_SETLONGADDRESS  9
 
 /* ------------------------------------------------------------------------ */
 
@@ -45,13 +33,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #   define uint     unsigned int
 #endif
 
-/* defaults if not in config file: */
-#ifndef HAVE_EEPROM_PAGED_ACCESS
-#   define HAVE_EEPROM_PAGED_ACCESS 0
-#endif
-#ifndef HAVE_EEPROM_BYTE_ACCESS
-#   define HAVE_EEPROM_BYTE_ACCESS  0
-#endif
 #ifndef BOOTLOADER_CAN_EXIT
 #   define  BOOTLOADER_CAN_EXIT     0
 #endif
@@ -72,76 +53,76 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 /* ------------------------------------------------------------------------ */
 
-#if (FLASHEND) > 0xffff /* we need long addressing */
-#   define CURRENT_ADDRESS  currentAddress.l
-#   define addr_t           ulong
-#else
-#   define CURRENT_ADDRESS  currentAddress.w[0]
-#   define addr_t           uint
-#endif
+#define addr_t uint
 
 typedef union longConverter{
     addr_t  l;
     uint    w[sizeof(addr_t)/2];
     uchar   b[sizeof(addr_t)];
-}longConverter_t;
+} longConverter_t;
 
-#ifdef TINY85MODE
-static uchar            flashPageLoaded = 0;
-#if HAVE_CHIP_ERASE
-static uchar            eraseRequested = 0;
-#endif
-static uchar            appWriteComplete = 0;
+// outstanding events for the mainloop to deal with
+static uchar events = 0;
+#define EVENT_ERASE_APPLICATION 1
+#define EVENT_WRITE_PAGE 2
+#define EVENT_EXIT_BOOTLOADER 4
+
+//static uchar            flashPageLoaded = 0;
+//#if HAVE_CHIP_ERASE
+//static uchar            eraseRequested = 0;
+//#endif
+//static uchar            appWriteComplete = 0;
 static uint16_t         writeSize;
 static uint16_t         vectorTemp[2];
-static uchar 			needToErase = 0;
-#endif
+//static uchar 			needToErase = 0;
+//#endif
 
-#ifdef APPCHECKSUM
-static uchar            connectedToPc = 0;
-static uint16_t         checksum = 0;
-#endif
+// #ifdef APPCHECKSUM
+// static uchar            connectedToPc = 0;
+// static uint16_t         checksum = 0;
+// #endif
 
-static uchar            requestBootLoaderExit;
+//static uchar            requestBootLoaderExit;
 static longConverter_t  currentAddress; /* in bytes */
 static uchar            bytesRemaining;
 static uchar            isLastPage;
-#if HAVE_EEPROM_PAGED_ACCESS
-static uchar            currentRequest;
-#else
+//#if HAVE_EEPROM_PAGED_ACCESS
+//static uchar            currentRequest;
+//#else
 static const uchar      currentRequest = 0;
-#endif
+//#endif
 
-static const uchar  signatureBytes[4] = {
-#ifdef SIGNATURE_BYTES
-    SIGNATURE_BYTES
-#elif defined (__AVR_ATmega8__) || defined (__AVR_ATmega8HVA__)
-    0x1e, 0x93, 0x07, 0
-#elif defined (__AVR_ATmega48__) || defined (__AVR_ATmega48P__)
-    0x1e, 0x92, 0x05, 0
-#elif defined (__AVR_ATmega88__) || defined (__AVR_ATmega88P__)
-    0x1e, 0x93, 0x0a, 0
-#elif defined (__AVR_ATmega168__) || defined (__AVR_ATmega168P__)
-    0x1e, 0x94, 0x06, 0
-#elif defined (__AVR_ATmega328P__)
-    0x1e, 0x95, 0x0f, 0
-#else
-#   error "Device signature is not known, please edit main.c!"
-#endif
-};
+// static const uchar  signatureBytes[4] = {
+// #ifdef SIGNATURE_BYTES
+//     SIGNATURE_BYTES
+// #elif defined (__AVR_ATmega8__) || defined (__AVR_ATmega8HVA__)
+//     0x1e, 0x93, 0x07, 0
+// #elif defined (__AVR_ATmega48__) || defined (__AVR_ATmega48P__)
+//     0x1e, 0x92, 0x05, 0
+// #elif defined (__AVR_ATmega88__) || defined (__AVR_ATmega88P__)
+//     0x1e, 0x93, 0x0a, 0
+// #elif defined (__AVR_ATmega168__) || defined (__AVR_ATmega168P__)
+//     0x1e, 0x94, 0x06, 0
+// #elif defined (__AVR_ATmega328P__)
+//     0x1e, 0x95, 0x0f, 0
+// #else
+// #   error "Device signature is not known, please edit main.c!"
+// #endif
+// };
+
+#define fireEvent(event) events |= (event)
+#define isEvent(event)   (events & (event))
+#define clearEvents()    events = 0 
 
 /* ------------------------------------------------------------------------ */
 
-#ifdef TINY85MODE
-static void writeFlashPage(void)
-{
-    if(needToErase)
-    {
-        boot_page_erase(CURRENT_ADDRESS - 2);
+static void writeFlashPage(void) {
+    if (needToErase) {
+        boot_page_erase(currentAddress - 2);
         boot_spm_busy_wait();
     }
 
-    boot_page_write(CURRENT_ADDRESS - 2);
+    boot_page_write(currentAddress - 2);
     boot_spm_busy_wait(); // Wait until the memory is written.
 
     needToErase = 0;
@@ -162,19 +143,19 @@ static void writeFlashPage(void)
 static void writeWordToPageBuffer(uint16_t data)
 {
     // first two interrupt vectors get replaced with a jump to the bootloader vector table
-    if(CURRENT_ADDRESS == (RESET_VECTOR_OFFSET * 2) || CURRENT_ADDRESS == (USBPLUS_VECTOR_OFFSET * 2))
+    if(currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2))
         data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
 
     // write 2's complement of checksum
 #ifdef APPCHECKSUM
-    if(CURRENT_ADDRESS == BOOTLOADER_ADDRESS - APPCHECKSUM_POSITION)
+    if(currentAddress == BOOTLOADER_ADDRESS - APPCHECKSUM_POSITION)
         data = (uint8_t)(~checksum + 1);
 #endif
 
-    if(CURRENT_ADDRESS == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)
+    if(currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
 
-    if(CURRENT_ADDRESS == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET)
+    if(currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET)
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
 
 #ifdef APPCHECKSUM
@@ -184,27 +165,27 @@ static void writeWordToPageBuffer(uint16_t data)
 
     // clear page buffer as a precaution before filling the buffer on the first page
     // TODO: maybe clear on the first byte of every page?
-    if(CURRENT_ADDRESS == 0x0000)
+    if(currentAddress == 0x0000)
         __boot_page_fill_clear();
     
     cli();
-    boot_page_fill(CURRENT_ADDRESS, data);
+    boot_page_fill(currentAddress, data);
     sei();
 
 	// only need to erase if there is data already in the page that doesn't match what we're programming    
-	if(pgm_read_word(CURRENT_ADDRESS) != data && pgm_read_word(CURRENT_ADDRESS) != 0xFFFF)
+	if(pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF)
         needToErase = 1;
 
-    CURRENT_ADDRESS += 2;
+    currentAddress += 2;
 }
 
 static void fillFlashWithVectors(void)
 {
     int16_t i;
 
-    // fill all or remainder of page starting at CURRENT_ADDRESS with 0xFFs, unless we're
+    // fill all or remainder of page starting at currentAddress with 0xFFs, unless we're
     //   at a special address that needs a vector replaced
-    for (i = CURRENT_ADDRESS % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2)
+    for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2)
     {
         writeWordToPageBuffer(0xFFFF);
     }
@@ -216,13 +197,13 @@ static void fillFlashWithVectors(void)
 static void eraseApplication(void)
 {
     // erase all pages starting from end of application section down to page 1 (leaving page 0)
-    CURRENT_ADDRESS = BOOTLOADER_ADDRESS - SPM_PAGESIZE;
-    while(CURRENT_ADDRESS != 0x0000)
+    currentAddress = BOOTLOADER_ADDRESS - SPM_PAGESIZE;
+    while(currentAddress != 0x0000)
     {
-        boot_page_erase(CURRENT_ADDRESS);
+        boot_page_erase(currentAddress);
         boot_spm_busy_wait();
 
-        CURRENT_ADDRESS -= SPM_PAGESIZE;
+        currentAddress -= SPM_PAGESIZE;
     }
 
     // erase and load page 0 with vectors
@@ -259,7 +240,7 @@ static void (*nullVector)(void) __attribute__((__noreturn__));
 
 static inline __attribute__((noreturn)) void leaveBootloader(void)
 {
-    DBG1(0x01, 0, 0);
+    //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
     USB_INTR_ENABLE = 0;
@@ -269,8 +250,8 @@ static inline __attribute__((noreturn)) void leaveBootloader(void)
 	// make sure remainder of flash is erased and write checksum and application reset vectors
     if(appWriteComplete)
     {
-        CURRENT_ADDRESS = writeSize;
-        while(CURRENT_ADDRESS < BOOTLOADER_ADDRESS)
+        currentAddress = writeSize;
+        while(currentAddress < BOOTLOADER_ADDRESS)
         {
             fillFlashWithVectors();
         }
@@ -338,7 +319,7 @@ static uchar    replyBuffer[4];
             addr_t addr;
             for(addr = 0; addr < FLASHEND + 1 - 2048; addr += SPM_PAGESIZE) {
                 /* wait and erase page */
-                DBG1(0x33, 0, 0);
+                //DBG1(0x33, 0, 0);
 #   	ifndef NO_FLASH_WRITE
                 boot_spm_busy_wait();
                 cli();
@@ -385,7 +366,7 @@ uchar usbFunctionWrite(uchar *data, uchar len)
 {
     uchar   isLast;
 
-    DBG1(0x31, (void *)&currentAddress.l, 4);
+    //DBG1(0x31, (void *)&currentAddress.l, 4);
     if(len > bytesRemaining)
         len = bytesRemaining;
     bytesRemaining -= len;
@@ -402,27 +383,27 @@ uchar usbFunctionWrite(uchar *data, uchar len)
         for(i = 0; i < len;){
 #ifdef TINY85MODE
 #if 1
-            if(CURRENT_ADDRESS == RESET_VECTOR_OFFSET * 2)
+            if(currentAddress == RESET_VECTOR_OFFSET * 2)
             {
                 vectorTemp[0] = *(short *)data;
             }
-            if(CURRENT_ADDRESS == USBPLUS_VECTOR_OFFSET * 2)
+            if(currentAddress == USBPLUS_VECTOR_OFFSET * 2)
             {
                 vectorTemp[1] = *(short *)data;
             }
 #else
-            if(CURRENT_ADDRESS == RESET_VECTOR_OFFSET * 2 || CURRENT_ADDRESS == USBPLUS_VECTOR_OFFSET * 2)
+            if(currentAddress == RESET_VECTOR_OFFSET * 2 || currentAddress == USBPLUS_VECTOR_OFFSET * 2)
             {
-                vectorTemp[CURRENT_ADDRESS ? 1:0] = *(short *)data;
+                vectorTemp[currentAddress ? 1:0] = *(short *)data;
             }
 #endif
 #else
 #	if !HAVE_CHIP_ERASE
             if((currentAddress.w[0] & (SPM_PAGESIZE - 1)) == 0){    /* if page start: erase */
-                DBG1(0x33, 0, 0);
+                //DBG1(0x33, 0, 0);
 #   	ifndef NO_FLASH_WRITE
                 cli();
-                boot_page_erase(CURRENT_ADDRESS);   /* erase page */
+                boot_page_erase(currentAddress);   /* erase page */
                 sei();
                 boot_spm_busy_wait();               /* wait until page is erased */
 #   	endif
@@ -430,9 +411,9 @@ uchar usbFunctionWrite(uchar *data, uchar len)
 #endif
 
             i += 2;
-            DBG1(0x32, 0, 0);
+            //DBG1(0x32, 0, 0);
 #ifdef TINY85MODE
-            if(CURRENT_ADDRESS >= BOOTLOADER_ADDRESS - 6)
+            if(currentAddress >= BOOTLOADER_ADDRESS - 6)
             {
                 // stop writing data to flash if the application is too big, and clear any leftover data in the page buffer
                 __boot_page_fill_clear();
@@ -442,20 +423,20 @@ uchar usbFunctionWrite(uchar *data, uchar len)
             writeWordToPageBuffer(*(short *)data);
 #else
 			cli();
-            boot_page_fill(CURRENT_ADDRESS, *(short *)data);
+            boot_page_fill(currentAddress, *(short *)data);
             sei();
-            CURRENT_ADDRESS += 2;
+            currentAddress += 2;
 #endif
             data += 2;
             /* write page when we cross page boundary or we have the last partial page */
             if((currentAddress.w[0] & (SPM_PAGESIZE - 1)) == 0 || (isLast && i >= len && isLastPage)){
-                DBG1(0x34, 0, 0);
+                //DBG1(0x34, 0, 0);
 #ifdef TINY85MODE
                 flashPageLoaded = 1;
 #else
 #	ifndef NO_FLASH_WRITE
                 cli();
-                boot_page_write(CURRENT_ADDRESS - 2);
+                boot_page_write(currentAddress - 2);
                 sei();
                 boot_spm_busy_wait();
                 cli();
@@ -465,7 +446,7 @@ uchar usbFunctionWrite(uchar *data, uchar len)
 #endif
             }
         }
-        DBG1(0x35, (void *)&currentAddress.l, 4);
+        //DBG1(0x35, (void *)&currentAddress.l, 4);
 #if HAVE_EEPROM_PAGED_ACCESS
     }
 #endif
@@ -485,25 +466,25 @@ uchar usbFunctionRead(uchar *data, uchar len)
             *data = eeprom_read_byte((void *)currentAddress.w[0]);
         }else{
 #endif
-            *data = pgm_read_byte((void *)CURRENT_ADDRESS);
+            *data = pgm_read_byte((void *)currentAddress);
 
             // read back original vectors
 #ifdef TINY85MODE
 #if 1
-            if(CURRENT_ADDRESS == RESET_VECTOR_OFFSET * 2)
+            if(currentAddress == RESET_VECTOR_OFFSET * 2)
                 *data = vectorTemp[0];
-            if(CURRENT_ADDRESS == (RESET_VECTOR_OFFSET * 2) + 1)
+            if(currentAddress == (RESET_VECTOR_OFFSET * 2) + 1)
                 *data = vectorTemp[0]/256;
-            if(CURRENT_ADDRESS == (USBPLUS_VECTOR_OFFSET * 2))
+            if(currentAddress == (USBPLUS_VECTOR_OFFSET * 2))
                 *data = vectorTemp[1];
-            if(CURRENT_ADDRESS == (USBPLUS_VECTOR_OFFSET * 2) + 1)
+            if(currentAddress == (USBPLUS_VECTOR_OFFSET * 2) + 1)
                 *data = vectorTemp[1]/256;
 #else
-            if(CURRENT_ADDRESS == RESET_VECTOR_OFFSET * 2 || CURRENT_ADDRESS == USBPLUS_VECTOR_OFFSET * 2)
+            if(currentAddress == RESET_VECTOR_OFFSET * 2 || currentAddress == USBPLUS_VECTOR_OFFSET * 2)
             {
-                *(short *)data = vectorTemp[CURRENT_ADDRESS ? 1:0];
+                *(short *)data = vectorTemp[currentAddress ? 1:0];
                 data++;
-                CURRENT_ADDRESS++;
+                currentAddress++;
             }
 #endif
 #endif
@@ -511,7 +492,7 @@ uchar usbFunctionRead(uchar *data, uchar len)
         }
 #endif
         data++;
-        CURRENT_ADDRESS++;
+        currentAddress++;
     }
     return len;
 }
@@ -558,8 +539,8 @@ static inline void tiny85FlashInit(void)
 #	endif
     }
 
-    // TODO: necessary to reset CURRENT_ADDRESS?
-    CURRENT_ADDRESS = 0;
+    // TODO: necessary to reset currentAddress?
+    currentAddress = 0;
 #   ifdef APPCHECKSUM
         checksum = 0;
 #   endif
@@ -587,7 +568,7 @@ static inline void tiny85FlashWrites(void)
         // write page to flash, interrupts will be disabled for several milliseconds
         cli();
 
-        if(CURRENT_ADDRESS % SPM_PAGESIZE)
+        if(currentAddress % SPM_PAGESIZE)
             fillFlashWithVectors();
         else
             writeFlashPage();
@@ -598,58 +579,44 @@ static inline void tiny85FlashWrites(void)
         if(isLastPage)
         {
             // store number of bytes written so rest of flash can be filled later
-            writeSize = CURRENT_ADDRESS;
+            writeSize = currentAddress;
             appWriteComplete = 1;
         }
     }
 }
 #endif
 
-int __attribute__((noreturn)) main(void)
-{
+int __attribute__((noreturn)) main(void) {
     uint16_t idlePolls = 0;
-#ifdef APPCHECKSUM
-    int validApp = 0;
-#endif
 
     /* initialize  */
     wdt_disable();      /* main app may have enabled watchdog */
-#ifdef TINY85MODE
     tiny85FlashInit();
-#endif
     bootLoaderInit();
-    odDebugInit();
-    DBG1(0x00, 0, 0);
+    //odDebugInit();
+    ////DBG1(0x00, 0, 0);
 
-#ifdef APPCHECKSUM
-    validApp = testForValidApplication();
-#endif
 
-#ifndef TINY85MODE
-#	ifndef NO_FLASH_WRITE
-    GICR = (1 << IVCE);  /* enable change of interrupt vectors */
-    GICR = (1 << IVSEL); /* move interrupts to boot flash section */
-#	endif
-#endif
-
-    if(bootLoaderCondition()){
+    if (bootLoaderCondition()){
         initForUsbConnectivity();
-        do{
+        do {
             usbPoll();
             _delay_us(100);
             idlePolls++;
-#ifdef TINY85MODE
-            tiny85FlashWrites();
-#endif
+            
+            if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
+            if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
 #if BOOTLOADER_CAN_EXIT
             // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
-            if(requestBootLoaderExit || AUTO_EXIT_CONDITION()){
+            if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
                 _delay_ms(10);
                 break;
             }
 #endif
-        }while(bootLoaderCondition());  /* main event loop */
+            clearEvents();
+            
+        } while(bootLoaderCondition());  /* main event loop */
     }
     leaveBootloader();
 }
