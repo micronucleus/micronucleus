@@ -1,0 +1,102 @@
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s 			page 1
+
+
+   1               		.file	"osccal.c"
+   2               	__SREG__ = 0x3f
+   3               	__SP_H__ = 0x3e
+   4               	__SP_L__ = 0x3d
+   5               	__CCP__ = 0x34
+   6               	__tmp_reg__ = 0
+   7               	__zero_reg__ = 1
+   8               		.text
+   9               	.global	calibrateOscillator
+  10               		.type	calibrateOscillator, @function
+  11               	calibrateOscillator:
+  12 0000 FF92      		push r15
+  13 0002 0F93      		push r16
+  14 0004 1F93      		push r17
+  15 0006 CF93      		push r28
+  16 0008 DF93      		push r29
+  17               	/* prologue: function */
+  18               	/* frame size = 0 */
+  19               	/* stack size = 5 */
+  20               	.L__stack_usage = 5
+  21 000a C8E0      		ldi r28,lo8(8)
+  22 000c D0E0      		ldi r29,hi8(8)
+  23 000e 10E0      		ldi r17,lo8(0)
+  24 0010 00E8      		ldi r16,lo8(-128)
+  25               	.L3:
+  26 0012 F12E      		mov r15,r17
+  27 0014 F00E      		add r15,r16
+  28 0016 F1BE      		out 81-32,r15
+  29 0018 00D0      		rcall usbMeasureFrameLength
+  30 001a 29E0      		ldi r18,hi8(2356)
+  31 001c 8433      		cpi r24,lo8(2356)
+  32 001e 9207      		cpc r25,r18
+  33 0020 04F4      		brge .L2
+  34 0022 1F2D      		mov r17,r15
+  35               	.L2:
+  36 0024 0695      		lsr r16
+  37 0026 2197      		sbiw r28,1
+  38 0028 01F4      		brne .L3
+  39 002a 212F      		mov r18,r17
+  40 002c 2150      		subi r18,lo8(-(-1))
+  41 002e 21BF      		out 81-32,r18
+  42 0030 EC01      		movw r28,r24
+  43 0032 012F      		mov r16,r17
+  44 0034 00C0      		rjmp .L4
+  45               	.L7:
+  46 0036 00D0      		rcall usbMeasureFrameLength
+  47 0038 8453      		subi r24,lo8(-(-2356))
+  48 003a 9940      		sbci r25,hi8(-(-2356))
+  49 003c 97FF      		sbrs r25,7
+  50 003e 00C0      		rjmp .L5
+  51 0040 9095      		com r25
+  52 0042 8195      		neg r24
+  53 0044 9F4F      		sbci r25,lo8(-1)
+  54               	.L5:
+  55 0046 8C17      		cp r24,r28
+  56 0048 9D07      		cpc r25,r29
+  57 004a 04F4      		brge .L6
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s 			page 2
+
+
+  58 004c 01B7      		in r16,81-32
+  59 004e EC01      		movw r28,r24
+  60               	.L6:
+  61 0050 81B7      		in r24,81-32
+  62 0052 8F5F      		subi r24,lo8(-(1))
+  63 0054 81BF      		out 81-32,r24
+  64               	.L4:
+  65 0056 21B7      		in r18,81-32
+  66 0058 30E0      		ldi r19,lo8(0)
+  67 005a 812F      		mov r24,r17
+  68 005c 90E0      		ldi r25,lo8(0)
+  69 005e 0196      		adiw r24,1
+  70 0060 8217      		cp r24,r18
+  71 0062 9307      		cpc r25,r19
+  72 0064 04F4      		brge .L7
+  73 0066 01BF      		out 81-32,r16
+  74               	/* epilogue start */
+  75 0068 DF91      		pop r29
+  76 006a CF91      		pop r28
+  77 006c 1F91      		pop r17
+  78 006e 0F91      		pop r16
+  79 0070 FF90      		pop r15
+  80 0072 0895      		ret
+  81               		.size	calibrateOscillator, .-calibrateOscillator
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s 			page 3
+
+
+DEFINED SYMBOLS
+                            *ABS*:00000000 osccal.c
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:2      *ABS*:0000003f __SREG__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:3      *ABS*:0000003e __SP_H__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:4      *ABS*:0000003d __SP_L__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:5      *ABS*:00000034 __CCP__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccgky3fN.s:11     .text:00000000 calibrateOscillator
+
+UNDEFINED SYMBOLS
+usbMeasureFrameLength
