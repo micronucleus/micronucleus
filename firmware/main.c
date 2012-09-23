@@ -226,7 +226,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         pinOff(0);
         writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
-        return 0xFF; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
+        return USB_NO_MSG; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
         
     } else { // exit bootloader
 #if BOOTLOADER_CAN_EXIT

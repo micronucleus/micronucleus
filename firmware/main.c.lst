@@ -1,4 +1,4 @@
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 1
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 1
 
 
    1               		.file	"main.c"
@@ -58,7 +58,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
   55 002e 2430      		cpi r18,4
   56 0030 3105      		cpc r19,__zero_reg__
   57 0032 01F0      		breq .L9
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 2
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 2
 
 
   58 0034 44E1      		ldi r20,hi8(5372)
@@ -118,7 +118,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  112 008c 3923      		and r19,r25
  113 008e 2817      		cp r18,r24
  114 0090 3907      		cpc r19,r25
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 3
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 3
 
 
  115 0092 01F0      		breq .L8
@@ -178,7 +178,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  169               	/* stack size = 0 */
  170               	.L__stack_usage = 0
  171               	/* #APP */
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 4
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 4
 
 
  172               	 ;  281 "main.c" 1
@@ -238,7 +238,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  226               	/* #APP */
  227               	 ;  303 "main.c" 1
  228 0106 8591      		lpm r24, Z+
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 5
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 5
 
 
  229 0108 9491      		lpm r25, Z
@@ -298,7 +298,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  283 016a 01F0      		breq .+2
  284 016c 00C0      		rjmp .L17
  285 016e 2830      		cpi r18,lo8(8)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 6
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 6
 
 
  286 0170 01F0      		breq .+2
@@ -358,7 +358,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  340 01ec 9093 0000 		sts usbNewDeviceAddr,r25
  341 01f0 00C0      		rjmp .L70
  342               	.L28:
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 7
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 7
 
 
  343 01f2 8630      		cpi r24,lo8(6)
@@ -418,7 +418,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  397 0260 8830      		cpi r24,lo8(8)
  398 0262 01F0      		breq .L66
  399 0264 8930      		cpi r24,lo8(9)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 8
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 8
 
 
  400 0266 01F4      		brne .L36
@@ -478,7 +478,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  454 02ce D801      		movw r26,r16
  455 02d0 8D91      		ld r24,X+
  456 02d2 9C91      		ld r25,X
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 9
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 9
 
 
  457 02d4 1197      		sbiw r26,1
@@ -538,7 +538,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  511 0346 8091 0000 		lds r24,usbTxLen
  512 034a 84FF      		sbrs r24,4
  513 034c 00C0      		rjmp .L43
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 10
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 10
 
 
  514 034e 8091 0000 		lds r24,usbMsgLen
@@ -598,7 +598,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  568 03b6 A817      		cp r26,r24
  569 03b8 B907      		cpc r27,r25
  570 03ba 01F4      		brne .L49
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 11
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 11
 
 
  571               	.L48:
@@ -658,7 +658,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  625 0416 8091 0000 		lds r24,events
  626 041a 8823      		tst r24
  627 041c 01F4      		brne .L68
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 12
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 12
 
 
  628 041e 0894      		sec
@@ -718,7 +718,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  682 0472 00D0      		rcall writeFlashPage
  683               	.L59:
  684 0474 8091 0000 		lds r24,events
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 13
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 13
 
 
  685 0478 82FD      		sbrc r24,2
@@ -778,7 +778,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  739 000a 6500      		.word	101
  740 000c 6100      		.word	97
  741 000e 7400      		.word	116
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 14
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 14
 
 
  742 0010 6900      		.word	105
@@ -838,7 +838,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  796 004b 80        		.byte	-128
  797 004c 32        		.byte	50
  798 004d 09        		.byte	9
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 15
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 15
 
 
  799 004e 04        		.byte	4
@@ -880,45 +880,45 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page
  835               		.lcomm wasReset.1698,1
  836               	.global __do_copy_data
  837               	.global __do_clear_bss
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s 			page 16
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s 			page 16
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:2      *ABS*:0000003f __SREG__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:3      *ABS*:0000003e __SP_H__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:4      *ABS*:0000003d __SP_L__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:5      *ABS*:00000034 __CCP__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:6      *ABS*:00000000 __tmp_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:7      *ABS*:00000001 __zero_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:10     .text:00000000 writeFlashPage
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:2      *ABS*:0000003f __SREG__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:3      *ABS*:0000003e __SP_H__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:4      *ABS*:0000003d __SP_L__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:5      *ABS*:00000034 __CCP__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:10     .text:00000000 writeFlashPage
                              .bss:00000000 currentAddress
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:44     .text:0000001e writeWordToPageBuffer
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:818    .bss:00000003 vectorTemp
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:817    .bss:00000002 events
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:138    .text:000000b6 fillFlashWithVectors
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:166    .init3:00000000 PushMagicWord
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:190    .text:000000dc main
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:44     .text:0000001e writeWordToPageBuffer
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:818    .bss:00000003 vectorTemp
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:817    .bss:00000002 events
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:138    .text:000000b6 fillFlashWithVectors
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:166    .init3:00000000 PushMagicWord
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:190    .text:000000dc main
                             *COM*:00000001 usbRxLen
                             *COM*:00000001 usbInputBufOffset
                             *COM*:00000016 usbRxBuf
                             *COM*:00000001 usbRxToken
                             *COM*:0000000b usbTxBuf
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:721    .data:00000000 usbTxLen
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:819    .bss:00000007 usbMsgFlags
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:829    .data:00000002 replyBuffer.1756
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:721    .data:00000000 usbTxLen
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:819    .bss:00000007 usbMsgFlags
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:829    .data:00000002 replyBuffer.1756
                             *COM*:00000002 usbMsgPtr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:825    .bss:00000008 writeLength
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:825    .bss:00000008 writeLength
                             *COM*:00000001 usbNewDeviceAddr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:766    .progmem.data:00000032 usbDescriptorDevice
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:788    .progmem.data:00000044 usbDescriptorConfiguration
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:727    .progmem.data:00000000 usbDescriptorString0
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:735    .progmem.data:00000004 usbDescriptorStringVendor
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:756    .progmem.data:00000026 usbDescriptorStringDevice
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:766    .progmem.data:00000032 usbDescriptorDevice
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:788    .progmem.data:00000044 usbDescriptorConfiguration
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:727    .progmem.data:00000000 usbDescriptorString0
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:735    .progmem.data:00000004 usbDescriptorStringVendor
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:756    .progmem.data:00000026 usbDescriptorStringDevice
                             *COM*:00000001 usbConfiguration
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:823    .data:00000001 usbMsgLen
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:823    .data:00000001 usbMsgLen
                             *COM*:00000001 usbDeviceAddr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//cc8OMEVS.s:826    .bss:00000009 wasReset.1698
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccMGKblz.s:826    .bss:00000009 wasReset.1698
                             *COM*:00000001 usbCurrentTok
 
 UNDEFINED SYMBOLS
