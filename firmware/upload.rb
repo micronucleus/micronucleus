@@ -30,7 +30,9 @@ class MicroBoot
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-        write_sleep: write_sleep.to_f / 1000.0
+        write_sleep: write_sleep.to_f / 1000.0,
+        version: "#{@device.bcdDevice >> 8}.#{@device.bcdDevice & 0xFF}",
+        version_numeric: @device.bcdDevice
       }
     end
     @info
