@@ -259,7 +259,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
         }
         
         writeWordToPageBuffer(*(uint16_t *) data);
-        currentAddress += 2; // advance progmem address
         data += 2; // advance data pointer
         length -= 2;
     } while(length);

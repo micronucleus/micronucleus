@@ -98,8 +98,13 @@ thinklet = thinklets.first
 
 puts "First thinklet: #{thinklet.info.inspect}"
 
-test_data = ("---- Hello World! ----" * 1).encode("BINARY")
-puts "Attempting to write '#{test_data}' to first thinklet's program memory"
+if ARGV.first
+  test_data = open(ARGV.first).read
+else
+  test_data = ("---- Hello World! ----" * 1).encode("BINARY")
+end
+puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
+puts "Bytes: #{test_data.bytes.to_a.inspect}"
 thinklet.program = test_data
 
 puts "That seems to have gone well! Telling thinklet to run program..."
