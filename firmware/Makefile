@@ -149,7 +149,7 @@ CFLAGS = -Wall -Os -fno-move-loop-invariants -fno-tree-scev-cprop -fno-inline-sm
 LDFLAGS = -Wl,--relax,--gc-sections -Wl,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map
 
 OBJECTS =  usbdrv/usbdrvasm.o main.o
-OBJECTS += libs-device/osccal.o
+#### OBJECTS += libs-device/osccal.o
 
 # symbolic targets:
 all: main.hex

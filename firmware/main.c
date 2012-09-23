@@ -16,12 +16,13 @@
 #include <avr/boot.h>
 //#include <avr/eeprom.h>
 #include <util/delay.h>
-#include <string.h>
+//#include <string.h>
 
 static void leaveBootloader() __attribute__((__noreturn__));
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
+#include "libs-device/osccal.c"
 
 
 /* ------------------------------------------------------------------------ */
@@ -112,7 +113,7 @@ PROGMEM char usbHidReportDescriptor[33] = {
 /* ------------------------------------------------------------------------ */
 
 // TODO: inline these?
-static void eraseFlashPage(void) {
+static inline void eraseFlashPage(void) {
     cli();
     boot_page_erase(currentAddress - 2);
     boot_spm_busy_wait();
@@ -162,15 +163,15 @@ static void writeWordToPageBuffer(uint16_t data) {
     
 	// only need to erase if there is data already in the page that doesn't match what we're programming
 	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
-	if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
+	//if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
+    if (pgm_read_word(currentAddress) & data != data) {
         fireEvent(EVENT_PAGE_NEEDS_ERASE);
     }
     
     currentAddress += 2;
 }
 
-static void fillFlashWithVectors(void)
-{
+static void fillFlashWithVectors(void) {
     int16_t i;
 
     // fill all or remainder of page with 0xFFFF
@@ -180,24 +181,6 @@ static void fillFlashWithVectors(void)
 
     writeFlashPage();
 }
-
-// #	if HAVE_CHIP_ERASE
-// static void eraseApplication(void)
-// {
-//     // erase all pages starting from end of application section down to page 1 (leaving page 0)
-//     currentAddress = BOOTLOADER_ADDRESS - SPM_PAGESIZE;
-//     while(currentAddress != 0x0000)
-//     {
-//         boot_page_erase(currentAddress);
-//         boot_spm_busy_wait();
-// 
-//         currentAddress -= SPM_PAGESIZE;
-//     }
-// 
-//     // erase and load page 0 with vectors
-//     fillFlashWithVectors();
-// }
-// #	endif
 
 
 static inline __attribute__((noreturn)) void leaveBootloader(void) {
@@ -225,12 +208,12 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
 
 /* ------------------------------------------------------------------------ */
 
-uchar usbFunctionSetup(uchar data[8]) {
+static uchar usbFunctionSetup(uchar data[8]) {
    usbRequest_t *rq = (void *)data;
    static uchar replyBuffer[7] = { // TODO: Adjust this buffer size when trimming off those two useless bytes
       1, // report ID
       SPM_PAGESIZE & 0xff,
-      SPM_PAGESIZE >> 8, // also completely useless on tiny85's - they'll never have more than 64 byte pagesize
+      0, // also completely useless on tiny85's - they'll never have more than 64 byte pagesize
       ((uint)PROGMEM_SIZE) & 0xff,
       (((uint)PROGMEM_SIZE) >> 8) & 0xff,
       0,
@@ -254,157 +237,10 @@ uchar usbFunctionSetup(uchar data[8]) {
    }
    return 0;
 }
-// 
-// uchar usbFunctionSetup(uchar data[8]) {
-//     usbRequest_t    *rq = (void *)data;
-//     uchar           len = 0;
-//     static uchar    replyBuffer[4];
-//     
-// 
-//     usbMsgPtr = replyBuffer;
-//     if (rq->bRequest == USBASP_FUNC_TRANSMIT) {   /* emulate parts of ISP protocol */
-//         uchar rval = 0;
-//         usbWord_t address;
-//         address.bytes[1] = rq->wValue.bytes[1];
-//         address.bytes[0] = rq->wIndex.bytes[0];
-//         if(rq->wValue.bytes[0] == 0x30){        /* read signature */
-//             rval = rq->wIndex.bytes[0] & 3;
-//             rval = signatureBytes[rval];
-// #if HAVE_EEPROM_BYTE_ACCESS
-//         }else if(rq->wValue.bytes[0] == 0xa0){  /* read EEPROM byte */
-//             rval = eeprom_read_byte((void *)address.word);
-//         }else if(rq->wValue.bytes[0] == 0xc0){  /* write EEPROM byte */
-//             eeprom_write_byte((void *)address.word, rq->wIndex.bytes[1]);
-// #endif
-// #if HAVE_CHIP_ERASE
-//         }else if(rq->wValue.bytes[0] == 0xac && rq->wValue.bytes[1] == 0x80){  /* chip erase */
-// #	ifdef TINY85MODE
-//             eraseRequested = 1;
-// #	else
-//             addr_t addr;
-//             for(addr = 0; addr < FLASHEND + 1 - 2048; addr += SPM_PAGESIZE) {
-//                 /* wait and erase page */
-//                 //DBG1(0x33, 0, 0);
-// #   	ifndef NO_FLASH_WRITE
-//                 boot_spm_busy_wait();
-//                 cli();
-//                 boot_page_erase(addr);
-//                 sei();
-// #   	endif
-//             }
-// #	endif
-// #endif
-//         }else{
-//             /* ignore all others, return default value == 0 */
-//         }
-//         replyBuffer[3] = rval;
-//         len = 4;
-//     }else if(rq->bRequest == USBASP_FUNC_ENABLEPROG){
-//         /* replyBuffer[0] = 0; is never touched and thus always 0 which means success */
-//         len = 1;
-//     }else if(rq->bRequest >= USBASP_FUNC_READFLASH && rq->bRequest <= USBASP_FUNC_SETLONGADDRESS){
-//         currentAddress.w[0] = rq->wValue.word;
-//         if(rq->bRequest == USBASP_FUNC_SETLONGADDRESS){
-// #if (FLASHEND) > 0xffff
-//             currentAddress.w[1] = rq->wIndex.word;
-// #endif
-//         }else{
-//             bytesRemaining = rq->wLength.bytes[0];
-//             /* if(rq->bRequest == USBASP_FUNC_WRITEFLASH) only evaluated during writeFlash anyway */
-//             isLastPage = rq->wIndex.bytes[1] & 0x02;
-// #if HAVE_EEPROM_PAGED_ACCESS
-//             currentRequest = rq->bRequest;
-// #endif
-//             len = 0xff; /* hand over to usbFunctionRead() / usbFunctionWrite() */
-//         }
-// #if BOOTLOADER_CAN_EXIT
-//     }else if(rq->bRequest == USBASP_FUNC_DISCONNECT){
-//         requestBootLoaderExit = 1;      /* allow proper shutdown/close of connection */
-// #endif
-//     }else{
-//         /* ignore: USBASP_FUNC_CONNECT */
-//     }
-//     return len;
-// }
 
-// uchar usbFunctionWrite(uchar *data, uchar len)
-// {
-//     uchar   isLast;
-//     
-//     //DBG1(0x31, (void *)&currentAddress.l, 4);
-//     if(len > bytesRemaining)
-//         len = bytesRemaining;
-//     bytesRemaining -= len;
-//     isLast = bytesRemaining == 0;
-// #if HAVE_EEPROM_PAGED_ACCESS
-//     if(currentRequest >= USBASP_FUNC_READEEPROM){
-//         uchar i;
-//         for(i = 0; i < len; i++){
-//             eeprom_write_byte((void *)(currentAddress.w[0]++), *data++);
-//         }
-//     }else {
-// #endif
-//         uchar i;
-//         for(i = 0; i < len;){
-// //#ifdef TINY85MODE
-// //#if 1
-//             if(currentAddress == RESET_VECTOR_OFFSET * 2)
-//             {
-//                 vectorTemp[0] = *(short *)data;
-//             }
-//             if(currentAddress == USBPLUS_VECTOR_OFFSET * 2)
-//             {
-//                 vectorTemp[1] = *(short *)data;
-//             }
-// // #else
-// //             if(currentAddress == RESET_VECTOR_OFFSET * 2 || currentAddress == USBPLUS_VECTOR_OFFSET * 2)
-// //             {
-// //                 vectorTemp[currentAddress ? 1:0] = *(short *)data;
-// //             }
-// // #endif
-// 
-//             i += 2;
-//             //DBG1(0x32, 0, 0);
-// #ifdef TINY85MODE
-//             if(currentAddress >= BOOTLOADER_ADDRESS - 6)
-//             {
-//                 // stop writing data to flash if the application is too big, and clear any leftover data in the page buffer
-//                 __boot_page_fill_clear();
-//                 return isLast;
-//             }
-// 
-//             writeWordToPageBuffer(*(short *)data);
-// #else
-// 			cli();
-//             boot_page_fill(currentAddress, *(short *)data);
-//             sei();
-//             currentAddress += 2;
-// #endif
-//             data += 2;
-//             /* write page when we cross page boundary or we have the last partial page */
-//             if((currentAddress.w[0] & (SPM_PAGESIZE - 1)) == 0 || (isLast && i >= len && isLastPage)){
-//                 //DBG1(0x34, 0, 0);
-// #ifdef TINY85MODE
-//                 flashPageLoaded = 1;
-// #else
-// #	ifndef NO_FLASH_WRITE
-//                 cli();
-//                 boot_page_write(currentAddress - 2);
-//                 sei();
-//                 boot_spm_busy_wait();
-//                 cli();
-//                 boot_rww_enable();
-//                 sei();
-// #	endif
-// #endif
-//             }
-//         }
-// 
-//     return isLast;
-// }
 
 // read in a page over usb, and write it in to the flash write buffer
-uchar usbFunctionWrite(uchar *data, uchar length) {
+static uchar usbFunctionWrite(uchar *data, uchar length) {
     union {
         addr_t  l;
         uint    s[sizeof(addr_t)/2];
