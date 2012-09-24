@@ -31,7 +31,8 @@ class MicroBoot
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-        write_sleep: 0.020, #write_sleep.to_f / 1000.0,
+        write_sleep: write_sleep.to_f / 1000.0,
+        pages: (flash_length.to_f / page_size.to_f).ceil,
         version: "#{@device.bcdDevice >> 8}.#{@device.bcdDevice & 0xFF}",
         version_numeric: @device.bcdDevice
       }
@@ -40,9 +41,14 @@ class MicroBoot
   end
   
   def erase!
+    puts "Erasing chip..."
     info = self.info
     control_transfer(function: :erase_application)
-    sleep(info[:write_sleep] * ((info[:flash_length] / info[:page_size]) + 1)) # sleep for as many pages as the chip has
+    
+    info[:pages].times do |index|
+      puts "Erasing: #{((index.to_f / info[:pages].to_f) * 100.0).round}%" if index % 5 == 0
+      sleep(info[:write_sleep]) # sleep for as many pages as the chip has
+    end
   end
   
   # upload a new program
@@ -54,16 +60,23 @@ class MicroBoot
     erase!
     
     address = 0
-    bytes.each_slice(info[:page_size]) do |bytes|
-      control_transfer(function: :write_page, wIndex: address, wValue: bytes.length, dataOut: bytes.pack('C*'))
+    bytes.each_slice(info[:page_size]) do |slice|
+      puts "Uploading: #{(address.to_f / bytes.length.to_f * 100.0).round}%: @#{address} of #{bytes.length}"
+      control_transfer(function: :write_page, wIndex: address, wValue: slice.length, dataOut: slice.pack('C*'))
       sleep(info[:write_sleep])
-      address += bytes.length
+      address += slice.length
     end
   end
   
   def finished
+    puts "Asking device to finish writing program..."
     control_transfer(function: :run_program)
-    sleep(info[:write_sleep]) # not sure if this is worth having? It's okay if USB fails now...
+    
+    # this could be shorter, relative to how many pages we uploaded..
+    info[:pages].times do |index|
+      puts "Finishing Upload: #{((index.to_f / info[:pages].to_f) * 100.0).round}%" if index % 5 == 0
+      sleep(info[:write_sleep]) # sleep for as many pages as the chip has
+    end
     
     @io.close
     @io = nil
