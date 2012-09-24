@@ -117,7 +117,10 @@ static inline __attribute__((noreturn)) void leaveBootloader(void);
 //  - vectors in now, and write in the application stuff around them later.
 //  - if vectors weren't written back in immidately, usb would fail.
 static inline void eraseApplication(void) {
-    // erase all pages (every last one!)
+    // erase all pages until bootloader, in reverse order (so our vectors stay in place for as long as possible)
+    // while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
+    // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
+    // during upload
     currentAddress = BOOTLOADER_ADDRESS;
     cli();
     while (currentAddress) {
@@ -131,6 +134,7 @@ static inline void eraseApplication(void) {
     sei();
 }
 
+// simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
     didWriteSomething = 1;
     cli();
@@ -139,6 +143,7 @@ static void writeFlashPage(void) {
     sei();
 }
 
+// clear memory which stores data to be written by next writeFlashPage call
 #define __boot_page_fill_clear()   \
 (__extension__({                                 \
     __asm__ __volatile__                         \
@@ -151,6 +156,7 @@ static void writeFlashPage(void) {
     );                                           \
 }))
 
+// write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
     // first two interrupt vectors get replaced with a jump to the bootloader vector table
     if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
@@ -167,7 +173,8 @@ static void writeWordToPageBuffer(uint16_t data) {
     
     
     // clear page buffer as a precaution before filling the buffer on the first page
-    // TODO: maybe clear on the first byte of every page?
+    // in case the bootloader somehow ran after user program and there was something
+    // in the page buffer already
     if (currentAddress == 0x0000) __boot_page_fill_clear();
     
     cli();
@@ -181,15 +188,17 @@ static void writeWordToPageBuffer(uint16_t data) {
     //    fireEvent(EVENT_PAGE_NEEDS_ERASE);
     //}
     
+    // increment progmem address by one word
     currentAddress += 2;
 }
 
+// fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
 static void fillFlashWithVectors(void) {
     int16_t i;
 
-    // fill all or remainder of page with 0xFFFF
+    // fill all or remainder of page with 0xFFFF (as if unprogrammed)
     for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
-        writeWordToPageBuffer(0xFFFF);
+        writeWordToPageBuffer(0xFFFF); // is where vector tables are sorted out
     }
 
     writeFlashPage();
@@ -310,6 +319,8 @@ static inline void tiny85FlashWrites(void) {
     }
 }
 
+// finishes up writing to the flash, including adding the tinyVector tables at the end of memory
+// TODO: can this be simplified? EG: currentAddress = PROGMEM_SIZE; fillFlashWithVectors();
 static inline void tiny85FinishWriting(void) {
     // make sure remainder of flash is erased and write checksum and application reset vectors
     if (didWriteSomething) {
@@ -319,6 +330,7 @@ static inline void tiny85FinishWriting(void) {
     }
 }
 
+// reset system to a normal state and launch user program
 static inline __attribute__((noreturn)) void leaveBootloader(void) {
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
