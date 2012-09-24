@@ -203,7 +203,10 @@ these macros are defined, the boot loader uses them.
 
 /* max 6200ms to not overflow idlePolls variable */
 #define AUTO_EXIT_MS    5000
-#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
+//#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
+
+
+#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
 
 
 /* ----------------------- Optional MCU Description ------------------------ */
@@ -241,9 +244,6 @@ static inline void  bootLoaderExit(void)
     PORTD = 0;                      /* undo bootLoaderInit() changes */
 #endif
 }
-
-
-#define bootLoaderCondition()   1
 
 #endif /* __ASSEMBLER__ */
 

@@ -25,9 +25,9 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
-// how many milliseconds should host wait till it sends another write?
-// this needs to be above 9, 12 is too low to be reliable, 15 seems to work reliably, 20 seems safe
-#define UBOOT_WRITE_SLEEP 20
+// how many milliseconds should host wait till it sends another erase or write?
+// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
+#define UBOOT_WRITE_SLEEP 8
 
 /* ------------------------------------------------------------------------ */
 
@@ -73,7 +73,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE 2
-#define EVENT_EXIT_BOOTLOADER 4
+#define EVENT_FINISH 4
 
 #define fireEvent(event) events |= (event)
 #define isEvent(event)   (events & (event))
@@ -201,19 +201,20 @@ static uchar usbFunctionSetup(uchar data[8]) {
     if (rq->bRequest == 0) { // get device info
         usbMsgPtr = replyBuffer;
         return 4;
-      
+        
     } else if (rq->bRequest == 1) { // write page
         writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
         
-        return USB_NO_MSG; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
+        return USB_NO_MSG; // hands off work to usbFunctionWrite
+        
     } else if (rq->bRequest == 2) { // erase application
         fireEvent(EVENT_ERASE_APPLICATION);
         
     } else { // exit bootloader
-#if BOOTLOADER_CAN_EXIT
-        fireEvent(EVENT_EXIT_BOOTLOADER);
-#endif
+#       if BOOTLOADER_CAN_EXIT
+            fireEvent(EVENT_FINISH);
+#       endif
     }
     
     return 0;
@@ -291,7 +292,7 @@ static inline void tiny85FlashInit(void) {
 }
 
 static inline void tiny85FlashWrites(void) {
-    _delay_ms(2); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
+    _delay_us(2000); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
     
     if (currentAddress % SPM_PAGESIZE) {
@@ -301,19 +302,21 @@ static inline void tiny85FlashWrites(void) {
     }
 }
 
-static inline __attribute__((noreturn)) void leaveBootloader(void) {
-    //DBG1(0x01, 0, 0);
-    bootLoaderExit();
-    cli();
-    USB_INTR_ENABLE = 0;
-    USB_INTR_CFG = 0;       /* also reset config bits */
-
+static inline void tiny85FinishWriting(void) {
     // make sure remainder of flash is erased and write checksum and application reset vectors
     if (didWriteSomething) {
         while (currentAddress < BOOTLOADER_ADDRESS) {
             fillFlashWithVectors();
         }
     }
+}
+
+static inline __attribute__((noreturn)) void leaveBootloader(void) {
+    //DBG1(0x01, 0, 0);
+    bootLoaderExit();
+    cli();
+    USB_INTR_ENABLE = 0;
+    USB_INTR_CFG = 0;       /* also reset config bits */
 
     // clear magic word from bottom of stack before jumping to the app
     *(uint8_t*)(RAMEND) = 0x00;
@@ -346,19 +349,28 @@ int __attribute__((noreturn)) main(void) {
             // needs to wait > 9ms before next usb request
             if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
-
-#           if BOOTLOADER_CAN_EXIT
-                // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
-                if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
-                    _delay_ms(10);
+            
+            if (isEvent(EVENT_FINISH)) { // || AUTO_EXIT_CONDITION()) {
+                tiny85FinishWriting();
+                
+#               if BOOTLOADER_CAN_EXIT
+                    _delay_ms(10); // removing delay causes USB errors
                     break;
-                }
-#           endif
+#               endif
+            }
+// #           if BOOTLOADER_CAN_EXIT
+//                 // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
+//                 if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
+//                     //_delay_ms(10);
+//                     break;
+//                 }
+// #           endif
             
             clearEvents();
             
         } while(bootLoaderCondition());  /* main event loop */
     }
+    
     leaveBootloader();
 }
 
