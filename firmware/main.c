@@ -13,7 +13,7 @@
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
-//#include <avr/pgmspace.h>
+#include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <avr/boot.h>
 //#include <avr/eeprom.h>
@@ -79,7 +79,7 @@ static uchar events = 0; // bitmap of events to run
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
-//static uchar writeLength;
+static uchar writeLength;
 
 // becomes 1 when some programming happened
 // lets leaveBootloader know if needs to finish up the programming
@@ -143,11 +143,12 @@ static void writeWordToPageBuffer(uint16_t data) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
     }
     
-    cli();
+    
     // clear page buffer as a precaution before filling the buffer on the first page
     // TODO: maybe clear on the first byte of every page?
-    if (currentAddress == 0) __boot_page_fill_clear();
+    if (currentAddress == 0x0000) __boot_page_fill_clear();
     
+    cli();
     boot_page_fill(currentAddress, data);
     sei();
     
@@ -188,7 +189,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         return 4;
       
     } else if (rq->bRequest == 1) { // write page
-        //writeLength = rq->wValue.word;
+        writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
         
         return USB_NO_MSG; // magical? IDK - USBaspLoader-tiny85 returns this and it works so whatever.
@@ -207,7 +208,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length) {
-    //writeLength -= length;
+    writeLength -= length;
     
     do {
         // remember vectors or the tinyvector table 
@@ -232,7 +233,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     // TODO: Isn't this always last?
     // if we have now reached another page boundary, we're done
-    uchar isLast = (currentAddress % SPM_PAGESIZE) == 0;
+    uchar isLast = (writeLength == 0);
     if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
     return isLast; // let vusb know we're done with this request
@@ -286,21 +287,19 @@ static inline void tiny85FlashWrites(void) {
     }
 }
 
-static inline finish(void) {
-    // make sure remainder of flash is erased and write checksum and application reset vectors
-    if (didWriteSomething) {
-        while (currentAddress < BOOTLOADER_ADDRESS) {
-            fillFlashWithVectors();
-        }
-    }
-}
-
 static inline __attribute__((noreturn)) void leaveBootloader(void) {
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
+
+    // make sure remainder of flash is erased and write checksum and application reset vectors
+    if (didWriteSomething) {
+        while (currentAddress < BOOTLOADER_ADDRESS) {
+            fillFlashWithVectors();
+        }
+    }
 
     // clear magic word from bottom of stack before jumping to the app
     *(uint8_t*)(RAMEND) = 0x00;
@@ -337,7 +336,7 @@ int __attribute__((noreturn)) main(void) {
 #           if BOOTLOADER_CAN_EXIT
                 // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
                 if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
-                    _delay_ms(10); // TODO: Does this do anything?
+                    _delay_ms(10);
                     break;
                 }
 #           endif
@@ -345,10 +344,7 @@ int __attribute__((noreturn)) main(void) {
             clearEvents();
             
         } while(bootLoaderCondition());  /* main event loop */
-        
-        finish();
     }
-    
     leaveBootloader();
 }
 

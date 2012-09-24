@@ -31,13 +31,7 @@ class MicroBoot
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-<<<<<<< HEAD
-        write_sleep: write_sleep.to_f / 1000.0,
-        pages: (flash_length.to_f / page_size.to_f).ceil,
-=======
-        pages: (flash_length.to_f / page_size.to_f).ceil,
-        write_sleep: write_sleep.to_f / 1000.0,
->>>>>>> f6c4c6f65e540aa373199fd6e6f99dea43d68ce6
+        write_sleep: 0.020, #write_sleep.to_f / 1000.0,
         version: "#{@device.bcdDevice >> 8}.#{@device.bcdDevice & 0xFF}",
         version_numeric: @device.bcdDevice
       }
@@ -46,20 +40,9 @@ class MicroBoot
   end
   
   def erase!
-    puts "Erasing chip..."
     info = self.info
     control_transfer(function: :erase_application)
-    
-<<<<<<< HEAD
-    info[:pages].times do |index|
-      puts "Erasing: #{((index.to_f / info[:pages].to_f) * 100.0).round}%" if index % 5 == 0
-      sleep(info[:write_sleep]) # sleep for as many pages as the chip has
-=======
-    # sleep for long enough for application to completely erase
-    info[:pages].times do
-      sleep(info[:write_sleep])
->>>>>>> f6c4c6f65e540aa373199fd6e6f99dea43d68ce6
-    end
+    sleep(info[:write_sleep] * ((info[:flash_length] / info[:page_size]) + 1)) # sleep for as many pages as the chip has
   end
   
   # upload a new program
@@ -71,23 +54,16 @@ class MicroBoot
     erase!
     
     address = 0
-    bytes.each_slice(info[:page_size]) do |slice|
-      puts "Uploading: #{(address.to_f / bytes.length.to_f * 100.0).round}%: @#{address} of #{bytes.length}"
-      control_transfer(function: :write_page, wIndex: address, wValue: slice.length, dataOut: slice.pack('C*'))
+    bytes.each_slice(info[:page_size]) do |bytes|
+      control_transfer(function: :write_page, wIndex: address, wValue: bytes.length, dataOut: bytes.pack('C*'))
       sleep(info[:write_sleep])
-      address += slice.length
+      address += bytes.length
     end
   end
   
   def finished
-    puts "Asking device to finish writing program..."
     control_transfer(function: :run_program)
-    
-    # this could be shorter, relative to how many pages we uploaded..
-    info[:pages].times do |index|
-      puts "Finishing Upload: #{((index.to_f / info[:pages].to_f) * 100.0).round}%" if index % 5 == 0
-      sleep(info[:write_sleep]) # sleep for as many pages as the chip has
-    end
+    sleep(info[:write_sleep]) # not sure if this is worth having? It's okay if USB fails now...
     
     @io.close
     @io = nil
