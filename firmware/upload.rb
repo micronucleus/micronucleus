@@ -13,7 +13,7 @@ class MicroBoot
   def self.all
     usb = LIBUSB::Context.new
     usb.devices.select { |device|
-      device.product == 'uBoot'
+      device.idVendor == 0x16d0 && device.idProduct == 0x0753 #&& device.product == "\xB5B"
     }.map { |device|
       self.new(device)
     }

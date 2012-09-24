@@ -9,7 +9,11 @@
  * This Revision: $Id: main.c 786 2010-05-30 20:41:40Z cs $
  */
  
-#define UBOOT_VERSION 1
+#define UBOOT_VERSION 2
+// how many milliseconds should host wait till it sends another erase or write?
+// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
+#define UBOOT_WRITE_SLEEP 8
+
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
@@ -24,10 +28,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
-
-// how many milliseconds should host wait till it sends another erase or write?
-// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define UBOOT_WRITE_SLEEP 8
 
 /* ------------------------------------------------------------------------ */
 
@@ -67,18 +67,23 @@ static void leaveBootloader() __attribute__((__noreturn__));
 // } longConverter_t;
 
 //////// Stuff Bluebie Added
-#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - 6)
+// postscript are the few bytes at the end of programmable memory which store tinyVectors
+// and used to in USBaspLoader-tiny85 store the checksum iirc
+#define POSTSCRIPT_SIZE 6 /* maybe it could be 4 now we do not have checksums? */
+#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
-// outstanding events for the mainloop to deal with
+// events system schedules functions to run in the main loop
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE 2
 #define EVENT_FINISH 4
 
+// controls state of events
 #define fireEvent(event) events |= (event)
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
+// length of bytes to write in to flash memory in upcomming usbFunctionWrite calls
 static uchar writeLength;
 
 // becomes 1 when some programming happened
@@ -90,8 +95,8 @@ static uchar didWriteSomething = 0;
 
 
 
-static uint16_t         vectorTemp[2];
-static addr_t  currentAddress; /* in bytes */
+static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
+static addr_t currentAddress; // current progmem address, used for erasing and writing
 
 
 /* ------------------------------------------------------------------------ */
@@ -104,11 +109,14 @@ static uchar usbFunctionWrite(uchar *data, uchar length);
 static inline void initForUsbConnectivity(void);
 static inline void tiny85FlashInit(void);
 static inline void tiny85FlashWrites(void);
+static inline void tiny85FinishWriting(void);
 static inline __attribute__((noreturn)) void leaveBootloader(void);
 
-
+// erase any existing application and write in jumps for usb interrupt and reset to bootloader
+//  - Because flash can be erased once and programmed several times, we can write the bootloader
+//  - vectors in now, and write in the application stuff around them later.
+//  - if vectors weren't written back in immidately, usb would fail.
 static inline void eraseApplication(void) {
-    // xxxxxx erase all pages starting from end of application section down to page 1 (leaving page 0)
     // erase all pages (every last one!)
     currentAddress = BOOTLOADER_ADDRESS;
     cli();
@@ -236,7 +244,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
         }
         
         // make sure we don't write over the bootloader!
-        if (currentAddress >= BOOTLOADER_ADDRESS - 6) {
+        if (currentAddress >= PROGMEM_SIZE) {
             __boot_page_fill_clear();
             break;
         }
