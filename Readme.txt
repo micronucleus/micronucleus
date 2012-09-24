@@ -11,7 +11,7 @@ folder - it's irrelevent for now - don't use that stuff!
 To upload to the device, pop in to 'firmware', and install ruby 1.9 on your system
 (I recommend using homebrew on Macs), then install libusb 1.x and then the libusb
 rubygem. You'll then be able to use my two experimental scripts 'upload.rb' and 'dump.rb'
-to upload binary files via bootloader (not hex) and dump to binary files over a
+to upload binary or hex files via bootloader and dump to binary files over a
 littlewire/usbtiny isp. I used ruby for rapid prototyping - I think it'd be better
 to port this stuff to C, modifying obdev's commandline app to do it or something like
 that.
