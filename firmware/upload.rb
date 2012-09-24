@@ -24,7 +24,7 @@ class MicroBoot
   end
 
   def info
-    unless defined? @info
+    unless @info
       result = control_transfer(function: :get_info, dataIn: 4)
       flash_length, page_size, write_sleep = result.unpack('S>CC')
 
@@ -37,6 +37,7 @@ class MicroBoot
         version_numeric: @device.bcdDevice
       }
     end
+    
     @info
   end
   
@@ -69,6 +70,8 @@ class MicroBoot
   end
   
   def finished
+    info = self.info
+    
     puts "asking device to finish writing"
     control_transfer(function: :run_program)
     puts "waiting for device to finish"
@@ -80,6 +83,10 @@ class MicroBoot
     
     @io.close
     @io = nil
+  end
+  
+  def inspect
+    "<MicroBoot #{info[:version]}: #{(info[:flash_length] / 1024.0).round(1)} kb programmable>"
   end
 
   protected
@@ -171,18 +178,15 @@ else
   raise "Pass intel hex or raw binary as argument to script"
 end
 
-puts "Finding devices"
-thinklets = MicroBoot.all
-puts "Found #{thinklets.length} thinklet"
-exit unless thinklets.length > 0
+puts "Plug in programmable device now: (waiting)"
+sleep 0.5 while MicroBoot.all.length == 0
 
-thinklet = thinklets.first
+thinklet = MicroBoot.all.first
+puts "Attached to device: #{thinklet.inspect}"
 
-puts "First thinklet: #{thinklet.info.inspect}"
-
-
-puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
-puts "Bytes: #{test_data.bytes.to_a.inspect}"
+#puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
+#puts "Bytes: #{test_data.bytes.to_a.inspect}"
+puts "Attempting to write supplied program in to device's memory"
 thinklet.program = test_data
 
 puts "That seems to have gone well! Telling thinklet to run program..."
