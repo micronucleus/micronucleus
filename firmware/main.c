@@ -95,18 +95,32 @@ static addr_t  currentAddress; /* in bytes */
 
 
 /* ------------------------------------------------------------------------ */
+static inline void eraseApplication(void);
+static void writeFlashPage(void);
+static void writeWordToPageBuffer(uint16_t data);
+static void fillFlashWithVectors(void);
+static uchar usbFunctionSetup(uchar data[8]);
+static uchar usbFunctionWrite(uchar *data, uchar length);
+static inline void initForUsbConnectivity(void);
+static inline void tiny85FlashInit(void);
+static inline void tiny85FlashWrites(void);
+static inline __attribute__((noreturn)) void leaveBootloader(void);
+
 
 static inline void eraseApplication(void) {
-    // erase all pages starting from end of application section down to page 1 (leaving page 0)
-    currentAddress = BOOTLOADER_ADDRESS - SPM_PAGESIZE;
+    // xxxxxx erase all pages starting from end of application section down to page 1 (leaving page 0)
+    // erase all pages (every last one!)
+    currentAddress = BOOTLOADER_ADDRESS;
+    cli();
     while (currentAddress) {
-        cli();
+        currentAddress -= SPM_PAGESIZE;
+        
         boot_page_erase(currentAddress);
         boot_spm_busy_wait();
-        sei();
-        
-        currentAddress -= SPM_PAGESIZE;
     }
+    
+    fillFlashWithVectors();
+    sei();
 }
 
 static void writeFlashPage(void) {

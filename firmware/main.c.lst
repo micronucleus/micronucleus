@@ -1,4 +1,4 @@
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 1
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 1
 
 
    1               		.file	"main.c"
@@ -18,7 +18,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   15 0000 81E0      		ldi r24,lo8(1)
   16 0002 8093 0000 		sts didWriteSomething,r24
   17               	/* #APP */
-  18               	 ;  114 "main.c" 1
+  18               	 ;  128 "main.c" 1
   19 0006 F894      		cli
   20               	 ;  0 "" 2
   21               	/* #NOAPP */
@@ -27,7 +27,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   24 0010 3297      		sbiw r30,2
   25 0012 85E0      		ldi r24,lo8(5)
   26               	/* #APP */
-  27               	 ;  115 "main.c" 1
+  27               	 ;  129 "main.c" 1
   28 0014 8093 5700 		sts 87, r24
   29 0018 E895      		spm
   30               		
@@ -38,7 +38,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   35 001c 00FC      		sbrc __tmp_reg__,0
   36 001e 00C0      		rjmp .L2
   37               	/* #APP */
-  38               	 ;  117 "main.c" 1
+  38               	 ;  131 "main.c" 1
   39 0020 7894      		sei
   40               	 ;  0 "" 2
   41               	/* epilogue start */
@@ -58,7 +58,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   55 0030 01F0      		breq .L4
   56 0032 2430      		cpi r18,4
   57 0034 3105      		cpc r19,__zero_reg__
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 2
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 2
 
 
   58 0036 01F0      		breq .L8
@@ -86,7 +86,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   80 0066 9BEC      		ldi r25,hi8(-13441)
   81               	.L7:
   82               	/* #APP */
-  83               	 ;  151 "main.c" 1
+  83               	 ;  165 "main.c" 1
   84 0068 F894      		cli
   85               	 ;  0 "" 2
   86               	/* #NOAPP */
@@ -94,14 +94,14 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
   88 006e F091 0000 		lds r31,currentAddress+1
   89 0072 21E0      		ldi r18,lo8(1)
   90               	/* #APP */
-  91               	 ;  152 "main.c" 1
+  91               	 ;  166 "main.c" 1
   92 0074 0C01      		movw  r0, r24
   93 0076 2093 5700 		sts 87, r18
   94 007a E895      		spm
   95 007c 1124      		clr  r1
   96               		
   97               	 ;  0 "" 2
-  98               	 ;  153 "main.c" 1
+  98               	 ;  167 "main.c" 1
   99 007e 7894      		sei
  100               	 ;  0 "" 2
  101               	/* #NOAPP */
@@ -115,10 +115,10 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  109               	.L4:
  110 0094 81E1      		ldi r24,lo8(17)
  111               	/* #APP */
- 112               	 ;  149 "main.c" 1
+ 112               	 ;  163 "main.c" 1
  113 0096 8093 5700 		sts 87, r24
  114 009a E895      		spm
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 3
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 3
 
 
  115               		
@@ -161,16 +161,16 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  152               	/* stack size = 0 */
  153               	.L__stack_usage = 0
  154               	/* #APP */
- 155               	 ;  248 "main.c" 1
+ 155               	 ;  262 "main.c" 1
  156 0000 00EB      		ldi r16, 0xB0
  157               	 ;  0 "" 2
- 158               	 ;  249 "main.c" 1
+ 158               	 ;  263 "main.c" 1
  159 0002 0F93      		push r16
  160               	 ;  0 "" 2
- 161               	 ;  250 "main.c" 1
+ 161               	 ;  264 "main.c" 1
  162 0004 07E0      		ldi r16, 0x07
  163               	 ;  0 "" 2
- 164               	 ;  251 "main.c" 1
+ 164               	 ;  265 "main.c" 1
  165 0006 0F93      		push r16
  166               	 ;  0 "" 2
  167               	/* epilogue start */
@@ -178,7 +178,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  169               		.size	PushMagicWord, .-PushMagicWord
  170               		.text
  171               	.global	main
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 4
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 4
 
 
  172               		.type	main, @function
@@ -194,7 +194,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  182               	.L__stack_usage = 3
  183 00ce 88E1      		ldi r24,lo8(24)
  184               	/* #APP */
- 185               	 ;  316 "main.c" 1
+ 185               	 ;  330 "main.c" 1
  186 00d0 0FB6      		in __tmp_reg__, __SREG__
  187 00d2 F894      		cli
  188 00d4 81BD      		out 33, r24
@@ -206,7 +206,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  194 00da E0E0      		ldi r30,lo8(0)
  195 00dc F0E0      		ldi r31,hi8(0)
  196               	/* #APP */
- 197               	 ;  269 "main.c" 1
+ 197               	 ;  283 "main.c" 1
  198 00de 8591      		lpm r24, Z+
  199 00e0 9491      		lpm r25, Z
  200               		
@@ -219,7 +219,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  207 00ea E4E0      		ldi r30,lo8(4)
  208 00ec F0E0      		ldi r31,hi8(4)
  209               	/* #APP */
- 210               	 ;  270 "main.c" 1
+ 210               	 ;  284 "main.c" 1
  211 00ee 8591      		lpm r24, Z+
  212 00f0 9491      		lpm r25, Z
  213               		
@@ -238,7 +238,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  226 0106 8BB7      		in r24,91-32
  227 0108 8062      		ori r24,lo8(32)
  228 010a 8BBF      		out 91-32,r24
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 5
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 5
 
 
  229 010c BB9A      		sbi 55-32,3
@@ -253,7 +253,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  238 011e 0000      		nop
  239 0120 BB98      		cbi 55-32,3
  240               	/* #APP */
- 241               	 ;  262 "main.c" 1
+ 241               	 ;  276 "main.c" 1
  242 0122 7894      		sei
  243               	 ;  0 "" 2
  244               	/* #NOAPP */
@@ -291,14 +291,14 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  276 016c 01F0      		breq .L18
  277 016e 8823      		tst r24
  278 0170 01F4      		brne .L19
- 279 0172 80E0      		ldi r24,lo8(replyBuffer.1745)
- 280 0174 90E0      		ldi r25,hi8(replyBuffer.1745)
+ 279 0172 80E0      		ldi r24,lo8(replyBuffer.1766)
+ 280 0174 90E0      		ldi r25,hi8(replyBuffer.1766)
  281 0176 9093 0000 		sts usbMsgPtr+1,r25
  282 017a 8093 0000 		sts usbMsgPtr,r24
  283 017e 24E0      		ldi r18,lo8(4)
  284 0180 00C0      		rjmp .L25
  285               	.L19:
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 6
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 6
 
 
  286 0182 8130      		cpi r24,lo8(1)
@@ -358,7 +358,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  340 01ee 9093 0000 		sts usbMsgPtr+1,r25
  341 01f2 8093 0000 		sts usbMsgPtr,r24
  342 01f6 22E1      		ldi r18,lo8(18)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 7
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 7
 
 
  343 01f8 00C0      		rjmp .L31
@@ -418,7 +418,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  397 0262 00C0      		rjmp .L76
  398               	.L72:
  399 0264 80E0      		ldi r24,lo8(usbTxBuf+9)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 8
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 8
 
 
  400 0266 90E0      		ldi r25,hi8(usbTxBuf+9)
@@ -478,14 +478,14 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  454               	.L40:
  455 02da F6E1      		ldi r31,hi8(5882)
  456 02dc 8A3F      		cpi r24,lo8(5882)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 9
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 9
 
 
  457 02de 9F07      		cpc r25,r31
  458 02e0 00F0      		brlo .L39
  459 02e2 81E1      		ldi r24,lo8(17)
  460               	/* #APP */
- 461               	 ;  225 "main.c" 1
+ 461               	 ;  239 "main.c" 1
  462 02e4 8093 5700 		sts 87, r24
  463 02e8 E895      		spm
  464               		
@@ -538,7 +538,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  511 0350 9091 0000 		lds r25,usbMsgFlags
  512 0354 802F      		mov r24,r16
  513 0356 8150      		subi r24,lo8(-(-1))
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 10
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 10
 
 
  514 0358 96FF      		sbrs r25,6
@@ -598,7 +598,7 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  568 03b2 9871      		andi r25,lo8(24)
  569 03b4 01F4      		brne .L51
  570 03b6 8150      		subi r24,lo8(-(-1))
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 11
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 11
 
 
  571 03b8 01F4      		brne .L52
@@ -646,286 +646,285 @@ GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page
  613               	.L56:
  614 03fc 80FF      		sbrs r24,0
  615 03fe 00C0      		rjmp .L57
- 616 0400 80EC      		ldi r24,lo8(5824)
- 617 0402 96E1      		ldi r25,hi8(5824)
- 618 0404 00C0      		rjmp .L78
- 619               	.L60:
+ 616 0400 80E0      		ldi r24,lo8(5888)
+ 617 0402 97E1      		ldi r25,hi8(5888)
+ 618 0404 9093 0000 		sts currentAddress+1,r25
+ 619 0408 8093 0000 		sts currentAddress,r24
  620               	/* #APP */
- 621               	 ;  103 "main.c" 1
- 622 0406 F894      		cli
+ 621               	 ;  114 "main.c" 1
+ 622 040c F894      		cli
  623               	 ;  0 "" 2
  624               	/* #NOAPP */
- 625 0408 E091 0000 		lds r30,currentAddress
- 626 040c F091 0000 		lds r31,currentAddress+1
- 627 0410 83E0      		ldi r24,lo8(3)
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 12
+ 625 040e E091 0000 		lds r30,currentAddress
+ 626 0412 F091 0000 		lds r31,currentAddress+1
+ 627 0416 00C0      		rjmp .L58
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 12
 
 
- 628               	/* #APP */
- 629               	 ;  104 "main.c" 1
- 630 0412 8093 5700 		sts 87, r24
- 631 0416 E895      		spm
- 632               		
- 633               	 ;  0 "" 2
- 634               	/* #NOAPP */
- 635               	.L59:
- 636 0418 07B6      		in __tmp_reg__,87-32
- 637 041a 00FC      		sbrc __tmp_reg__,0
- 638 041c 00C0      		rjmp .L59
- 639               	/* #APP */
- 640               	 ;  106 "main.c" 1
- 641 041e 7894      		sei
- 642               	 ;  0 "" 2
- 643               	/* #NOAPP */
- 644 0420 8091 0000 		lds r24,currentAddress
- 645 0424 9091 0000 		lds r25,currentAddress+1
- 646 0428 8054      		subi r24,lo8(-(-64))
- 647 042a 9040      		sbci r25,hi8(-(-64))
- 648               	.L78:
- 649 042c 9093 0000 		sts currentAddress+1,r25
- 650 0430 8093 0000 		sts currentAddress,r24
- 651 0434 8091 0000 		lds r24,currentAddress
- 652 0438 9091 0000 		lds r25,currentAddress+1
- 653 043c 0097      		sbiw r24,0
- 654 043e 01F4      		brne .L60
- 655               	.L57:
- 656 0440 8091 0000 		lds r24,events
- 657 0444 81FF      		sbrs r24,1
- 658 0446 00C0      		rjmp .L61
- 659 0448 A9E3      		 ldi r26,lo8(8249)
- 660 044a B0E2      	    ldi r27,hi8(8249)
- 661 044c 1197      	    1:sbiw r26,1
- 662 044e 01F4      	    brne 1b
- 663 0450 00C0      		rjmp .
- 664 0452 0000      		nop
- 665 0454 8091 0000 		lds r24,currentAddress
- 666 0458 9091 0000 		lds r25,currentAddress+1
- 667 045c 8F73      		andi r24,lo8(63)
- 668 045e 9070      		andi r25,hi8(63)
- 669 0460 0097      		sbiw r24,0
- 670 0462 01F0      		breq .L62
- 671 0464 00D0      		rcall fillFlashWithVectors
- 672 0466 00C0      		rjmp .L61
- 673               	.L62:
- 674 0468 00D0      		rcall writeFlashPage
- 675               	.L61:
- 676 046a 8091 0000 		lds r24,events
- 677 046e 82FD      		sbrc r24,2
- 678 0470 00C0      		rjmp .L63
- 679 0472 B1E5      		ldi r27,lo8(-15535)
- 680 0474 EB16      		cp r14,r27
- 681 0476 B3EC      		ldi r27,hi8(-15535)
- 682 0478 FB06      		cpc r15,r27
- 683 047a 00F0      		brlo .L64
- 684               	.L63:
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 13
+ 628               	.L60:
+ 629 0418 E054      		subi r30,lo8(-(-64))
+ 630 041a F040      		sbci r31,hi8(-(-64))
+ 631 041c 83E0      		ldi r24,lo8(3)
+ 632               	/* #APP */
+ 633               	 ;  118 "main.c" 1
+ 634 041e 8093 5700 		sts 87, r24
+ 635 0422 E895      		spm
+ 636               		
+ 637               	 ;  0 "" 2
+ 638               	/* #NOAPP */
+ 639               	.L59:
+ 640 0424 07B6      		in __tmp_reg__,87-32
+ 641 0426 00FC      		sbrc __tmp_reg__,0
+ 642 0428 00C0      		rjmp .L59
+ 643               	.L58:
+ 644 042a 3097      		sbiw r30,0
+ 645 042c 01F4      		brne .L60
+ 646 042e 1092 0000 		sts currentAddress+1,__zero_reg__
+ 647 0432 1092 0000 		sts currentAddress,__zero_reg__
+ 648 0436 00D0      		rcall fillFlashWithVectors
+ 649               	/* #APP */
+ 650               	 ;  123 "main.c" 1
+ 651 0438 7894      		sei
+ 652               	 ;  0 "" 2
+ 653               	/* #NOAPP */
+ 654               	.L57:
+ 655 043a 8091 0000 		lds r24,events
+ 656 043e 81FF      		sbrs r24,1
+ 657 0440 00C0      		rjmp .L61
+ 658 0442 A9E3      		 ldi r26,lo8(8249)
+ 659 0444 B0E2      	    ldi r27,hi8(8249)
+ 660 0446 1197      	    1:sbiw r26,1
+ 661 0448 01F4      	    brne 1b
+ 662 044a 00C0      		rjmp .
+ 663 044c 0000      		nop
+ 664 044e 8091 0000 		lds r24,currentAddress
+ 665 0452 9091 0000 		lds r25,currentAddress+1
+ 666 0456 8F73      		andi r24,lo8(63)
+ 667 0458 9070      		andi r25,hi8(63)
+ 668 045a 0097      		sbiw r24,0
+ 669 045c 01F0      		breq .L62
+ 670 045e 00D0      		rcall fillFlashWithVectors
+ 671 0460 00C0      		rjmp .L61
+ 672               	.L62:
+ 673 0462 00D0      		rcall writeFlashPage
+ 674               	.L61:
+ 675 0464 8091 0000 		lds r24,events
+ 676 0468 82FD      		sbrc r24,2
+ 677 046a 00C0      		rjmp .L63
+ 678 046c B1E5      		ldi r27,lo8(-15535)
+ 679 046e EB16      		cp r14,r27
+ 680 0470 B3EC      		ldi r27,hi8(-15535)
+ 681 0472 FB06      		cpc r15,r27
+ 682 0474 00F0      		brlo .L64
+ 683               	.L63:
+ 684 0476 E1E2      		 ldi r30,lo8(-24287)
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 13
 
 
- 685 047c E1E2      		 ldi r30,lo8(-24287)
- 686 047e F1EA      	    ldi r31,hi8(-24287)
- 687 0480 3197      	    1:sbiw r30,1
- 688 0482 01F4      	    brne 1b
- 689 0484 00C0      		rjmp .
- 690 0486 0000      		nop
- 691               	/* #APP */
- 692               	 ;  293 "main.c" 1
- 693 0488 F894      		cli
- 694               	 ;  0 "" 2
- 695               	/* #NOAPP */
- 696 048a 1BBE      		out 91-32,__zero_reg__
- 697 048c 15BA      		out 53-32,__zero_reg__
- 698 048e 8091 0000 		lds r24,didWriteSomething
- 699 0492 8823      		tst r24
- 700 0494 01F4      		brne .L65
- 701 0496 00C0      		rjmp .L66
- 702               	.L67:
- 703 0498 00D0      		rcall fillFlashWithVectors
- 704               	.L65:
- 705 049a 8091 0000 		lds r24,currentAddress
- 706 049e 9091 0000 		lds r25,currentAddress+1
- 707 04a2 F7E1      		ldi r31,hi8(5888)
- 708 04a4 8030      		cpi r24,lo8(5888)
- 709 04a6 9F07      		cpc r25,r31
- 710 04a8 00F0      		brlo .L67
- 711               	.L66:
- 712 04aa 1092 5F02 		sts 607,__zero_reg__
- 713 04ae 1092 5E02 		sts 606,__zero_reg__
- 714               	/* #APP */
- 715               	 ;  309 "main.c" 1
- 716 04b2 00C0      		rjmp __vectors - 4
- 717               	 ;  0 "" 2
- 718               	/* #NOAPP */
- 719               	.L64:
- 720 04b4 1092 0000 		sts events,__zero_reg__
- 721 04b8 00C0      		rjmp .L68
- 722               		.size	main, .-main
- 723               	.global	usbTxLen
- 724               		.data
- 725               		.type	usbTxLen, @object
- 726               		.size	usbTxLen, 1
- 727               	usbTxLen:
- 728 0000 5A        		.byte	90
- 729               	.global	usbDescriptorString0
- 730               		.section	.progmem.data,"a",@progbits
- 731               		.type	usbDescriptorString0, @object
- 732               		.size	usbDescriptorString0, 4
- 733               	usbDescriptorString0:
- 734 0000 04        		.byte	4
- 735 0001 03        		.byte	3
- 736 0002 09        		.byte	9
- 737 0003 04        		.byte	4
- 738               	.global	usbDescriptorStringVendor
- 739               		.type	usbDescriptorStringVendor, @object
- 740               		.size	usbDescriptorStringVendor, 34
- 741               	usbDescriptorStringVendor:
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 14
+ 685 0478 F1EA      	    ldi r31,hi8(-24287)
+ 686 047a 3197      	    1:sbiw r30,1
+ 687 047c 01F4      	    brne 1b
+ 688 047e 00C0      		rjmp .
+ 689 0480 0000      		nop
+ 690               	/* #APP */
+ 691               	 ;  307 "main.c" 1
+ 692 0482 F894      		cli
+ 693               	 ;  0 "" 2
+ 694               	/* #NOAPP */
+ 695 0484 1BBE      		out 91-32,__zero_reg__
+ 696 0486 15BA      		out 53-32,__zero_reg__
+ 697 0488 8091 0000 		lds r24,didWriteSomething
+ 698 048c 8823      		tst r24
+ 699 048e 01F4      		brne .L65
+ 700 0490 00C0      		rjmp .L66
+ 701               	.L67:
+ 702 0492 00D0      		rcall fillFlashWithVectors
+ 703               	.L65:
+ 704 0494 8091 0000 		lds r24,currentAddress
+ 705 0498 9091 0000 		lds r25,currentAddress+1
+ 706 049c F7E1      		ldi r31,hi8(5888)
+ 707 049e 8030      		cpi r24,lo8(5888)
+ 708 04a0 9F07      		cpc r25,r31
+ 709 04a2 00F0      		brlo .L67
+ 710               	.L66:
+ 711 04a4 1092 5F02 		sts 607,__zero_reg__
+ 712 04a8 1092 5E02 		sts 606,__zero_reg__
+ 713               	/* #APP */
+ 714               	 ;  323 "main.c" 1
+ 715 04ac 00C0      		rjmp __vectors - 4
+ 716               	 ;  0 "" 2
+ 717               	/* #NOAPP */
+ 718               	.L64:
+ 719 04ae 1092 0000 		sts events,__zero_reg__
+ 720 04b2 00C0      		rjmp .L68
+ 721               		.size	main, .-main
+ 722               	.global	usbTxLen
+ 723               		.data
+ 724               		.type	usbTxLen, @object
+ 725               		.size	usbTxLen, 1
+ 726               	usbTxLen:
+ 727 0000 5A        		.byte	90
+ 728               	.global	usbDescriptorString0
+ 729               		.section	.progmem.data,"a",@progbits
+ 730               		.type	usbDescriptorString0, @object
+ 731               		.size	usbDescriptorString0, 4
+ 732               	usbDescriptorString0:
+ 733 0000 04        		.byte	4
+ 734 0001 03        		.byte	3
+ 735 0002 09        		.byte	9
+ 736 0003 04        		.byte	4
+ 737               	.global	usbDescriptorStringVendor
+ 738               		.type	usbDescriptorStringVendor, @object
+ 739               		.size	usbDescriptorStringVendor, 34
+ 740               	usbDescriptorStringVendor:
+ 741 0004 2203      		.word	802
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 14
 
 
- 742 0004 2203      		.word	802
- 743 0006 6300      		.word	99
- 744 0008 7200      		.word	114
- 745 000a 6500      		.word	101
- 746 000c 6100      		.word	97
- 747 000e 7400      		.word	116
- 748 0010 6900      		.word	105
- 749 0012 7600      		.word	118
- 750 0014 6500      		.word	101
- 751 0016 7000      		.word	112
- 752 0018 6F00      		.word	111
- 753 001a 6E00      		.word	110
- 754 001c 7900      		.word	121
- 755 001e 2E00      		.word	46
- 756 0020 6300      		.word	99
- 757 0022 6F00      		.word	111
- 758 0024 6D00      		.word	109
- 759               	.global	usbDescriptorStringDevice
- 760               		.type	usbDescriptorStringDevice, @object
- 761               		.size	usbDescriptorStringDevice, 12
- 762               	usbDescriptorStringDevice:
- 763 0026 0C03      		.word	780
- 764 0028 7500      		.word	117
- 765 002a 4200      		.word	66
- 766 002c 6F00      		.word	111
- 767 002e 6F00      		.word	111
- 768 0030 7400      		.word	116
- 769               	.global	usbDescriptorDevice
- 770               		.type	usbDescriptorDevice, @object
- 771               		.size	usbDescriptorDevice, 18
- 772               	usbDescriptorDevice:
- 773 0032 12        		.byte	18
- 774 0033 01        		.byte	1
- 775 0034 10        		.byte	16
- 776 0035 01        		.byte	1
- 777 0036 FF        		.byte	-1
- 778 0037 00        		.byte	0
- 779 0038 00        		.byte	0
- 780 0039 08        		.byte	8
- 781 003a C0        		.byte	-64
- 782 003b 16        		.byte	22
- 783 003c DC        		.byte	-36
- 784 003d 05        		.byte	5
- 785 003e 01        		.byte	1
- 786 003f 01        		.byte	1
- 787 0040 01        		.byte	1
- 788 0041 02        		.byte	2
- 789 0042 00        		.byte	0
- 790 0043 01        		.byte	1
- 791               	.global	usbDescriptorConfiguration
- 792               		.type	usbDescriptorConfiguration, @object
- 793               		.size	usbDescriptorConfiguration, 18
- 794               	usbDescriptorConfiguration:
- 795 0044 09        		.byte	9
- 796 0045 02        		.byte	2
- 797 0046 12        		.byte	18
- 798 0047 00        		.byte	0
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 15
+ 742 0006 6300      		.word	99
+ 743 0008 7200      		.word	114
+ 744 000a 6500      		.word	101
+ 745 000c 6100      		.word	97
+ 746 000e 7400      		.word	116
+ 747 0010 6900      		.word	105
+ 748 0012 7600      		.word	118
+ 749 0014 6500      		.word	101
+ 750 0016 7000      		.word	112
+ 751 0018 6F00      		.word	111
+ 752 001a 6E00      		.word	110
+ 753 001c 7900      		.word	121
+ 754 001e 2E00      		.word	46
+ 755 0020 6300      		.word	99
+ 756 0022 6F00      		.word	111
+ 757 0024 6D00      		.word	109
+ 758               	.global	usbDescriptorStringDevice
+ 759               		.type	usbDescriptorStringDevice, @object
+ 760               		.size	usbDescriptorStringDevice, 12
+ 761               	usbDescriptorStringDevice:
+ 762 0026 0C03      		.word	780
+ 763 0028 7500      		.word	117
+ 764 002a 4200      		.word	66
+ 765 002c 6F00      		.word	111
+ 766 002e 6F00      		.word	111
+ 767 0030 7400      		.word	116
+ 768               	.global	usbDescriptorDevice
+ 769               		.type	usbDescriptorDevice, @object
+ 770               		.size	usbDescriptorDevice, 18
+ 771               	usbDescriptorDevice:
+ 772 0032 12        		.byte	18
+ 773 0033 01        		.byte	1
+ 774 0034 10        		.byte	16
+ 775 0035 01        		.byte	1
+ 776 0036 FF        		.byte	-1
+ 777 0037 00        		.byte	0
+ 778 0038 00        		.byte	0
+ 779 0039 08        		.byte	8
+ 780 003a C0        		.byte	-64
+ 781 003b 16        		.byte	22
+ 782 003c DC        		.byte	-36
+ 783 003d 05        		.byte	5
+ 784 003e 01        		.byte	1
+ 785 003f 01        		.byte	1
+ 786 0040 01        		.byte	1
+ 787 0041 02        		.byte	2
+ 788 0042 00        		.byte	0
+ 789 0043 01        		.byte	1
+ 790               	.global	usbDescriptorConfiguration
+ 791               		.type	usbDescriptorConfiguration, @object
+ 792               		.size	usbDescriptorConfiguration, 18
+ 793               	usbDescriptorConfiguration:
+ 794 0044 09        		.byte	9
+ 795 0045 02        		.byte	2
+ 796 0046 12        		.byte	18
+ 797 0047 00        		.byte	0
+ 798 0048 01        		.byte	1
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 15
 
 
- 799 0048 01        		.byte	1
- 800 0049 01        		.byte	1
- 801 004a 00        		.byte	0
- 802 004b 80        		.byte	-128
- 803 004c 32        		.byte	50
- 804 004d 09        		.byte	9
- 805 004e 04        		.byte	4
- 806 004f 00        		.byte	0
- 807 0050 00        		.byte	0
- 808 0051 00        		.byte	0
- 809 0052 00        		.byte	0
- 810 0053 00        		.byte	0
- 811 0054 00        		.byte	0
- 812 0055 00        		.byte	0
- 813               		.comm usbMsgPtr,2,1
- 814               		.comm usbRxToken,1,1
- 815               		.comm usbConfiguration,1,1
- 816               		.comm usbRxBuf,22,1
- 817               		.comm usbInputBufOffset,1,1
- 818               		.comm usbDeviceAddr,1,1
- 819               		.comm usbNewDeviceAddr,1,1
- 820               		.comm usbRxLen,1,1
- 821               		.comm usbCurrentTok,1,1
- 822               		.comm usbTxBuf,11,1
- 823               		.lcomm events,1
- 824               		.lcomm currentAddress,2
- 825               		.lcomm vectorTemp,4
- 826               		.lcomm didWriteSomething,1
- 827               		.data
- 828               		.type	usbMsgLen, @object
- 829               		.size	usbMsgLen, 1
- 830               	usbMsgLen:
- 831 0001 FF        		.byte	-1
- 832               		.lcomm usbMsgFlags,1
- 833               		.lcomm writeLength,1
- 834               		.type	replyBuffer.1745, @object
- 835               		.size	replyBuffer.1745, 4
- 836               	replyBuffer.1745:
- 837 0002 16        		.byte	22
- 838 0003 FA        		.byte	-6
- 839 0004 40        		.byte	64
- 840 0005 14        		.byte	20
- 841               		.lcomm wasReset.1698,1
- 842               	.global __do_copy_data
- 843               	.global __do_clear_bss
-GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s 			page 16
+ 799 0049 01        		.byte	1
+ 800 004a 00        		.byte	0
+ 801 004b 80        		.byte	-128
+ 802 004c 32        		.byte	50
+ 803 004d 09        		.byte	9
+ 804 004e 04        		.byte	4
+ 805 004f 00        		.byte	0
+ 806 0050 00        		.byte	0
+ 807 0051 00        		.byte	0
+ 808 0052 00        		.byte	0
+ 809 0053 00        		.byte	0
+ 810 0054 00        		.byte	0
+ 811 0055 00        		.byte	0
+ 812               		.comm usbMsgPtr,2,1
+ 813               		.comm usbRxToken,1,1
+ 814               		.comm usbConfiguration,1,1
+ 815               		.comm usbRxBuf,22,1
+ 816               		.comm usbInputBufOffset,1,1
+ 817               		.comm usbDeviceAddr,1,1
+ 818               		.comm usbNewDeviceAddr,1,1
+ 819               		.comm usbRxLen,1,1
+ 820               		.comm usbCurrentTok,1,1
+ 821               		.comm usbTxBuf,11,1
+ 822               		.lcomm events,1
+ 823               		.lcomm currentAddress,2
+ 824               		.lcomm vectorTemp,4
+ 825               		.lcomm didWriteSomething,1
+ 826               		.data
+ 827               		.type	usbMsgLen, @object
+ 828               		.size	usbMsgLen, 1
+ 829               	usbMsgLen:
+ 830 0001 FF        		.byte	-1
+ 831               		.lcomm usbMsgFlags,1
+ 832               		.lcomm writeLength,1
+ 833               		.type	replyBuffer.1766, @object
+ 834               		.size	replyBuffer.1766, 4
+ 835               	replyBuffer.1766:
+ 836 0002 16        		.byte	22
+ 837 0003 FA        		.byte	-6
+ 838 0004 40        		.byte	64
+ 839 0005 14        		.byte	20
+ 840               		.lcomm wasReset.1698,1
+ 841               	.global __do_copy_data
+ 842               	.global __do_clear_bss
+GAS LISTING /var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s 			page 16
 
 
 DEFINED SYMBOLS
                             *ABS*:00000000 main.c
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:2      *ABS*:0000003f __SREG__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:3      *ABS*:0000003e __SP_H__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:4      *ABS*:0000003d __SP_L__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:5      *ABS*:00000034 __CCP__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:6      *ABS*:00000000 __tmp_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:7      *ABS*:00000001 __zero_reg__
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:10     .text:00000000 writeFlashPage
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:825    .bss:00000007 didWriteSomething
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:823    .bss:00000001 currentAddress
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:46     .text:00000024 writeWordToPageBuffer
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:824    .bss:00000003 vectorTemp
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:121    .text:0000009e fillFlashWithVectors
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:149    .init3:00000000 PushMagicWord
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:173    .text:000000c4 main
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:2      *ABS*:0000003f __SREG__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:3      *ABS*:0000003e __SP_H__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:4      *ABS*:0000003d __SP_L__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:5      *ABS*:00000034 __CCP__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:6      *ABS*:00000000 __tmp_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:7      *ABS*:00000001 __zero_reg__
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:10     .text:00000000 writeFlashPage
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:824    .bss:00000007 didWriteSomething
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:822    .bss:00000001 currentAddress
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:46     .text:00000024 writeWordToPageBuffer
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:823    .bss:00000003 vectorTemp
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:121    .text:0000009e fillFlashWithVectors
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:149    .init3:00000000 PushMagicWord
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:173    .text:000000c4 main
                             *COM*:00000001 usbRxLen
                             *COM*:00000001 usbInputBufOffset
                             *COM*:00000016 usbRxBuf
                             *COM*:00000001 usbRxToken
                             *COM*:0000000b usbTxBuf
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:727    .data:00000000 usbTxLen
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:826    .bss:00000008 usbMsgFlags
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:836    .data:00000002 replyBuffer.1745
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:726    .data:00000000 usbTxLen
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:825    .bss:00000008 usbMsgFlags
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:835    .data:00000002 replyBuffer.1766
                             *COM*:00000002 usbMsgPtr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:832    .bss:00000009 writeLength
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:831    .bss:00000009 writeLength
                              .bss:00000000 events
                             *COM*:00000001 usbNewDeviceAddr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:772    .progmem.data:00000032 usbDescriptorDevice
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:794    .progmem.data:00000044 usbDescriptorConfiguration
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:733    .progmem.data:00000000 usbDescriptorString0
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:741    .progmem.data:00000004 usbDescriptorStringVendor
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:762    .progmem.data:00000026 usbDescriptorStringDevice
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:771    .progmem.data:00000032 usbDescriptorDevice
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:793    .progmem.data:00000044 usbDescriptorConfiguration
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:732    .progmem.data:00000000 usbDescriptorString0
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:740    .progmem.data:00000004 usbDescriptorStringVendor
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:761    .progmem.data:00000026 usbDescriptorStringDevice
                             *COM*:00000001 usbConfiguration
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:830    .data:00000001 usbMsgLen
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:829    .data:00000001 usbMsgLen
                             *COM*:00000001 usbDeviceAddr
-/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccsUuzSz.s:833    .bss:0000000a wasReset.1698
+/var/folders/nd/dq8cd7_x03d_z3x899kwf__80000gn/T//ccQ4lgkR.s:832    .bss:0000000a wasReset.1698
                             *COM*:00000001 usbCurrentTok
 
 UNDEFINED SYMBOLS

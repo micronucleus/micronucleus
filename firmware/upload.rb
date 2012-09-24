@@ -31,7 +31,8 @@ class MicroBoot
       @info = {
         flash_length: flash_length,
         page_size: page_size,
-        write_sleep: 0.020, #write_sleep.to_f / 1000.0,
+        pages: (flash_length.to_f / page_size).ceil,
+        write_sleep: write_sleep.to_f / 1000.0,
         version: "#{@device.bcdDevice >> 8}.#{@device.bcdDevice & 0xFF}",
         version_numeric: @device.bcdDevice
       }
@@ -40,9 +41,13 @@ class MicroBoot
   end
   
   def erase!
+    puts "erasing"
     info = self.info
     control_transfer(function: :erase_application)
-    sleep(info[:write_sleep] * ((info[:flash_length] / info[:page_size]) + 1)) # sleep for as many pages as the chip has
+    info[:pages].times do
+      sleep(info[:write_sleep]) # sleep for as many pages as the chip has to erase
+    end
+    puts "erased chip"
   end
   
   # upload a new program
@@ -54,16 +59,24 @@ class MicroBoot
     erase!
     
     address = 0
-    bytes.each_slice(info[:page_size]) do |bytes|
-      control_transfer(function: :write_page, wIndex: address, wValue: bytes.length, dataOut: bytes.pack('C*'))
+    bytes.each_slice(info[:page_size]) do |slice|
+      puts "uploading @ #{address} of #{bytes.length}"
+      control_transfer(function: :write_page, wIndex: address, wValue: slice.length, dataOut: slice.pack('C*'))
+      sleep(info[:write_sleep]) if address == 0 # additional sleep just for first page, as it includes an erase too
       sleep(info[:write_sleep])
-      address += bytes.length
+      address += slice.length
     end
   end
   
   def finished
+    puts "asking device to finish writing"
     control_transfer(function: :run_program)
-    sleep(info[:write_sleep]) # not sure if this is worth having? It's okay if USB fails now...
+    puts "waiting for device to finish"
+    
+    # sleep for as many pages as the chip could potentially need to write - this could be smarter
+    info[:pages].times do
+      sleep(info[:write_sleep]) 
+    end
     
     @io.close
     @io = nil
