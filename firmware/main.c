@@ -72,6 +72,11 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #define POSTSCRIPT_SIZE 6 /* maybe it could be 4 now we do not have checksums? */
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
+// verify the bootloader address aligns with page size
+#if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
+#  error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+#endif
+
 // events system schedules functions to run in the main loop
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1

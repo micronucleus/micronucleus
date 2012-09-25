@@ -63,7 +63,7 @@ LOAD usbdrv/usbdrvasm.o
 LOAD usbdrv/oddebug.o
 LOAD main.o
 LOAD libs-device/osccal.o
-Address of section .text set to 0x1740
+Address of section .text set to 0x1780
 LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
 LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/libc.a
 LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
@@ -158,54 +158,54 @@ LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
 .rela.plt
  *(.rela.plt)
 
-.text           0x00001740      0x846
+.text           0x00001780      0x846
  *(.vectors)
- .vectors       0x00001740       0x1e /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
-                0x00001740                __vectors
-                0x00001740                __vector_default
+ .vectors       0x00001780       0x1e /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
+                0x00001780                __vectors
+                0x00001780                __vector_default
  *(.vectors)
  *(.progmem.gcc*)
  *(.progmem*)
- .progmem.data  0x0000175e       0x28 main.o
-                0x00001762                usbDescriptorDevice
-                0x0000175e                usbDescriptorString0
-                0x00001774                usbDescriptorConfiguration
-                0x00001786                . = ALIGN (0x2)
-                0x00001786                __trampolines_start = .
+ .progmem.data  0x0000179e       0x28 main.o
+                0x000017a2                usbDescriptorDevice
+                0x0000179e                usbDescriptorString0
+                0x000017b4                usbDescriptorConfiguration
+                0x000017c6                . = ALIGN (0x2)
+                0x000017c6                __trampolines_start = .
  *(.trampolines)
- .trampolines   0x00001786        0x0 linker stubs
+ .trampolines   0x000017c6        0x0 linker stubs
  *(.trampolines*)
-                0x00001786                __trampolines_end = .
+                0x000017c6                __trampolines_end = .
  *(.jumptables)
  *(.jumptables*)
  *(.lowtext)
  *(.lowtext*)
-                0x00001786                __ctors_start = .
+                0x000017c6                __ctors_start = .
  *(.ctors)
-                0x00001786                __ctors_end = .
-                0x00001786                __dtors_start = .
+                0x000017c6                __ctors_end = .
+                0x000017c6                __dtors_start = .
  *(.dtors)
-                0x00001786                __dtors_end = .
+                0x000017c6                __dtors_end = .
  SORT(*)(.ctors)
  SORT(*)(.dtors)
  *(.init0)
- .init0         0x00001786        0x0 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
-                0x00001786                __init
+ .init0         0x000017c6        0x0 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
+                0x000017c6                __init
  *(.init0)
  *(.init1)
  *(.init1)
  *(.init2)
- .init2         0x00001786        0xc /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
+ .init2         0x000017c6        0xc /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
  *(.init2)
  *(.init3)
- .init3         0x00001792        0x8 main.o
-                0x00001792                PushMagicWord
+ .init3         0x000017d2        0x8 main.o
+                0x000017d2                PushMagicWord
  *(.init3)
  *(.init4)
- .init4         0x0000179a       0x16 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_copy_data.o)
-                0x0000179a                __do_copy_data
- .init4         0x000017b0       0x10 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_clear_bss.o)
-                0x000017b0                __do_clear_bss
+ .init4         0x000017da       0x16 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_copy_data.o)
+                0x000017da                __do_copy_data
+ .init4         0x000017f0       0x10 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_clear_bss.o)
+                0x000017f0                __do_clear_bss
  *(.init4)
  *(.init5)
  *(.init5)
@@ -216,40 +216,40 @@ LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
  *(.init8)
  *(.init8)
  *(.init9)
- .init9         0x000017c0        0x4 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
+ .init9         0x00001800        0x4 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
  *(.init9)
  *(.text)
- .text          0x000017c4        0x2 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
-                0x000017c4                __vector_1
-                0x000017c4                __vector_12
-                0x000017c4                __bad_interrupt
-                0x000017c4                __vector_6
-                0x000017c4                __vector_3
-                0x000017c4                __vector_11
-                0x000017c4                __vector_13
-                0x000017c4                __vector_7
-                0x000017c4                __vector_5
-                0x000017c4                __vector_4
-                0x000017c4                __vector_9
-                0x000017c4                __vector_8
-                0x000017c4                __vector_14
-                0x000017c4                __vector_10
- .text          0x000017c6      0x314 usbdrv/usbdrvasm.o
-                0x000017c6                usbCrc16
-                0x000017f0                usbCrc16Append
-                0x0000181e                __vector_2
-                0x000017f8                usbMeasureFrameLength
- .text          0x00001ada      0x42a main.o
-                0x00001b8e                main
- .text          0x00001f04       0x7e libs-device/osccal.o
-                0x00001f04                calibrateOscillator
-                0x00001f82                . = ALIGN (0x2)
+ .text          0x00001804        0x2 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/../../../../avr/lib/avr25/crttn85.o
+                0x00001804                __vector_1
+                0x00001804                __vector_12
+                0x00001804                __bad_interrupt
+                0x00001804                __vector_6
+                0x00001804                __vector_3
+                0x00001804                __vector_11
+                0x00001804                __vector_13
+                0x00001804                __vector_7
+                0x00001804                __vector_5
+                0x00001804                __vector_4
+                0x00001804                __vector_9
+                0x00001804                __vector_8
+                0x00001804                __vector_14
+                0x00001804                __vector_10
+ .text          0x00001806      0x314 usbdrv/usbdrvasm.o
+                0x00001806                usbCrc16
+                0x00001830                usbCrc16Append
+                0x0000185e                __vector_2
+                0x00001838                usbMeasureFrameLength
+ .text          0x00001b1a      0x42a main.o
+                0x00001bce                main
+ .text          0x00001f44       0x7e libs-device/osccal.o
+                0x00001f44                calibrateOscillator
+                0x00001fc2                . = ALIGN (0x2)
  *(.text.*)
-                0x00001f82                . = ALIGN (0x2)
+                0x00001fc2                . = ALIGN (0x2)
  *(.fini9)
- .fini9         0x00001f82        0x0 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_exit.o)
-                0x00001f82                exit
-                0x00001f82                _exit
+ .fini9         0x00001fc2        0x0 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_exit.o)
+                0x00001fc2                exit
+                0x00001fc2                _exit
  *(.fini9)
  *(.fini8)
  *(.fini8)
@@ -268,11 +268,11 @@ LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
  *(.fini1)
  *(.fini1)
  *(.fini0)
- .fini0         0x00001f82        0x4 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_exit.o)
+ .fini0         0x00001fc2        0x4 /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a(_exit.o)
  *(.fini0)
-                0x00001f86                _etext = .
+                0x00001fc6                _etext = .
 
-.data           0x00800060        0x6 load address 0x00001f86
+.data           0x00800060        0x6 load address 0x00001fc6
                 0x00800060                PROVIDE (__data_start, .)
  *(.data)
  .data          0x00800060        0x6 main.o
@@ -303,8 +303,8 @@ LOAD /usr/local/CrossPack-AVR-20100115/lib/gcc/avr/4.3.3/avr25/libgcc.a
                 0x00800084                usbConfiguration
                 0x00800085                usbRxBuf
                 0x0080009b                PROVIDE (__bss_end, .)
-                0x00001f86                __data_load_start = LOADADDR (.data)
-                0x00001f8c                __data_load_end = (__data_load_start + SIZEOF (.data))
+                0x00001fc6                __data_load_start = LOADADDR (.data)
+                0x00001fcc                __data_load_end = (__data_load_start + SIZEOF (.data))
 
 .noinit         0x0080009b        0x0
                 0x0080009b                PROVIDE (__noinit_start, .)
