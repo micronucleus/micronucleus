@@ -274,6 +274,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     // TODO: Isn't this always last?
     // if we have now reached another page boundary, we're done
     uchar isLast = (writeLength == 0);
+    // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
     if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
     return isLast; // let vusb know we're done with this request
@@ -320,10 +321,10 @@ static inline void tiny85FlashWrites(void) {
     _delay_us(2000); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
     
-    if (currentAddress % SPM_PAGESIZE) {
-        fillFlashWithVectors();
+    if (currentAddress % SPM_PAGESIZE) { // when we aren't perfectly aligned to a flash page boundary
+        fillFlashWithVectors(); // fill up the rest of the page with 0xFFFF (unprogrammed) bits
     } else {
-        writeFlashPage();
+        writeFlashPage(); // otherwise just write it
     }
 }
 
@@ -363,7 +364,7 @@ int __attribute__((noreturn)) main(void) {
     bootLoaderInit();
     
     
-    if (bootLoaderCondition()){
+    if (bootLoaderCondition()) {
         initForUsbConnectivity();
         do {
             usbPoll();
