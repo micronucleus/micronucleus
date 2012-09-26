@@ -89,7 +89,7 @@ static uchar events = 0; // bitmap of events to run
 #define clearEvents()    events = 0
 
 // length of bytes to write in to flash memory in upcomming usbFunctionWrite calls
-static uchar writeLength;
+static unsigned char writeLength;
 
 // becomes 1 when some programming happened
 // lets leaveBootloader know if needs to finish up the programming
@@ -248,6 +248,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length) {
+    //if (length > writeLength) length = writeLength; // test for missing final page bug
     writeLength -= length;
     
     do {

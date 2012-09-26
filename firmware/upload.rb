@@ -12,20 +12,22 @@ else
   raise "Pass intel hex or raw binary as argument to script"
 end
 
-puts "Plug in programmable device now: (waiting)"
-sleep 0.5 while MicroBoot.all.length == 0
+#test_data += ("\xFF" * 64)
 
-thinklet = MicroBoot.all.first
-puts "Attached to device: #{thinklet.inspect}"
+puts "Plug in programmable device now: (waiting)"
+sleep 0.25 while MicroBoot.all.length == 0
+
+ubootable = MicroBoot.all.first
+puts "Attached to device: #{ubootable.inspect}"
 
 #puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
 #puts "Bytes: #{test_data.bytes.to_a.inspect}"
-sleep(0.1) # some time to think?
+sleep(0.25) # some time to think?
 puts "Attempting to write supplied program in to device's memory"
-thinklet.program = test_data
+ubootable.program = test_data
 
-puts "That seems to have gone well! Telling thinklet to run program..."
+puts "Great! Starting program..."
 
 
-thinklet.finished # let thinklet know it can go do other things now if it likes
+ubootable.finished # let thinklet know it can go do other things now if it likes
 puts "All done!"

@@ -61,6 +61,8 @@ class MicroBoot
 
     address = 0
     bytes.each_slice(info[:page_size]) do |slice|
+      slice.push(0xFF) while slice.length < info[:page_size] # ensure every slice is one page_size long - pad out if needed
+      
       puts "uploading @ #{address} of #{bytes.length}"
       control_transfer(function: :write_page, wIndex: address, wValue: slice.length, dataOut: slice.pack('C*'))
       sleep(info[:write_sleep])
