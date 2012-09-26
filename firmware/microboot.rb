@@ -63,7 +63,6 @@ class MicroBoot
     bytes.each_slice(info[:page_size]) do |slice|
       puts "uploading @ #{address} of #{bytes.length}"
       control_transfer(function: :write_page, wIndex: address, wValue: slice.length, dataOut: slice.pack('C*'))
-      sleep(info[:write_sleep]) if address == 0 # additional sleep just for first page, as it includes an erase too
       sleep(info[:write_sleep])
       address += slice.length
     end
