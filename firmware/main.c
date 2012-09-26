@@ -163,11 +163,14 @@ static void writeFlashPage(void) {
 
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
-    // first two interrupt vectors get replaced with a jump to the bootloader vector table
+    // first two interrupt vectors get replaced with a jump to the bootloader's vector table
     if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
         data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
-
+    
+    // at end of page just before bootloader, write in tinyVector table
+    // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
+    // for info on how the tiny vector table works
     if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
     }

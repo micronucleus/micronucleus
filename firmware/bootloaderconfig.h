@@ -175,30 +175,32 @@ these macros are defined, the boot loader uses them.
 #endif
 
 /* tiny85 Architecture Specifics */
-#ifdef __AVR_ATtiny85__
-#   define TINY85MODE
+#ifndef __AVR_ATtiny85__
+#  error "uBoot is only designed for attiny85"
+#endif
+
+#define TINY85MODE
 
 // number of bytes before the boot loader vectors to store the tiny application vector table
-#   define TINYVECTOR_RESET_OFFSET     4
-#   define TINYVECTOR_USBPLUS_OFFSET   2
+#define TINYVECTOR_RESET_OFFSET     4
+#define TINYVECTOR_USBPLUS_OFFSET   2
 
-#   define RESET_VECTOR_OFFSET         0
-#   define USBPLUS_VECTOR_OFFSET       2
+#define RESET_VECTOR_OFFSET         0
+#define USBPLUS_VECTOR_OFFSET       2
 
-#   if BOOTLOADER_CAN_EXIT == 0
-#       define BOOTLOADER_CAN_EXIT 1
-#   endif
+//#if BOOTLOADER_CAN_EXIT == 0
+//#    define BOOTLOADER_CAN_EXIT 1
+//#endif
 
 // setup interrupt for Pin Change for D+
-#   define USB_INTR_CFG            PCMSK
-#   define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
-#   define USB_INTR_CFG_CLR        0
-#   define USB_INTR_ENABLE         GIMSK
-#   define USB_INTR_ENABLE_BIT     PCIE
-#   define USB_INTR_PENDING        GIFR
-#   define USB_INTR_PENDING_BIT    PCIF
-#   define USB_INTR_VECTOR         PCINT0_vect
-#endif
+#define USB_INTR_CFG            PCMSK
+#define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
+#define USB_INTR_CFG_CLR        0
+#define USB_INTR_ENABLE         GIMSK
+#define USB_INTR_ENABLE_BIT     PCIE
+#define USB_INTR_PENDING        GIFR
+#define USB_INTR_PENDING_BIT    PCIF
+#define USB_INTR_VECTOR         PCINT0_vect
 
 
 /* max 6200ms to not overflow idlePolls variable */
