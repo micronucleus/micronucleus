@@ -1,9 +1,11 @@
-microBoot tiny85 Note
-=====================
+micronucleus tiny85 Note
+========================
 This is a brand new project by bluebie, which merges code from embedded-creations'
 wonderful USBaspLoader-tiny85 project with bits from obdev's bootloadHID and bits
 of my own invention to create a minimalist bootloader for tiny85 chips. It's hot
-off the presses, and so this readme and everything else is already way out of date
+off the presses, and so this readme and everything else is already way out of date.
+During it's early development it was called 'µBoot-t85', and the name has since
+changed to avoid conflict with a similarly named ARM bootloader of no relation.
 
 Some quick notes:
 The stuff in commandline is a slightly modified version of bootloadHID's commandline

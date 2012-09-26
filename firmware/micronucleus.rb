@@ -1,7 +1,7 @@
 require 'libusb'
 
-# Abstracts access to uBoot avr tiny85 bootloader - can be used only to upload bytes
-class MicroBoot
+# Abstracts access to micronucleus avr tiny85 bootloader - can be used only to erase and upload bytes
+class Micronucleus
   Functions = [
     :get_info,
     :write_page,
@@ -9,11 +9,11 @@ class MicroBoot
     :run_program
   ]
 
-  # return all thinklets
+  # return all micronucleus devices connected to computer
   def self.all
     usb = LIBUSB::Context.new
     usb.devices.select { |device|
-      device.idVendor == 0x16d0 && device.idProduct == 0x0753 #&& device.product == "\xB5B"
+      device.idVendor == 0x16d0 && device.idProduct == 0x0753
     }.map { |device|
       self.new(device)
     }

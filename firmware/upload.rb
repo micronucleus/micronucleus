@@ -1,4 +1,4 @@
-require_relative './microboot'
+require_relative './micronucleus'
 
 if ARGV[0]
   if ARGV[0].end_with? '.hex'
@@ -15,19 +15,19 @@ end
 #test_data += ("\xFF" * 64)
 
 puts "Plug in programmable device now: (waiting)"
-sleep 0.25 while MicroBoot.all.length == 0
+sleep 0.25 while Micronucleus.all.length == 0
 
-ubootable = MicroBoot.all.first
-puts "Attached to device: #{ubootable.inspect}"
+nucleus = Micronucleus.all.first
+puts "Attached to device: #{nucleus.inspect}"
 
 #puts "Attempting to write '#{test_data.inspect}' to first thinklet's program memory"
 #puts "Bytes: #{test_data.bytes.to_a.inspect}"
 sleep(0.25) # some time to think?
 puts "Attempting to write supplied program in to device's memory"
-ubootable.program = test_data
+nucleus.program = test_data
 
 puts "Great! Starting program..."
 
 
-ubootable.finished # let thinklet know it can go do other things now if it likes
+nucleus.finished # let thinklet know it can go do other things now if it likes
 puts "All done!"
