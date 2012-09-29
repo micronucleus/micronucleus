@@ -89,7 +89,7 @@ static uchar events = 0; // bitmap of events to run
 #define clearEvents()    events = 0
 
 // length of bytes to write in to flash memory in upcomming usbFunctionWrite calls
-static unsigned char writeLength;
+//static unsigned char writeLength;
 
 // becomes 1 when some programming happened
 // lets leaveBootloader know if needs to finish up the programming
@@ -228,7 +228,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         return 4;
         
     } else if (rq->bRequest == 1) { // write page
-        writeLength = rq->wValue.word;
+        //writeLength = rq->wValue.word;
         currentAddress = rq->wIndex.word;
         
         return USB_NO_MSG; // hands off work to usbFunctionWrite
@@ -249,7 +249,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length) {
     //if (length > writeLength) length = writeLength; // test for missing final page bug
-    writeLength -= length;
+    //writeLength -= length;
     
     do {
         // remember vectors or the tinyvector table 
@@ -274,7 +274,8 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     // TODO: Isn't this always last?
     // if we have now reached another page boundary, we're done
-    uchar isLast = (writeLength == 0);
+    //uchar isLast = (writeLength == 0);
+    uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
     // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
     if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
