@@ -81,7 +81,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE 2
-#define EVENT_FINISH 4
+#define EVENT_EXECUTE 4
 
 // controls state of events
 #define fireEvent(event) events |= (event)
@@ -238,7 +238,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         
     } else { // exit bootloader
 #       if BOOTLOADER_CAN_EXIT
-            fireEvent(EVENT_FINISH);
+            fireEvent(EVENT_EXECUTE);
 #       endif
     }
     
@@ -332,14 +332,14 @@ static inline void tiny85FlashWrites(void) {
 
 // finishes up writing to the flash, including adding the tinyVector tables at the end of memory
 // TODO: can this be simplified? EG: currentAddress = PROGMEM_SIZE; fillFlashWithVectors();
-static inline void tiny85FinishWriting(void) {
-    // make sure remainder of flash is erased and write checksum and application reset vectors
-    if (didWriteSomething) {
-        while (currentAddress < BOOTLOADER_ADDRESS) {
-            fillFlashWithVectors();
-        }
-    }
-}
+// static inline void tiny85FinishWriting(void) {
+//     // make sure remainder of flash is erased and write checksum and application reset vectors
+//     if (didWriteSomething) {
+//         while (currentAddress < BOOTLOADER_ADDRESS) {
+//             fillFlashWithVectors();
+//         }
+//     }
+// }
 
 // reset system to a normal state and launch user program
 static inline __attribute__((noreturn)) void leaveBootloader(void) {
@@ -380,26 +380,17 @@ int __attribute__((noreturn)) main(void) {
             // needs to wait > 9ms before next usb request
             if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
-            
-            if (isEvent(EVENT_FINISH)) { // || AUTO_EXIT_CONDITION()) {
-                tiny85FinishWriting();
-                
-#               if BOOTLOADER_CAN_EXIT
+
+#           if BOOTLOADER_CAN_EXIT            
+                if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
                     _delay_ms(10); // removing delay causes USB errors
                     break;
-#               endif
-            }
-// #           if BOOTLOADER_CAN_EXIT
-//                 // exit if requested by the programming app, or if we timeout waiting for the pc with a valid app
-//                 if (isEvent(EVENT_EXIT_BOOTLOADER) || AUTO_EXIT_CONDITION()) {
-//                     //_delay_ms(10);
-//                     break;
-//                 }
-// #           endif
+                }
+#           endif
             
             clearEvents();
             
-        } while(bootLoaderCondition());  /* main event loop */
+        } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
     leaveBootloader();
