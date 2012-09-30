@@ -114,7 +114,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length);
 static inline void initForUsbConnectivity(void);
 static inline void tiny85FlashInit(void);
 static inline void tiny85FlashWrites(void);
-static inline void tiny85FinishWriting(void);
+//static inline void tiny85FinishWriting(void);
 static inline __attribute__((noreturn)) void leaveBootloader(void);
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
@@ -202,12 +202,17 @@ static void writeWordToPageBuffer(uint16_t data) {
 
 // fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
 static void fillFlashWithVectors(void) {
-    int16_t i;
-
+    //int16_t i;
+    //
     // fill all or remainder of page with 0xFFFF (as if unprogrammed)
-    for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
-        writeWordToPageBuffer(0xFFFF); // is where vector tables are sorted out
-    }
+    //for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
+    //    writeWordToPageBuffer(0xFFFF); // is where vector tables are sorted out
+    //}
+    
+    // TODO: Or more simply: 
+    do {
+        writeWordToPageBuffer(0xFFFF);
+    } while (currentAddress % SPM_PAGESIZE);
 
     writeFlashPage();
 }
@@ -272,7 +277,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
         length -= 2;
     } while(length);
     
-    // TODO: Isn't this always last?
     // if we have now reached another page boundary, we're done
     //uchar isLast = (writeLength == 0);
     uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
@@ -323,6 +327,7 @@ static inline void tiny85FlashWrites(void) {
     _delay_us(2000); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
     
+    // TODO: Do we need this? Wouldn't the programmer always send full sized pages?
     if (currentAddress % SPM_PAGESIZE) { // when we aren't perfectly aligned to a flash page boundary
         fillFlashWithVectors(); // fill up the rest of the page with 0xFFFF (unprogrammed) bits
     } else {
