@@ -10,6 +10,11 @@ ifeq ($(shell uname), Linux)
 	USBLIBS = `libusb-config --libs`
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
+else ifeq ($(shell uname), Darwin)
+	USBFLAGS = `libusb-config --cflags`
+	USBLIBS = `libusb-config --libs`
+	EXE_SUFFIX =
+	OSFLAG = -D MAC_OS
 else
 	USBFLAGS = -I C:\MinGW\include
 	USBLIBS = -L C:\MinGW\lib -lusb

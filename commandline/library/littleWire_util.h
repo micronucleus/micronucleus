@@ -1,10 +1,10 @@
 #ifndef LITTLEWIRE_UTIL_H
 #define LITTLEWIRE_UTIL_H
 
-#ifdef LINUX
-	#include <unistd.h>
+#if defined WIN
+    #include <windows.h>
 #else
-	#include <windows.h>
+    #include <unistd.h>
 #endif
 
 /* Delay in miliseconds */

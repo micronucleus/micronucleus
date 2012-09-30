@@ -27,10 +27,10 @@
 /********************************************************************************
 * Header files
 ********************************************************************************/
-#if defined(LINUX)
-   #include <usb.h>				// this is libusb, see http://libusb.sourceforge.net/
-#else
+#if defined WIN
    #include <lusb0_usb.h>		// this is libusb, see http://libusb.sourceforge.net/
+#else
+   #include <usb.h>				// this is libusb, see http://libusb.sourceforge.net/
 #endif
 #include "opendevice.h"			// common code moved to separate module
 /*******************************************************************************/
