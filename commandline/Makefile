@@ -26,7 +26,7 @@ LIBS    = $(USBLIBS)
 INCLUDE = library
 CFLAGS  = $(USBFLAGS) $(LIBS) -I$(INCLUDE) -O -g $(OSFLAG)
 
-LWLIBS = opendevice micronucleus_lib littleWire_util
+LWLIBS = micronucleus_lib littleWire_util
 EXAMPLES = micronucleus
 
 .PHONY:	clean library

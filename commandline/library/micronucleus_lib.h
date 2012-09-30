@@ -32,25 +32,40 @@
 #else
    #include <usb.h>				// this is libusb, see http://libusb.sourceforge.net/
 #endif
-#include "opendevice.h"			// common code moved to separate module
+//#include "opendevice.h"			// common code moved to separate module
+#include <assert.h>
 /*******************************************************************************/
 
 /********************************************************************************
 * USB details
 ********************************************************************************/
-#define	VENDOR_ID	0x16D0
-#define	PRODUCT_ID	0x0753
-#define	USB_TIMEOUT	0xFFFF
-#define	RX_BUFFER_SIZE	64
-#define	TX_BUFFER_SIZE	64
+#define	MICRONUCLEUS_VENDOR_ID	 0x16D0
+#define	MICRONUCLEUS_PRODUCT_ID	 0x0753
+#define	MICRONUCLEUS_USB_TIMEOUT 0xFFFF
 /*******************************************************************************/
 
 /********************************************************************************
 * Declearations
 ********************************************************************************/
-typedef usb_dev_handle micronucleus;
-unsigned char rxBuffer[RX_BUFFER_SIZE];	/* This has to be unsigned for the data's sake */
-unsigned char tBuffer[TX_BUFFER_SIZE];	/* This has to be unsigned for the data's sake */
+//typedef usb_dev_handle micronucleus;
+// representing version number of micronucleus device
+typedef struct _micronucleus_version {
+	unsigned char major;
+	unsigned char minor;
+} micronucleus_version;
+
+// handle representing one micronucleus device
+typedef struct _micronucleus {
+	usb_dev_handle *device;
+	// general information about device
+	micronucleus_version version;
+	unsigned int flash_size;  // programmable size (in bytes) of progmem
+	unsigned int page_size;   // size (in bytes) of page
+	unsigned int pages;       // total number of pages to program
+	unsigned int write_sleep; // milliseconds
+	unsigned int erase_sleep; // milliseconds
+} micronucleus;
+
 /*******************************************************************************/
 
 /********************************************************************************
@@ -61,21 +76,15 @@ micronucleus* micronucleus_connect();
 /*******************************************************************************/
 
 /********************************************************************************
-* Get the device info
-********************************************************************************/
-int micronucleus_getDeviceInfo(micronucleus* deviceHandle, unsigned int* availableMemory, unsigned char* deviceSize, unsigned char* sleepAmount);
-/*******************************************************************************/
-
-/********************************************************************************
 * Erase the flash memory
 ********************************************************************************/
-int micronucleus_eraseFlash(micronucleus* deviceHandle,unsigned int sleepAmount);
+int micronucleus_eraseFlash(micronucleus* deviceHandle);
 /*******************************************************************************/
 
 /********************************************************************************
 * Write the flash memory
 ********************************************************************************/
-int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int startAddress, unsigned int endAddress, unsigned char* buffer, unsigned char sleepAmount);
+int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_length, unsigned char* program);
 /*******************************************************************************/
 
 /********************************************************************************

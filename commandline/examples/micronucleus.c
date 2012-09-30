@@ -31,15 +31,7 @@
 /******************************************************************************
 * Global definitions 
 ******************************************************************************/
-unsigned int		availableMemory;
-unsigned char		pageSize;
-unsigned char		sleepAmount;
-unsigned int		eraseSleep;	
-unsigned int		pages;
 unsigned char		dataBuffer[65536 + 256];    /* buffer for file data */
-unsigned int 		startAddress, endAddress;
-unsigned int 		i;
-unsigned int 		k;
 /*****************************************************************************/
 
 /******************************************************************************
@@ -57,26 +49,30 @@ int main(int argc, char **argv)
 {
 	int res;
 	char *file = NULL;
+	int run = 0;
 	micronucleus *myDevice = NULL;
 
 	if(argc < 2)
 	{
-		printf("usage: %s [-r] [<intel-hexfile>]\n", argv[0]);
-		return 0;
+		printf("usage: %s [--run] [<intel-hexfile>]\n", argv[0]);
+		return EXIT_FAILURE;
 	}
 	if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
 	{
-		printf("usage: %s [-r] [<intel-hexfile>]\n", argv[0]);
-		return 0;
+		printf("usage: %s [--run] [<intel-hexfile>]\n", argv[0]);
+		return EXIT_FAILURE;
 	}
-	if(strcmp(argv[1], "-r") == 0)
+	if(strcmp(argv[1], "--run") == 0)
 	{
+    	run = 1;
 		if(argc >= 3){
 			file = argv[2];
 		}
 	}
 	else
+	{
 		file = argv[1];
+	}
 
 	printf("> Please plug the device ... \n");
 	printf("> Press CTRL+C to terminate the program.\n");
@@ -92,55 +88,44 @@ int main(int argc, char **argv)
 	delay(750);
 	myDevice = micronucleus_connect();
 	
-	res = micronucleus_getDeviceInfo(myDevice, &availableMemory, &pageSize, &sleepAmount);
-	if(res!=0)
+	if(myDevice->page_size == 64)
 	{
-		printf(">> Abort mission! An error has occured ...\n");
-		printf(">> Please unplug the device and restart the program. \n");
-		return 0;
+		printf("> Device looks like Attiny85!\n");
 	}
-	
-	if(pageSize==64)
+	else if(myDevice->page_size == 32)
 	{
-		printf("> Device is based on Attiny85!\n");
-	}
-	else if(pageSize==32)
-	{
-		printf("> Device is based on Attiny45!\n");
+		printf("> Device looks like Attiny45!\n");
 	}
 	else
 	{
 		printf("> Unsupported device!\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
-	printf("> Available space for user application: %d bytes\n",availableMemory);
-	printf("> Suggested sleep time between sending pages: %u miliseconds\n",sleepAmount);
+	printf("> Available space for user application: %d bytes\n", myDevice->flash_size);
+	printf("> Suggested sleep time between sending pages: %u milliseconds\n", myDevice->write_sleep);
+	printf("> Whole page count: %d\n", myDevice->pages);
+	printf("> Erase function sleep duration: %d milliseconds\n", myDevice->erase_sleep);
 	
-	pages = availableMemory/pageSize;
-	if((pages*pageSize) < availableMemory) pages++;
-	eraseSleep = sleepAmount*pages;
-
-	printf("> Whole page count: %d\n",pages);
-	printf("> Erase function sleep duration: %d miliseconds\n",eraseSleep);
-	
-	startAddress = sizeof(dataBuffer);
-   endAddress = 0;
 	memset(dataBuffer, 0xFF, sizeof(dataBuffer));
-
-	if(parseIntelHex(file, dataBuffer, &startAddress, &endAddress))
-		return 0;
+    
+    int startAddress = 1, endAddress = 0;
+	if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress))
+	{
+    	printf("> Error parsing hex file.\n");
+		return EXIT_FAILURE;
+	}
 
 	if(startAddress >= endAddress)
 	{
 		printf("> No data in input file, exiting.\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
-	if((endAddress-startAddress)>availableMemory)
+	if(endAddress > myDevice->flash_size)
 	{
 		printf("> Program file is too big for the bootloader!\n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
 	/* Prints the decoded intel hex file */
@@ -155,35 +140,38 @@ int main(int argc, char **argv)
 	printf("> Decoded hex file ends ... \n");*/
 
 	printf("> Erasing the memory ...\n");
-	res = micronucleus_eraseFlash(myDevice,eraseSleep);
+	res = micronucleus_eraseFlash(myDevice);
 	if(res!=0)
 	{
 		printf(">> Abort mission! An error has occured ...\n");
 		printf(">> Please unplug the device and restart the program. \n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
 	printf("> Starting to upload ...\n");	
-	res = micronucleus_writeFlash(myDevice,startAddress,endAddress,dataBuffer,sleepAmount);
+	res = micronucleus_writeFlash(myDevice,endAddress,dataBuffer);
 	if(res!=0)
 	{
 		printf(">> Abort mission! An error has occured ...\n");
 		printf(">> Please unplug the device and restart the program. \n");
-		return 0;
+		return EXIT_FAILURE;
 	}
 	
-	printf("> Starting the user app ...\n");
-	res = micronucleus_startApp(myDevice);
-	if(res!=0)
+	if (run)
 	{
-		printf(">> Abort mission! An error has occured ...\n");
-		printf(">> Please unplug the device and restart the program. \n");
-		return 0;
-	}
+    	printf("> Starting the user app ...\n");
+    	res = micronucleus_startApp(myDevice);
+    	if(res!=0)
+    	{
+    		printf(">> Abort mission! An error has occured ...\n");
+    		printf(">> Please unplug the device and restart the program. \n");
+    		return EXIT_FAILURE;
+    	}
+    }
 
 	printf(">> Micronucleus done. Thank you!\n");
 
-	return 0;
+	return EXIT_SUCCESS;
 }
 /******************************************************************************/
 

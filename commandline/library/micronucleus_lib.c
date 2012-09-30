@@ -29,60 +29,98 @@
 
 micronucleus* micronucleus_connect()
 {
-	micronucleus *tempHandle = NULL;
-
+	micronucleus *nucleus = NULL;
+	struct usb_bus *busses;
+	
+	// intialise usb and find micronucleus device
 	usb_init();
-	usbOpenDevice(&tempHandle, VENDOR_ID, "*", PRODUCT_ID, "*", "*", NULL, NULL );
+	usb_find_busses();
+	usb_find_devices();
+	
+	busses = usb_get_busses();
+	struct usb_bus *bus;
+	for (bus = busses; bus; bus = bus->next)
+	{
+		struct usb_device *dev;
+		
+		for (dev = bus->devices; dev; dev = dev->next)
+		{
+			/* Check if this device is a micronucleus */
+			if (dev->descriptor.idVendor == MICRONUCLEUS_VENDOR_ID && dev->descriptor.idProduct == MICRONUCLEUS_PRODUCT_ID)
+			{
+				nucleus = malloc(sizeof(micronucleus));
+				nucleus->version.major = (dev->descriptor.bcdUSB >> 8) & 0xFF;
+				nucleus->version.minor = dev->descriptor.bcdUSB & 0xFF;
+				nucleus->device = usb_open(dev);
+				
+				// get nucleus info
+				unsigned char buffer[4];
+				int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+				assert(res == 4);
+				
+				nucleus->flash_size = (buffer[0]<<8) + buffer[1];
+				nucleus->page_size = buffer[2];
+				nucleus->pages = (nucleus->flash_size / nucleus->page_size);
+				if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
+				nucleus->write_sleep = buffer[3];
+				nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
+			}
+		}
+	}
 
-	return tempHandle;
+	return nucleus;
 }
 
-int micronucleus_getDeviceInfo(micronucleus* deviceHandle, unsigned int* availableMemory, unsigned char* deviceSize, unsigned char* sleepAmount)
+int micronucleus_eraseFlash(micronucleus* deviceHandle)
 {
 	int res;
-	res =	usb_control_msg(deviceHandle, 0xC0, 0, 0, 0, rxBuffer, 4, USB_TIMEOUT);
+	res = usb_control_msg(deviceHandle->device, 0xC0, 2, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
 	
-	if(res!=4)	
-		return -1;
+	// give microcontroller enough time to erase all writable pages and come back online
+	delay(deviceHandle->erase_sleep);
 	
-	*availableMemory = (rxBuffer[0]<<8) + rxBuffer[1];
-	*deviceSize = rxBuffer[2];
-	*sleepAmount = rxBuffer[3];
-	
-	return 0;		
-}
-
-int micronucleus_eraseFlash(micronucleus* deviceHandle, unsigned int sleepAmount)
-{
-	int res;
-	res = usb_control_msg(deviceHandle, 0xC0, 2, 0, 0, rxBuffer, 0, USB_TIMEOUT);
-	delay(sleepAmount);
 	if(res!=0)	
 		return -1;
 	else 
 		return 0;
 }
 
-int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int startAddress, unsigned int endAddress, unsigned char* buffer, unsigned char sleepAmount)
+int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_size, unsigned char* program)
 {
-	unsigned char		tempBuffer[64];
-	unsigned int		i;
-	unsigned int		k;	
-	unsigned int		res;	
+	unsigned char page_length = deviceHandle->page_size;
+	unsigned char page_buffer[page_length];
+	unsigned int  address; // overall flash memory address
+	unsigned int  page_address; // address within this page when copying buffer
+	unsigned int  res;
 
-	for(i=startAddress;i<(endAddress);i+=64)
-	{
-		for(k=0;k<64;k++)
-			tempBuffer[k]=buffer[i+k];
+	for (address = 0; address < deviceHandle->flash_size; address += deviceHandle->page_size) {
+		// work around a bug in older bootloader versions
+		if (deviceHandle->version.major == 1 && deviceHandle->version.minor <= 2
+				&& address / deviceHandle->page_size == deviceHandle->pages - 1) {
+			page_length = deviceHandle->flash_size % deviceHandle->page_size;
+		}
 		
-			 res = usb_control_msg(deviceHandle,
+		// copy in bytes from user program
+		for (page_address = 0; page_address < page_length; page_address += 1) {
+			if (address + page_address > program_size) {
+				page_buffer[page_address] = 0xFF; // pad out remainder with unprogrammed bytes
+			} else {
+				page_buffer[page_address] = program[address + page_address]; // load from user program
+			}
+		}
+		
+		// ask microcontroller to write this page's data
+		res = usb_control_msg(deviceHandle->device,
 					 USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
 					 1,
-					 64,i,
-					 tempBuffer, 64,
-					 USB_TIMEOUT);
-		delay(sleepAmount);
-		if(res!=64)	return -1;
+					 page_length, address,
+					 page_buffer, page_length,
+					 MICRONUCLEUS_USB_TIMEOUT);
+		
+		// give microcontroller enough time to write this page and come back online
+		delay(deviceHandle->write_sleep);
+		
+		if (res != 64) return -1;
 	}
 	
 	return 0;
@@ -91,7 +129,8 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int startAddres
 int micronucleus_startApp(micronucleus* deviceHandle)
 {
 	int res;
-	res = usb_control_msg(deviceHandle, 0xC0, 4, 0, 0, rxBuffer, 0, USB_TIMEOUT);
+	res = usb_control_msg(deviceHandle->device, 0xC0, 4, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
+	
 	if(res!=0)	
 		return -1;
 	else 
