@@ -28,6 +28,9 @@
 #include "micronucleus_lib.h"
 #include "littleWire_util.h"
 
+#define FILE_TYPE_INTEL_HEX 1
+#define FILE_TYPE_RAW 2
+
 /******************************************************************************
 * Global definitions 
 ******************************************************************************/
@@ -37,6 +40,7 @@ unsigned char		dataBuffer[65536 + 256];    /* buffer for file data */
 /******************************************************************************
 * Function prototypes
 ******************************************************************************/
+static int parseRaw(char *hexfile, char* buffer, int *startAddr, int *endAddr);
 static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr); /* taken from bootloadHID example from obdev */
 static int parseUntilColon(FILE *fp); /* taken from bootloadHID example from obdev */
 static int parseHex(FILE *fp, int numDigits); /* taken from bootloadHID example from obdev */
@@ -49,31 +53,40 @@ int main(int argc, char **argv)
 {
 	int res;
 	char *file = NULL;
-	int run = 0;
 	micronucleus *myDevice = NULL;
 
-	if(argc < 2)
-	{
-		printf("usage: %s [--run] [<intel-hexfile>]\n", argv[0]);
+    // parse arguments
+    int run = 0;
+    int file_type = FILE_TYPE_INTEL_HEX;
+    int arg_pointer = 1;
+    char* usage = "usage: micronucleus [--run] [--type intel-hex|raw] [<intel-hexfile>|-]";
+    
+    while (arg_pointer < argc) {
+        if (strcmp(argv[arg_pointer], "--run") == 0) {
+            run = 1;
+        } else if (strcmp(argv[arg_pointer], "--type") == 0) {
+            arg_pointer += 1;
+            if (strcmp(argv[arg_pointer], "intel-hex") == 0) {
+                file_type = FILE_TYPE_INTEL_HEX;
+            } else if (strcmp(argv[arg_pointer], "raw") == 0) {
+                file_type = FILE_TYPE_RAW;
+            } else {
+                printf("Unknown File Type specified with --type option");
+            }
+        } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
+            puts(usage);
+            return EXIT_SUCCESS;
+        } else {
+            file = argv[arg_pointer];
+        }
+        arg_pointer += 1;
+    }
+	if (argc < 2) {
+		puts(usage);
 		return EXIT_FAILURE;
 	}
-	if(strcmp(argv[1], "-h") == 0 || strcmp(argv[1], "--help") == 0)
-	{
-		printf("usage: %s [--run] [<intel-hexfile>]\n", argv[0]);
-		return EXIT_FAILURE;
-	}
-	if(strcmp(argv[1], "--run") == 0)
-	{
-    	run = 1;
-		if(argc >= 3){
-			file = argv[2];
-		}
-	}
-	else
-	{
-		file = argv[1];
-	}
-
+	
+	
 	printf("> Please plug the device ... \n");
 	printf("> Press CTRL+C to terminate the program.\n");
 	
@@ -90,11 +103,11 @@ int main(int argc, char **argv)
 	
 	if(myDevice->page_size == 64)
 	{
-		printf("> Device looks like Attiny85!\n");
+		printf("> Device looks like ATtiny85!\n");
 	}
 	else if(myDevice->page_size == 32)
 	{
-		printf("> Device looks like Attiny45!\n");
+		printf("> Device looks like ATtiny45!\n");
 	}
 	else
 	{
@@ -103,18 +116,24 @@ int main(int argc, char **argv)
 	}
 	
 	printf("> Available space for user application: %d bytes\n", myDevice->flash_size);
-	printf("> Suggested sleep time between sending pages: %u milliseconds\n", myDevice->write_sleep);
+	printf("> Suggested sleep time between sending pages: %ums\n", myDevice->write_sleep);
 	printf("> Whole page count: %d\n", myDevice->pages);
-	printf("> Erase function sleep duration: %d milliseconds\n", myDevice->erase_sleep);
+	printf("> Erase function sleep duration: %dms\n", myDevice->erase_sleep);
 	
 	memset(dataBuffer, 0xFF, sizeof(dataBuffer));
     
     int startAddress = 1, endAddress = 0;
-	if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress))
-	{
-    	printf("> Error parsing hex file.\n");
-		return EXIT_FAILURE;
-	}
+    if (file_type = FILE_TYPE_INTEL_HEX) {
+    	if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
+        	printf("> Error loading or parsing hex file.\n");
+    		return EXIT_FAILURE;
+    	}
+    } else if (FILE_TYPE_RAW) {
+        if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
+            printf("> Error loading raw file.\n");
+            return EXIT_FAILURE;
+        }
+    }
 
 	if(startAddress >= endAddress)
 	{
@@ -124,7 +143,7 @@ int main(int argc, char **argv)
 	
 	if(endAddress > myDevice->flash_size)
 	{
-		printf("> Program file is too big for the bootloader!\n");
+		printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - myDevice->flash_size);
 		return EXIT_FAILURE;
 	}
 	
@@ -206,7 +225,7 @@ static int  parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endA
 int     address, base, d, segment, i, lineLen, sum;
 FILE    *input;
 
-    input = fopen(hexfile, "r");
+    input = strcmp(hexfile, "-") == 0 ? stdin : fopen(hexfile, "r");
     if(input == NULL){
         printf("> Error opening %s: %s\n", hexfile, strerror(errno));
         return 1;
@@ -234,6 +253,36 @@ FILE    *input;
         if(*endAddr < address)
             *endAddr = address;
     }
+    fclose(input);
+    return 0;
+}
+/******************************************************************************/
+
+/******************************************************************************/
+static int parseRaw(char *filename, char* data_buffer, int *start_address, int *end_address) {
+    FILE *input;
+    
+    input = strcmp(filename, "-") == 0 ? stdin : fopen(filename, "r");
+    
+    if (input == NULL) {
+        printf("> Error reading %s: %s\n", filename, strerror(errno));
+        return 1;
+    }
+    
+    *start_address = 0;
+    *end_address = 0;
+    
+    // read in bytes from file
+    int byte = 0;
+    while (1) {
+        byte = getc(input);
+        if (byte == EOF) break;
+        
+        *data_buffer = byte;
+        data_buffer += 1;
+        *end_address += 1;
+    }
+    
     fclose(input);
     return 0;
 }
