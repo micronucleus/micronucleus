@@ -11,3 +11,4 @@ firmware/main.c.lst
 firmware/main.map
 firmware/main.o
 firmware/usbdrv/oddebug.c.lst
+firmware/main.hex
