@@ -1,0 +1,10 @@
+This commandline application for the Micronucleus bootloader is written by ihsan Kehribar <ihsan@kehribar.me>
+
+I have only tested this application on my Ubuntu machine so far. Might need little tweaks for the Windows and Mac platforms.
+
+Usage example:
+	sudo ./micronucleus name_of_the_file.hex
+
+Binary file writing and program memory reading hasn't been implemented yet.
+
+Program sometimes sporadicly crashes and fails to upload the user application. User should unplug and re-plug the device and restart the application if such situation happens. I hope this problem will be solved in the future.
