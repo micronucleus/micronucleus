@@ -1,18 +1,19 @@
 /* Name: main.c
- * Project: USBaspLoader
- * Author: Christian Starkjohann
+ * Project: Micronucleus
+ * Author: Jenna Fox
  * Creation Date: 2007-12-08
  * Tabsize: 4
- * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
- * Portions Copyright: (c) 2012 Louis Beaudoin
+ * Copyright: (c) 2012 Jenna Fox
+ * Portions Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH (USBaspLoader)
+ * Portions Copyright: (c) 2012 Louis Beaudoin (USBaspLoader-tiny85)
  * License: GNU GPL v2 (see License.txt)
- * This Revision: $Id: main.c 786 2010-05-30 20:41:40Z cs $
  */
  
-#define UBOOT_VERSION 2
+#define MICRONUCLEUS_VERSION_MAJOR 1
+#define MICRONUCLEUS_VERSION_MINOR 3
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define UBOOT_WRITE_SLEEP 8
+#define MICRONUCLEUS_WRITE_SLEEP 8
 
 
 #include <avr/io.h>
@@ -69,7 +70,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 //////// Stuff Bluebie Added
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
 // and used to in USBaspLoader-tiny85 store the checksum iirc
-#define POSTSCRIPT_SIZE 6 /* maybe it could be 4 now we do not have checksums? */
+#define POSTSCRIPT_SIZE 4
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 // verify the bootloader address aligns with page size
@@ -225,7 +226,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
-        UBOOT_WRITE_SLEEP
+        MICRONUCLEUS_WRITE_SLEEP
     };
     
     if (rq->bRequest == 0) { // get device info
@@ -267,8 +268,8 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
         }
         
         // make sure we don't write over the bootloader!
-        if (currentAddress >= PROGMEM_SIZE) {
-            __boot_page_fill_clear();
+        if (currentAddress >= BOOTLOADER_ADDRESS) {
+            //__boot_page_fill_clear();
             break;
         }
         
@@ -348,6 +349,8 @@ static inline void tiny85FlashWrites(void) {
 
 // reset system to a normal state and launch user program
 static inline __attribute__((noreturn)) void leaveBootloader(void) {
+    _delay_ms(10); // removing delay causes USB errors
+    
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
@@ -388,7 +391,6 @@ int __attribute__((noreturn)) main(void) {
 
 #           if BOOTLOADER_CAN_EXIT            
                 if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
-                    _delay_ms(10); // removing delay causes USB errors
                     break;
                 }
 #           endif
