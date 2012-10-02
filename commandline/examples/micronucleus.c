@@ -1,24 +1,24 @@
 /*
-	Created: September 2012
-	by ihsan Kehribar <ihsan@kehribar.me>
-	
-	Permission is hereby granted, free of charge, to any person obtaining a copy of
-	this software and associated documentation files (the "Software"), to deal in
-	the Software without restriction, including without limitation the rights to
-	use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
-	of the Software, and to permit persons to whom the Software is furnished to do
-	so, subject to the following conditions:
+  Created: September 2012
+  by ihsan Kehribar <ihsan@kehribar.me>
+  
+  Permission is hereby granted, free of charge, to any person obtaining a copy of
+  this software and associated documentation files (the "Software"), to deal in
+  the Software without restriction, including without limitation the rights to
+  use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+  of the Software, and to permit persons to whom the Software is furnished to do
+  so, subject to the following conditions:
 
-	The above copyright notice and this permission notice shall be included in all
-	copies or substantial portions of the Software.
+  The above copyright notice and this permission notice shall be included in all
+  copies or substantial portions of the Software.
 
-	THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-	IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-	FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-	AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-	LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-	OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-	SOFTWARE.	
+  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+  SOFTWARE.  
 */
 
 #include <stdio.h>
@@ -30,11 +30,12 @@
 
 #define FILE_TYPE_INTEL_HEX 1
 #define FILE_TYPE_RAW 2
+#define CONNECT_WAIT 750 /* milliseconds to wait after detecting device on usb bus - probably excessive */
 
 /******************************************************************************
 * Global definitions 
 ******************************************************************************/
-unsigned char		dataBuffer[65536 + 256];    /* buffer for file data */
+unsigned char dataBuffer[65536 + 256];    /* buffer for file data */
 /*****************************************************************************/
 
 /******************************************************************************
@@ -44,246 +45,292 @@ static int parseRaw(char *hexfile, char* buffer, int *startAddr, int *endAddr);
 static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr); /* taken from bootloadHID example from obdev */
 static int parseUntilColon(FILE *fp); /* taken from bootloadHID example from obdev */
 static int parseHex(FILE *fp, int numDigits); /* taken from bootloadHID example from obdev */
+static void printProgress(float progress);
+static void setProgressData(char* friendly, int step);
+static int progress_step = 0; // current step
+static int progress_total_steps = 0; // total steps for upload
+static char* progress_friendly_name; // name of progress section
+static int dump_progress = 0; // output computer friendly progress info
 /*****************************************************************************/
 
 /******************************************************************************
 * Main function!
 ******************************************************************************/
-int main(int argc, char **argv)
-{
-	int res;
-	char *file = NULL;
-	micronucleus *myDevice = NULL;
+int main(int argc, char **argv) {
+  int res;
+  char *file = NULL;
+  micronucleus *my_device = NULL;
 
-    // parse arguments
-    int run = 0;
-    int file_type = FILE_TYPE_INTEL_HEX;
-    int arg_pointer = 1;
-    char* usage = "usage: micronucleus [--run] [--type intel-hex|raw] [<intel-hexfile>|-]";
+  // parse arguments
+  int run = 0;
+  int file_type = FILE_TYPE_INTEL_HEX;
+  int arg_pointer = 1;
+  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [<intel-hexfile>|-]";
+  progress_step = 0;
+  progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
+  dump_progress = 0;
+  
+  while (arg_pointer < argc) {
+    if (strcmp(argv[arg_pointer], "--run") == 0) {
+      run = 1;
+      progress_total_steps += 1;
+    } else if (strcmp(argv[arg_pointer], "--type") == 0) {
+      arg_pointer += 1;
+      if (strcmp(argv[arg_pointer], "intel-hex") == 0) {
+          file_type = FILE_TYPE_INTEL_HEX;
+      } else if (strcmp(argv[arg_pointer], "raw") == 0) {
+          file_type = FILE_TYPE_RAW;
+      } else {
+          printf("Unknown File Type specified with --type option");
+      }
+    } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
+      puts(usage);
+      return EXIT_SUCCESS;
+    } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
+      dump_progress = 1;
+    } else {
+      file = argv[arg_pointer];
+    }
+    arg_pointer += 1;
+  }
+  
+  if (argc < 2) {
+    puts(usage);
+    return EXIT_FAILURE;
+  }
+  
+  setProgressData("waiting", 1);
+  printProgress(0.5);
+  printf("> Please plug the device ... \n");
+  printf("> Press CTRL+C to terminate the program.\n");
+  
+  while (my_device == NULL) {
+    my_device = micronucleus_connect();
+    delay(250);
+  }
+  
+  printf("> Device is found!\n");
+  
+  // wait for CONNECT_WAIT milliseconds with progress output
+  float wait = 0.0f;
+  setProgressData("connecting", 2);
+  while (wait < CONNECT_WAIT) {
+    printProgress((wait / ((float) CONNECT_WAIT)) * 0.9f);
+    wait += 50.0f;
+    delay(50);
+  }
+  
+  my_device = micronucleus_connect();
+  printProgress(1.0);
     
-    while (arg_pointer < argc) {
-        if (strcmp(argv[arg_pointer], "--run") == 0) {
-            run = 1;
-        } else if (strcmp(argv[arg_pointer], "--type") == 0) {
-            arg_pointer += 1;
-            if (strcmp(argv[arg_pointer], "intel-hex") == 0) {
-                file_type = FILE_TYPE_INTEL_HEX;
-            } else if (strcmp(argv[arg_pointer], "raw") == 0) {
-                file_type = FILE_TYPE_RAW;
-            } else {
-                printf("Unknown File Type specified with --type option");
-            }
-        } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
-            puts(usage);
-            return EXIT_SUCCESS;
-        } else {
-            file = argv[arg_pointer];
-        }
-        arg_pointer += 1;
+  if (my_device->page_size == 64) {
+    printf("> Device looks like ATtiny85!\n");
+  }
+  else if (my_device->page_size == 32)  {
+    printf("> Device looks like ATtiny45!\n");
+  }  else {
+    printf("> Unsupported device!\n");
+    return EXIT_FAILURE;
+  }
+  
+  printf("> Available space for user application: %d bytes\n", my_device->flash_size);
+  printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
+  printf("> Whole page count: %d\n", my_device->pages);
+  printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
+  
+  setProgressData("parsing", 3);
+  printProgress(0.0);
+  memset(dataBuffer, 0xFF, sizeof(dataBuffer));
+  
+  int startAddress = 1, endAddress = 0;
+  if (file_type = FILE_TYPE_INTEL_HEX) {
+    if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
+      printf("> Error loading or parsing hex file.\n");
+      return EXIT_FAILURE;
     }
-	if (argc < 2) {
-		puts(usage);
-		return EXIT_FAILURE;
-	}
-	
-	
-	printf("> Please plug the device ... \n");
-	printf("> Press CTRL+C to terminate the program.\n");
-	
-	while(myDevice == NULL)
-	{
-		myDevice = micronucleus_connect();
-		delay(250);
-	}
+  } else if (FILE_TYPE_RAW) {
+    if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
+      printf("> Error loading raw file.\n");
+      return EXIT_FAILURE;
+    }
+  }
+  
+  printProgress(1.0);
 
-	printf("> Device is found!\n");
-	
-	delay(750);
-	myDevice = micronucleus_connect();
-	
-	if(myDevice->page_size == 64)
-	{
-		printf("> Device looks like ATtiny85!\n");
-	}
-	else if(myDevice->page_size == 32)
-	{
-		printf("> Device looks like ATtiny45!\n");
-	}
-	else
-	{
-		printf("> Unsupported device!\n");
-		return EXIT_FAILURE;
-	}
-	
-	printf("> Available space for user application: %d bytes\n", myDevice->flash_size);
-	printf("> Suggested sleep time between sending pages: %ums\n", myDevice->write_sleep);
-	printf("> Whole page count: %d\n", myDevice->pages);
-	printf("> Erase function sleep duration: %dms\n", myDevice->erase_sleep);
-	
-	memset(dataBuffer, 0xFF, sizeof(dataBuffer));
+  if (startAddress >= endAddress) {
+    printf("> No data in input file, exiting.\n");
+    return EXIT_FAILURE;
+  }
+  
+  if (endAddress > my_device->flash_size) {
+    printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - my_device->flash_size);
+    return EXIT_FAILURE;
+  }
+  
+  setProgressData("erasing", 4);
+  printf("> Erasing the memory ...\n");
+  res = micronucleus_eraseFlash(my_device, printProgress);
+  if (res != 0) {
+    printf(">> Abort mission! An error has occured ...\n");
+    printf(">> Please unplug the device and restart the program. \n");
+    return EXIT_FAILURE;
+  }
+  printProgress(1.0);
+  
+  printf("> Starting to upload ...\n");
+  setProgressData("writing", 5);
+  res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
+  if (res != 0) {
+    printf(">> Abort mission! An error has occured ...\n");
+    printf(">> Please unplug the device and restart the program. \n");
+    return EXIT_FAILURE;
+  }
+  
+  if (run) {
     
-    int startAddress = 1, endAddress = 0;
-    if (file_type = FILE_TYPE_INTEL_HEX) {
-    	if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
-        	printf("> Error loading or parsing hex file.\n");
-    		return EXIT_FAILURE;
-    	}
-    } else if (FILE_TYPE_RAW) {
-        if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
-            printf("> Error loading raw file.\n");
-            return EXIT_FAILURE;
-        }
+    printf("> Starting the user app ...\n");
+    setProgressData("running", 6);
+    printProgress(0.0);
+    
+    res = micronucleus_startApp(my_device);
+    
+    if (res != 0) {
+      printf(">> Abort mission! An error has occured ...\n");
+      printf(">> Please unplug the device and restart the program. \n");
+      return EXIT_FAILURE;
     }
-
-	if(startAddress >= endAddress)
-	{
-		printf("> No data in input file, exiting.\n");
-		return EXIT_FAILURE;
-	}
-	
-	if(endAddress > myDevice->flash_size)
-	{
-		printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - myDevice->flash_size);
-		return EXIT_FAILURE;
-	}
-	
-	/* Prints the decoded intel hex file */
-	/*printf("> Decoded hex file starts ... \n");
-	for(i=startAddress;i<endAddress;i+=16)
-	{
-		printf("%5d:\t",i);
-		for(k=0;k<16;k++)
-			printf("%2X ",dataBuffer[i+k]);
-		printf("\n");
-	}
-	printf("> Decoded hex file ends ... \n");*/
-
-	printf("> Erasing the memory ...\n");
-	res = micronucleus_eraseFlash(myDevice);
-	if(res!=0)
-	{
-		printf(">> Abort mission! An error has occured ...\n");
-		printf(">> Please unplug the device and restart the program. \n");
-		return EXIT_FAILURE;
-	}
-	
-	printf("> Starting to upload ...\n");	
-	res = micronucleus_writeFlash(myDevice,endAddress,dataBuffer);
-	if(res!=0)
-	{
-		printf(">> Abort mission! An error has occured ...\n");
-		printf(">> Please unplug the device and restart the program. \n");
-		return EXIT_FAILURE;
-	}
-	
-	if (run)
-	{
-    	printf("> Starting the user app ...\n");
-    	res = micronucleus_startApp(myDevice);
-    	if(res!=0)
-    	{
-    		printf(">> Abort mission! An error has occured ...\n");
-    		printf(">> Please unplug the device and restart the program. \n");
-    		return EXIT_FAILURE;
-    	}
-    }
-
-	printf(">> Micronucleus done. Thank you!\n");
-
-	return EXIT_SUCCESS;
+    
+    printProgress(1.0);
+  }
+  
+  printf(">> Micronucleus done. Thank you!\n");
+  
+  return EXIT_SUCCESS;
 }
 /******************************************************************************/
 
 /******************************************************************************/
-static int  parseUntilColon(FILE *fp)
-{
-int c;
+static void printProgress(float progress) {
+  static int last_step;
+  
+  if (dump_progress) {
+    printf("status:%s,step:%d,steps:%d,progress:%f\n", progress_friendly_name, progress_step, progress_total_steps, progress);
+  } else {
+    #ifndef WIN
+      if (last_step == progress_step) {
+        printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
+      }
+    #endif
+    printf("%s: %d%% complete\n", progress_friendly_name, (int) (progress * 100.0f));
+  }
+  
+  last_step = progress_step;
+}
 
-    do{
-        c = getc(fp);
-    }while(c != ':' && c != EOF);
-    return c;
+static void setProgressData(char* friendly, int step) {
+  progress_friendly_name = friendly;
+  progress_step = step;
 }
 /******************************************************************************/
 
 /******************************************************************************/
-static int  parseHex(FILE *fp, int numDigits)
-{
-int     i;
-char    temp[9];
-
-    for(i = 0; i < numDigits; i++)
-        temp[i] = getc(fp);
-    temp[i] = 0;
-    return strtol(temp, NULL, 16);
+static int parseUntilColon(FILE *file_pointer) {
+  int character;
+  
+  do {
+    character = getc(file_pointer);
+  } while(character != ':' && character != EOF);
+  
+  return character;
 }
 /******************************************************************************/
 
 /******************************************************************************/
-static int  parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr)
-{
-int     address, base, d, segment, i, lineLen, sum;
-FILE    *input;
+static int parseHex(FILE *file_pointer, int num_digits) {
+  int iter;
+  char temp[9];
 
-    input = strcmp(hexfile, "-") == 0 ? stdin : fopen(hexfile, "r");
-    if(input == NULL){
-        printf("> Error opening %s: %s\n", hexfile, strerror(errno));
-        return 1;
+  for(iter = 0; iter < num_digits; iter++) {
+    temp[iter] = getc(file_pointer);
+  }
+  temp[iter] = 0;
+  
+  return strtol(temp, NULL, 16);
+}
+/******************************************************************************/
+
+/******************************************************************************/
+static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr) {
+  int address, base, d, segment, i, lineLen, sum;
+  FILE *input;
+  
+  input = strcmp(hexfile, "-") == 0 ? stdin : fopen(hexfile, "r");
+  if (input == NULL) {
+    printf("> Error opening %s: %s\n", hexfile, strerror(errno));
+    return 1;
+  }
+  
+  while (parseUntilColon(input) == ':') {
+    sum = 0;
+    sum += lineLen = parseHex(input, 2);
+    base = address = parseHex(input, 4);
+    sum += address >> 8;
+    sum += address;
+    sum += segment = parseHex(input, 2);  /* segment value? */
+    if (segment != 0) {   /* ignore lines where this byte is not 0 */
+      continue;
     }
-    while(parseUntilColon(input) == ':'){
-        sum = 0;
-        sum += lineLen = parseHex(input, 2);
-        base = address = parseHex(input, 4);
-        sum += address >> 8;
-        sum += address;
-        sum += segment = parseHex(input, 2);  /* segment value? */
-        if(segment != 0)    /* ignore lines where this byte is not 0 */
-            continue;
-        for(i = 0; i < lineLen ; i++){
-            d = parseHex(input, 2);
-            buffer[address++] = d;
-            sum += d;
-        }
-        sum += parseHex(input, 2);
-        if((sum & 0xff) != 0){
-            printf("> Warning: Checksum error between address 0x%x and 0x%x\n", base, address);
-        }
-        if(*startAddr > base)
-            *startAddr = base;
-        if(*endAddr < address)
-            *endAddr = address;
+    
+    for (i = 0; i < lineLen; i++) {
+      d = parseHex(input, 2);
+      buffer[address++] = d;
+      sum += d;
     }
-    fclose(input);
-    return 0;
+    
+    sum += parseHex(input, 2);
+    if ((sum & 0xff) != 0) {
+      printf("> Warning: Checksum error between address 0x%x and 0x%x\n", base, address);
+    }
+    
+    if(*startAddr > base) {
+      *startAddr = base;
+    }
+    if(*endAddr < address) {
+      *endAddr = address;
+    }
+  }
+  
+  fclose(input);
+  return 0;
 }
 /******************************************************************************/
 
 /******************************************************************************/
 static int parseRaw(char *filename, char* data_buffer, int *start_address, int *end_address) {
-    FILE *input;
+  FILE *input;
+  
+  input = strcmp(filename, "-") == 0 ? stdin : fopen(filename, "r");
+  
+  if (input == NULL) {
+    printf("> Error reading %s: %s\n", filename, strerror(errno));
+    return 1;
+  }
+  
+  *start_address = 0;
+  *end_address = 0;
+  
+  // read in bytes from file
+  int byte = 0;
+  while (1) {
+    byte = getc(input);
+    if (byte == EOF) break;
     
-    input = strcmp(filename, "-") == 0 ? stdin : fopen(filename, "r");
-    
-    if (input == NULL) {
-        printf("> Error reading %s: %s\n", filename, strerror(errno));
-        return 1;
-    }
-    
-    *start_address = 0;
-    *end_address = 0;
-    
-    // read in bytes from file
-    int byte = 0;
-    while (1) {
-        byte = getc(input);
-        if (byte == EOF) break;
-        
-        *data_buffer = byte;
-        data_buffer += 1;
-        *end_address += 1;
-    }
-    
-    fclose(input);
-    return 0;
+    *data_buffer = byte;
+    data_buffer += 1;
+    *end_address += 1;
+  }
+  
+  fclose(input);
+  return 0;
 }
 /******************************************************************************/
