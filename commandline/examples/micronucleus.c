@@ -223,7 +223,7 @@ static void printProgress(float progress) {
   static int last_step;
   
   if (dump_progress) {
-    printf("status:%s,step:%d,steps:%d,progress:%f\n", progress_friendly_name, progress_step, progress_total_steps, progress);
+    printf("{status:\"%s\",step:%d,steps:%d,progress:%f}\n", progress_friendly_name, progress_step, progress_total_steps, progress);
   } else {
     #ifndef WIN
       if (last_step == progress_step) {
