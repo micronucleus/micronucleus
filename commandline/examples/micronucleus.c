@@ -100,8 +100,8 @@ int main(int argc, char **argv) {
   }
   
   setProgressData("waiting", 1);
-  printProgress(0.5);
-  printf("> Please plug the device ... \n");
+  if (dump_progress) printProgress(0.5);
+  printf("> Please plug in the device ... \n");
   printf("> Press CTRL+C to terminate the program.\n");
   
   while (my_device == NULL) {
@@ -221,7 +221,10 @@ static void printProgress(float progress) {
         printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
       }
     #endif
-    printf("%s: %d%% complete\n", progress_friendly_name, (int) (progress * 100.0f));
+    
+    float total_progress = ((float) progress_step - 1.0f) / (float) progress_total_steps;
+    total_progress += progress / (float) progress_total_steps;
+    printf("%s: %d%% complete\n", progress_friendly_name, (int) (total_progress * 100.0f));
   }
   
   last_step = progress_step;

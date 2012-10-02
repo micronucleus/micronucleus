@@ -34,14 +34,17 @@
 #endif
 //#include "opendevice.h"      // common code moved to separate module
 #include <assert.h>
+#include <stdio.h>
+#include <stdlib.h>
 /*******************************************************************************/
 
 /********************************************************************************
 * USB details
 ********************************************************************************/
-#define  MICRONUCLEUS_VENDOR_ID   0x16D0
-#define  MICRONUCLEUS_PRODUCT_ID   0x0753
-#define  MICRONUCLEUS_USB_TIMEOUT 0xFFFF
+#define MICRONUCLEUS_VENDOR_ID   0x16D0
+#define MICRONUCLEUS_PRODUCT_ID  0x0753
+#define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
+#define MICRONUCLEUS_MAX_MAJOR_VERSION 1
 /*******************************************************************************/
 
 /********************************************************************************
