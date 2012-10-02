@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [<intel-hexfile>|-]";
+  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] filename";
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
@@ -85,6 +85,15 @@ int main(int argc, char **argv) {
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
       puts(usage);
+      puts("");
+      puts("  --type [intel-hex, raw]: Set upload file type to either intel hex or raw");
+      puts("                           bytes (intel hex is default)");
+      puts("          --dump-progress: Output progress data in computer-friendly form");
+      puts("                           for driving GUIs");
+      puts("                    --run: Ask bootloader to run the program when finished");
+      puts("                           uploading provided program");
+      puts("                 filename: Path to intel hex or raw data file to upload,");
+      puts("                           or \"-\" to read from stdin");
       return EXIT_SUCCESS;
     } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
       dump_progress = 1;
