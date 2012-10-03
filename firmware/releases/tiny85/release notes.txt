@@ -1,0 +1,27 @@
+== 1.04 - not yet released ==
+
+firmware:
+ o Further reduction in code size - not enough to gain another page yet
+ o Reduced default configuration's timeout from 5ms to 2.5ms - seems to work on Mac, Windows 7, and Linux
+
+commandline:
+ o Added percentage progress logging
+ o New --dump-progress option outputs computer readable JSON lines, for driving GUIs, including raw progress bar data
+ o Can pass "-" as filename to upload via stdin, for GUI apps
+ o Exit code is more reliably not zero when an error occurs, and zero when upload succeeds flawlessly
+ o Detect and refuse to upload to unknown newer versions of firmware
+ o Adjusted some delays - uploads now take about a quarter to half of a second less time
+
+== 1.03 - released 2012-9-30 ==
+
+ o Reduced bootloader size by one page, expanding memory for user program by 64 bytes
+ o Adjusted tinyvector table to correct size (four bytes) - giving user program two more bytes
+ o Changed upload protocol in an incompatible way to enable smaller bootloaders in the future
+ o Now we have a command line tool (which detects 1.02 and works around upload protocol differences)
+ o Now requires all pages be written
+ o 'Finish' command repurposed as 'run' command for bootloader configs where running user program maybe optional
+
+== 1.02 - released 2012-9-30 ==
+
+ o Most recent build before next release where some subtle protocol changes took place
+ 
