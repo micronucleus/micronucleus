@@ -78,6 +78,13 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #  error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
 #endif
 
+#ifdef AUTO_EXIT_MS
+#  if AUTO_EXIT_MS < (MICRONUCLEUS_WRITE_SLEEP * (BOOTLOADER_ADDRESS / SPM_PAGESIZE))
+#    warning "AUTO_EXIT_MS is shorter than the time it takes to perform erase function - might affect reliability?"
+#    warning "Try increasing AUTO_EXIT_MS if you have stability problems"
+#  endif
+#endif
+
 // events system schedules functions to run in the main loop
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
@@ -96,8 +103,7 @@ static uchar events = 0; // bitmap of events to run
 // lets leaveBootloader know if needs to finish up the programming
 static uchar didWriteSomething = 0;
 
-
-
+uint16_t idlePolls = 0; // how long have we been idle?
 
 
 
@@ -116,7 +122,7 @@ static inline void initForUsbConnectivity(void);
 static inline void tiny85FlashInit(void);
 static inline void tiny85FlashWrites(void);
 //static inline void tiny85FinishWriting(void);
-static inline __attribute__((noreturn)) void leaveBootloader(void);
+static inline void leaveBootloader(void);
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
 //  - Because flash can be erased once and programmed several times, we can write the bootloader
@@ -222,6 +228,8 @@ static void fillFlashWithVectors(void) {
 
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
+    idlePolls = 0; // reset idle polls when we get usb traffic
+    
     static uchar replyBuffer[4] = {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
@@ -348,7 +356,7 @@ static inline void tiny85FlashWrites(void) {
 // }
 
 // reset system to a normal state and launch user program
-static inline __attribute__((noreturn)) void leaveBootloader(void) {
+static inline void leaveBootloader(void) {
     _delay_ms(10); // removing delay causes USB errors
     
     //DBG1(0x01, 0, 0);
@@ -366,8 +374,6 @@ static inline __attribute__((noreturn)) void leaveBootloader(void) {
 }
 
 int __attribute__((noreturn)) main(void) {
-    uint16_t idlePolls = 0;
-
     /* initialize  */
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
@@ -380,8 +386,6 @@ int __attribute__((noreturn)) main(void) {
             usbPoll();
             _delay_us(100);
             idlePolls++;
-            
-            if (events) idlePolls = 0;
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
             // and usually both of these will activate in the same loop, so host
