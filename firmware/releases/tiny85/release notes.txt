@@ -3,6 +3,11 @@
 firmware:
  o Further reduction in code size - not enough to gain another page yet
  o Reduced default configuration's timeout from 5ms to 2.5ms - seems to work on Mac, Windows 7, and Linux
+ o Timeout mechanism now more robust - any usb requests reset timeout
+ o You can poll info requests once every half second or so to keep bootloader captive, so it doesn't launch user program
+  -- this is useful for programs which are likely to do strange things to the USB data lines - less freaking out usb
+  -- root hubs in specialist applications where that can be predicted
+ o Added warning when bootloader configured with idle timeout below duration of erase request (the longest running request)
 
 commandline:
  o Added percentage progress logging
@@ -11,6 +16,13 @@ commandline:
  o Exit code is more reliably not zero when an error occurs, and zero when upload succeeds flawlessly
  o Detect and refuse to upload to unknown newer versions of firmware
  o Adjusted some delays - uploads now take about a quarter to half of a second less time
+ o `make install` works and installs to /usr/local/bin (anyone know how to make this smarter?)
+
+commandline's c library:
+ o progress argument to eraseFlash and writeFlash functions - a function to call frequently with progress data
+  -- eraseFlash: library currently simulates progress, by providing the erase_sleep progress in steps of 1%
+  -- writeFlash: provides real progress, at about one update every write_sleep milliseconds (usually about 8-10ms)
+
 
 == 1.03 - released 2012-9-30 ==
 
@@ -21,7 +33,9 @@ commandline:
  o Now requires all pages be written
  o 'Finish' command repurposed as 'run' command for bootloader configs where running user program maybe optional
 
+
 == 1.02 - released 2012-9-30 ==
 
  o Most recent build before next release where some subtle protocol changes took place
+
  
