@@ -204,7 +204,7 @@ these macros are defined, the boot loader uses them.
 
 
 /* max 6200ms to not overflow idlePolls variable */
-#define AUTO_EXIT_MS    5000
+#define AUTO_EXIT_MS    2500
 //#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
 
 
