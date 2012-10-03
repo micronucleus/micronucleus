@@ -30,7 +30,7 @@
 
 #define FILE_TYPE_INTEL_HEX 1
 #define FILE_TYPE_RAW 2
-#define CONNECT_WAIT 750 /* milliseconds to wait after detecting device on usb bus - probably excessive */
+#define CONNECT_WAIT 250 /* milliseconds to wait after detecting device on usb bus - probably excessive */
 
 /******************************************************************************
 * Global definitions 
@@ -114,8 +114,8 @@ int main(int argc, char **argv) {
   printf("> Press CTRL+C to terminate the program.\n");
   
   while (my_device == NULL) {
+    delay(100);
     my_device = micronucleus_connect();
-    delay(250);
   }
   
   printf("> Device is found!\n");
@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
     delay(50);
   }
   
-  my_device = micronucleus_connect();
+  //my_device = micronucleus_connect();
   printProgress(1.0);
     
   if (my_device->page_size == 64) {
