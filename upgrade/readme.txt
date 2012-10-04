@@ -9,7 +9,9 @@ The program then emits a beep if a piezo speaker is connected between PB0 and PB
 Creating an Upgrader
 ====================
 
-    ruby generate-data my_bootloader.hex
+    ruby generate-data.rb my_bootloader.hex
     make clean; make
 
 Next upload the 'upgrade.hex' file generated, via whichever bootloader you're using. If you're using micronucleus and have the command line tool installed: micronucleus --run upgrade.hex
+
+The ruby script requires ruby 1.9 be installed. On Mac OS this is best achieved via Mac Homebrew. The 1.8 version included wont do.
