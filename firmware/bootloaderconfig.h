@@ -16,7 +16,6 @@
 #define BOOTLOADER_ADDRESS 0
 #endif
 
-
 /*
 General Description:
 This file (together with some settings in Makefile) configures the boot loader
@@ -207,9 +206,22 @@ these macros are defined, the boot loader uses them.
 #define AUTO_EXIT_MS    2500
 //#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
 
+// uncomment for chips with clkdiv8 enabled in fuses
+//#define LOW_POWER_MODE 1
+// restore cpu speed calibration back to 8/16mhz instead of 8.25/16.5mhz
+//#define RESTORE_OSCCAL 1
+// set clock prescaler to a value before running user program
+//#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
 
 #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
-
+#if LOW_POWER_MODE
+  // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
+  // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
+  #define bootLoaderStartCondition() \
+    (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
+#else
+  #define bootLoaderStartCondition() 1
+#endif
 
 /* ----------------------- Optional MCU Description ------------------------ */
 

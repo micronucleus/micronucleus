@@ -375,12 +375,26 @@ static inline void leaveBootloader(void) {
 
 int __attribute__((noreturn)) main(void) {
     /* initialize  */
+    #ifdef RESTORE_OSCCAL
+        uint8_t osccal_default = OSCCAL;
+    #endif
+    #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
+        uint8_t prescaler_default = CLKPR;
+    #endif
+    
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
     bootLoaderInit();
     
     
-    if (bootLoaderCondition()) {
+    if (bootLoaderStartCondition()) {
+        #if LOW_POWER_MODE
+            // turn off clock prescalling - chip must run at full speed for usb
+            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
+            CLKPR = 1 << CLKPCE;
+            CLKPR = 0;
+        #endif
+        
         initForUsbConnectivity();
         do {
             usbPoll();
@@ -404,6 +418,21 @@ int __attribute__((noreturn)) main(void) {
         } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
+    // set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
+    #if LOW_POWER_MODE
+        #ifdef SET_CLOCK_PRESCALER
+            CLKPR = 1 << CLKPCE;
+            CLKPR = SET_CLOCK_PRESCALER;
+        #else
+            CLKPR = 1 << CLKPCE;
+            CLKPR = prescaler_default;
+        #endif
+    #endif
+    
+    // slowly bring down OSCCAL to it's original value before launching in to user program
+    #ifdef RESTORE_OSCCAL
+        while (OSCCAL > osccal_default) { OSCCAL -= 1; }
+    #endif
     leaveBootloader();
 }
 
