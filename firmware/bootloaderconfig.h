@@ -203,7 +203,7 @@ these macros are defined, the boot loader uses them.
 
 
 /* max 6200ms to not overflow idlePolls variable */
-#define AUTO_EXIT_MS    2000
+#define AUTO_EXIT_MS    2500
 //#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
 
 // uncomment for chips with clkdiv8 enabled in fuses
