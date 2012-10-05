@@ -157,7 +157,7 @@ class HexProgram
 
       checksum_calculated = (((checksum_calculated % 256) ^ 0xFF) + 1) % 256
 
-      raise "Hex file checksum mismatch @ #{line}" unless checksum == checksum_calculated
+      raise "Hex file checksum mismatch @ #{line} should be #{checksum_calculated.to_s(16)}" unless checksum == checksum_calculated
 
       if record_type == 0 # data record
         data_bytes = data.chars.each_slice(2).map { |slice| slice.join('').to_i(16) }
