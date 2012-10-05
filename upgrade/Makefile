@@ -18,8 +18,8 @@ DEVICE = attiny85
 FUSEOPT = $(FUSEOPT_t85)
 LOCKOPT = -U lock:w:0x2f:m
 
-# app starts at beginning, as it should!
-APP_ADDRESS = 0
+# app starts two pages in, so we can mess around with the first page for leet ISR hax
+APP_ADDRESS = 80
 
 PROGRAMMER = -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
@@ -192,7 +192,9 @@ upgrade.bin:	$(OBJECTS)
 
 upgrade.hex:	upgrade.bin
 	rm -f upgrade.hex upgrade.eep.hex
-	avr-objcopy -j .text -j .data -O ihex upgrade.bin upgrade.hex
+	avr-objcopy -j .text -j .data -O ihex upgrade.bin upgrade-app.hex
+	cat upgrade-prefix.hex upgrade-app.hex > upgrade.hex
+	rm upgrade-app.hex
 	avr-size upgrade.hex
 
 disasm:	upgrade.bin

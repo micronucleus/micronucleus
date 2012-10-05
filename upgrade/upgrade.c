@@ -37,7 +37,11 @@ void write_page(uint16_t address, uint16_t words[SPM_PAGESIZE / 2]);
 
 
 int main(void) {
-  delay(100); // milliseconds
+  pinsOff(0xFF); // pull down all pins
+  outputs(0xFF); // all to ground - force usb disconnect
+  delay(250); // milliseconds
+  inputs(0xFF); // let them float
+  delay(250);
   cli();
   
   secure_interrupt_vector_table(); // reset our vector table to it's original state
@@ -58,7 +62,7 @@ void secure_interrupt_vector_table(void) {
   
   // wipe out any interrupt hooks the bootloader rewrote
   int i = 0;
-  while (i < 15) {
+  while (i < SPM_PAGESIZE / 2) {
     table[0] = 0xFFFF;
     i++;
   }
@@ -140,6 +144,7 @@ void write_page(uint16_t address, uint16_t words[SPM_PAGESIZE / 2]) {
 // beep for a quarter of a second
 void beep(void) {
   outputs(pin(0) | pin(1));
+  pinOff(1);
   
   byte i = 0;
   while (i < 250) {
@@ -151,15 +156,12 @@ void beep(void) {
   }
 }
 
+
 ////////////// Add padding to start of program so no program code could reasonably be erased while program is running
 // this never needs to be called - avr-gcc stuff happening: http://www.nongnu.org/avr-libc/user-manual/mem_sections.html
-void PadStartOfProgram (void) __attribute__ ((naked)) __attribute__ ((section (".init0")));
-void PushMagicWord (void) {
-  // 32 words of nop - a whole page's worth
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); 
+volatile void FakeISR (void) __attribute__ ((naked)) __attribute__ ((section (".init0")));
+volatile void FakeISR (void) {
+  // 16 nops to pad out first section of program
   asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); 
-  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); 
+  asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop"); asm("nop");
 }
-
-
