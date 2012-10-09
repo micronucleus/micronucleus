@@ -1,10 +1,20 @@
-This commandline application for the Micronucleus bootloader is written by ihsan Kehribar <ihsan@kehribar.me>
+This commandline application for the Micronucleus bootloader is written by
+ihsan Kehribar <ihsan@kehribar.me> and Bluebie <a@creativepony.com>
 
-I have only tested this application on my Ubuntu machine so far. Might need little tweaks for the Windows and Mac platforms.
+It's been tested casually on Mac, Windows, and Linux, and aught to work on all
+three. To make and install, do the regular 'make; sudo make install' on unixes.
+On windows just 'make' with mingw and do whatever people do with windows exes.
 
-Usage example:
-	sudo ./micronucleus name_of_the_file.hex
+Usage on Ubuntu:
+	sudo micronucleus --run name_of_the_file.hex
+Usage on Mac:
+  micronucleus --run name_of_the_file.hex
+Usage on Windows
+  micronucleus.exe --run name_of_the_file.hex
 
-Binary file writing and program memory reading hasn't been implemented yet.
+Raw binary file writing hasn't been tested much yet and is suspected to not
+work.
 
-Program sometimes sporadicly crashes and fails to upload the user application. User should unplug and re-plug the device and restart the application if such situation happens. I hope this problem will be solved in the future.
+Every now and then the program fails once it reaches the Writing stage - this is
+a known bug - but if you simply rerun the micronucleus command immediately, it
+will succeed the second time usually. Most of the time this issue is not present.
