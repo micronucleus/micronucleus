@@ -5,7 +5,8 @@ void delay(unsigned int duration)
 {
 	#if defined _WIN32 || defined _WIN64
 		// use windows sleep api with milliseconds
-		Sleep(duration);
+		// * 2 to make it run at half speed, because windows seems to have some trouble with this...
+		Sleep(duration * 2);
 	#else
 		// use standard unix api with microseconds
 		usleep(duration*1000);
