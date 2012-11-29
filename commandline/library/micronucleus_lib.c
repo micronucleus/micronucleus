@@ -89,7 +89,9 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
     i += 0.01;
   }
   
-  if(res!=0)
+  if (res == -5)
+    return -2;
+  if (res != 0)
     return -1;
   else
     return 0;

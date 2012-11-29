@@ -179,9 +179,29 @@ int main(int argc, char **argv) {
   setProgressData("erasing", 4);
   printf("> Erasing the memory ...\n");
   res = micronucleus_eraseFlash(my_device, printProgress);
-  if (res != 0) {
-    printf(">> Abort mission! An error has occured ...\n");
-    printf(">> Please unplug the device and restart the program. \n");
+  
+  if (res == -2) { // erase disconnection bug workaround
+    printf(">> Eep! Connection to device lost during erase! Not to worry\n");
+    printf(">> This happens on some computers - reconnecting...\n");
+    my_device = NULL;
+    
+    int deciseconds_till_reconnect_notice = 50; // notice after 5 seconds
+    while (my_device == NULL) {
+      delay(100);
+      my_device = micronucleus_connect();
+      deciseconds_till_reconnect_notice -= 1;
+      
+      if (deciseconds_till_reconnect_notice == 0) {
+        printf(">> (!) Automatic reconnection not working. Unplug and reconnect\n");
+        printf("   device usb connector, or reset it some other way to continue.\n");
+      }
+    }
+    
+    printf(">> Reconnected! Continuing upload sequence...\n");
+    
+  } else if (res != 0) {
+    printf(">> Abort mission! %d error has occured ...\n", res);
+    printf(">> Please unplug the device and restart the program.\n");
     return EXIT_FAILURE;
   }
   printProgress(1.0);
@@ -191,7 +211,7 @@ int main(int argc, char **argv) {
   res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
   if (res != 0) {
     printf(">> Abort mission! An error has occured ...\n");
-    printf(">> Please unplug the device and restart the program. \n");
+    printf(">> Please unplug the device and restart the program.\n");
     return EXIT_FAILURE;
   }
   
