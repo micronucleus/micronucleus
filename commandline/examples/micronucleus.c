@@ -152,12 +152,12 @@ int main(int argc, char **argv) {
   memset(dataBuffer, 0xFF, sizeof(dataBuffer));
   
   int startAddress = 1, endAddress = 0;
-  if (file_type = FILE_TYPE_INTEL_HEX) {
+  if (file_type == FILE_TYPE_INTEL_HEX) {
     if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
       printf("> Error loading or parsing hex file.\n");
       return EXIT_FAILURE;
     }
-  } else if (FILE_TYPE_RAW) {
+  } else if (file_type == FILE_TYPE_RAW) {
     if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
       printf("> Error loading raw file.\n");
       return EXIT_FAILURE;
