@@ -51,6 +51,7 @@ static int progress_step = 0; // current step
 static int progress_total_steps = 0; // total steps for upload
 static char* progress_friendly_name; // name of progress section
 static int dump_progress = 0; // output computer friendly progress info
+static int use_ansi = 0; // output ansi control character stuff
 /*****************************************************************************/
 
 /******************************************************************************
@@ -65,10 +66,15 @@ int main(int argc, char **argv) {
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] filename";
+  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] filename";
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
+  #if defined(WIN)
+    use_ansi = 0;
+  #else
+    use_ansi = 1;
+  #endif
   
   while (arg_pointer < argc) {
     if (strcmp(argv[arg_pointer], "--run") == 0) {
@@ -77,11 +83,11 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[arg_pointer], "--type") == 0) {
       arg_pointer += 1;
       if (strcmp(argv[arg_pointer], "intel-hex") == 0) {
-          file_type = FILE_TYPE_INTEL_HEX;
+        file_type = FILE_TYPE_INTEL_HEX;
       } else if (strcmp(argv[arg_pointer], "raw") == 0) {
-          file_type = FILE_TYPE_RAW;
+        file_type = FILE_TYPE_RAW;
       } else {
-          printf("Unknown File Type specified with --type option");
+        printf("Unknown File Type specified with --type option");
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
       puts(usage);
@@ -92,14 +98,20 @@ int main(int argc, char **argv) {
       puts("                           for driving GUIs");
       puts("                    --run: Ask bootloader to run the program when finished");
       puts("                           uploading provided program");
+      #ifndef WIN
+      puts("                --no-ansi: Don't use ANSI in terminal output");
+      #endif
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
       return EXIT_SUCCESS;
     } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
       dump_progress = 1;
+    } else if (strcmp(argv[arg_pointer], "--no-ansi") == 0) {
+      use_ansi = 0;
     } else {
       file = argv[arg_pointer];
     }
+    
     arg_pointer += 1;
   }
   
@@ -132,15 +144,14 @@ int main(int argc, char **argv) {
   //my_device = micronucleus_connect();
   printProgress(1.0);
     
-  if (my_device->page_size == 64) {
-    printf("> Device looks like ATtiny85!\n");
-  }
-  else if (my_device->page_size == 32)  {
-    printf("> Device looks like ATtiny45!\n");
-  }  else {
-    printf("> Unsupported device!\n");
-    return EXIT_FAILURE;
-  }
+  // if (my_device->page_size == 64) {
+  //   printf("> Device looks like ATtiny85!\n");
+  // } else if (my_device->page_size == 32)  {
+  //   printf("> Device looks like ATtiny45!\n");
+  // } else {
+  //   printf("> Unsupported device!\n");
+  //   return EXIT_FAILURE;
+  // }
   
   printf("> Available space for user application: %d bytes\n", my_device->flash_size);
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
@@ -241,19 +252,23 @@ int main(int argc, char **argv) {
 /******************************************************************************/
 static void printProgress(float progress) {
   static int last_step;
+  static int last_integer_total_progress;
   
   if (dump_progress) {
     printf("{status:\"%s\",step:%d,steps:%d,progress:%f}\n", progress_friendly_name, progress_step, progress_total_steps, progress);
   } else {
-    #ifndef WIN
-      if (last_step == progress_step) {
-        printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
-      }
-    #endif
+    if (last_step == progress_step && use_ansi) {
+      printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
+    }
     
     float total_progress = ((float) progress_step - 1.0f) / (float) progress_total_steps;
     total_progress += progress / (float) progress_total_steps;
-    printf("%s: %d%% complete\n", progress_friendly_name, (int) (total_progress * 100.0f));
+    int integer_total_progress = total_progress * 100.0f;
+    
+    if (use_ansi || integer_total_progress >= last_integer_total_progress + 5) {
+      printf("%s: %d%% complete\n", progress_friendly_name, integer_total_progress);
+      last_integer_total_progress = integer_total_progress;
+    }
   }
   
   last_step = progress_step;
