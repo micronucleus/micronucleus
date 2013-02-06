@@ -52,6 +52,7 @@ static int progress_total_steps = 0; // total steps for upload
 static char* progress_friendly_name; // name of progress section
 static int dump_progress = 0; // output computer friendly progress info
 static int use_ansi = 0; // output ansi control character stuff
+static int timeout = 0; // 
 /*****************************************************************************/
 
 /******************************************************************************
@@ -66,10 +67,11 @@ int main(int argc, char **argv) {
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] filename";
+  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] [--timeout integer] filename";
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
+  timeout = 0; // no timeout by default
   #if defined(WIN)
     use_ansi = 0;
   #else
@@ -88,6 +90,7 @@ int main(int argc, char **argv) {
         file_type = FILE_TYPE_RAW;
       } else {
         printf("Unknown File Type specified with --type option");
+        return EXIT_FAILURE;
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
       puts(usage);
@@ -101,6 +104,7 @@ int main(int argc, char **argv) {
       #ifndef WIN
       puts("                --no-ansi: Don't use ANSI in terminal output");
       #endif
+      puts("      --timeout [integer]: Timeout after waiting specified number of seconds");
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
       return EXIT_SUCCESS;
@@ -108,6 +112,12 @@ int main(int argc, char **argv) {
       dump_progress = 1;
     } else if (strcmp(argv[arg_pointer], "--no-ansi") == 0) {
       use_ansi = 0;
+    } else if (strcmp(argv[arg_pointer], "--timeout") == 0) {
+      arg_pointer += 1;
+      if (sscanf(argv[arg_pointer], "%d", &timeout) != 1) {
+        printf("Did not understand --timeout value\n");
+        return EXIT_FAILURE;
+      }
     } else {
       file = argv[arg_pointer];
     }
@@ -125,9 +135,23 @@ int main(int argc, char **argv) {
   printf("> Please plug in the device ... \n");
   printf("> Press CTRL+C to terminate the program.\n");
   
+  
+  time_t start_time, current_time;
+  time(&start_time);
+  
   while (my_device == NULL) {
     delay(100);
     my_device = micronucleus_connect();
+    
+    time(&current_time);
+    if (timeout && start_time + timeout < current_time) {
+      break;
+    }
+  }
+  
+  if (my_device == NULL) {
+    printf("> Device search timed out\n");
+    return EXIT_FAILURE;
   }
   
   printf("> Device is found!\n");
