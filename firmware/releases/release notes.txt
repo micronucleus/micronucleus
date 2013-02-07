@@ -1,3 +1,10 @@
+== 1.05 - 2013-2-8 ==
+not yet released
+
+firmware:
+ o Revert all timing aspects to be like 1.02 - the most reliable version ever as judged by digistump
+   - this means this is a 5 sec release
+
 == 1.04 - 2012-10-5 ==
 
 firmware:

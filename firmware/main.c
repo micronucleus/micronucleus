@@ -10,10 +10,10 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 4
+#define MICRONUCLEUS_VERSION_MINOR 5
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define MICRONUCLEUS_WRITE_SLEEP 6
+#define MICRONUCLEUS_WRITE_SLEEP 8
 
 
 #include <avr/io.h>
