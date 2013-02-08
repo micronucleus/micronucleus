@@ -241,7 +241,7 @@ these macros are defined, the boot loader uses them.
 /* #define USB_INTR_VECTOR         INT0_vect */
 
 // todo: change to pin 5
-#define DEUXVIS_JUMPER_PIN 0
+#define DEUXVIS_JUMPER_PIN 5
 #define digitalRead(pin) ((PINB >> pin) & 0b00000001)
 #define bootLoaderStartCondition() (!digitalRead(DEUXVIS_JUMPER_PIN))
 #define bootLoaderCondition()   (1)
@@ -252,6 +252,7 @@ static inline void  bootLoaderInit(void) {
   // DeuxVis pin-5 pullup
   DDRB |= _BV(DEUXVIS_JUMPER_PIN); // is an input
   PORTB |= _BV(DEUXVIS_JUMPER_PIN); // has pullup enabled
+  _delay_ms(10);
 }
 
 static inline void  bootLoaderExit(void) {
