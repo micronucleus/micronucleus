@@ -1,9 +1,12 @@
 == 1.05 - 2013-2-8 ==
-not yet released
 
 firmware:
  o Revert all timing aspects to be like 1.02 - the most reliable version ever as judged by digistump
-   - this means this is a 5 sec release
+   this means this is a 5 sec boot time release
+ o The only meaningful difference between using this and version 1.02 is 1.02 has 6010 bytes of
+   programmable space and 1.05 has 6076 bytes. This release also has the improved idlePolls mechanism
+   which might improve reliability in some cases
+ o I'm not totally sure this version is as reliable as 1.02. Maybe it's better? Maybe it's worse?
 
 == 1.04 - 2012-10-5 ==
 
