@@ -373,7 +373,7 @@ static inline void leaveBootloader(void) {
     asm volatile ("rjmp __vectors - 4");
 }
 
-int __attribute__((noreturn)) main(void) {
+int main(void) {
     /* initialize  */
     #ifdef RESTORE_OSCCAL
         uint8_t osccal_default = OSCCAL;
