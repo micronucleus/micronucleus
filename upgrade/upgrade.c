@@ -50,6 +50,8 @@ int main(void) {
   
   beep();
   
+  reboot();
+  
   return 0;
 }
 
@@ -154,6 +156,12 @@ void beep(void) {
     pinOff(pin(0));
     i++;
   }
+}
+
+void reboot(void) {
+  void (*ptrToFunction)(); // pointer to a function 
+  ptrToFunction = 0x0000;
+  (*ptrToFunction)(); // reset!
 }
 
 
