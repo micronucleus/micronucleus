@@ -7,6 +7,18 @@ firmware:
    programmable space and 1.05 has 6076 bytes. This release also has the improved idlePolls mechanism
    which might improve reliability in some cases
  o I'm not totally sure this version is as reliable as 1.02. Maybe it's better? Maybe it's worse?
+ o Now includes a -jumper. "-jumper" works exactly the same with four exceptions:
+   -> Bootloader never times out (no 5 seconds waiting)
+   -> Bootloader runs user program immediately
+   -> If you want to upload something, connect jumper between D5 / reset pin and ground
+   -> You obviously can't use this on chips which don't have their reset pin disabled
+   :: I made it for DeuxVis on digispark forum, but I mostly use it on my LittleWire. It's really great for that!
+
+upgrade:
+ o When finished upgrading runs new bootloader firmware.
+   -> you can watch for the new bootloader to connect to see when the upgrade has finished
+   -> upgrades only take about half a second, so you could just wait like five seconds
+   :: if upgrading to a micronucleus -jumper variant you might like to connect the jumper before you upgrade
 
 == 1.04 - 2012-10-5 ==
 
