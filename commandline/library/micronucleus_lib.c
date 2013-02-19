@@ -89,7 +89,15 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
     i += 0.01;
   }
   
-  if (res == -5)
+  /* Under Linux, the erase process is often aborted with errors such as:
+   usbfs: USBDEVFS_CONTROL failed cmd micronucleus rqt 192 rq 2 len 0 ret -84
+   This seems to be because the erase is taking long enough that the device
+   is disconnecting and reconnecting.  Under Windows, micronucleus can see this
+   and automatically reconnects prior to uploading the program.  To get the
+   the same functionality, we must flag this state (the "-84" error result) by
+   converting the return to -2 for the upper layer.
+  */
+  if (res == -5 || res == -84)
     return -2;
   if (res != 0)
     return -1;
