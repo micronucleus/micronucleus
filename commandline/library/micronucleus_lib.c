@@ -96,13 +96,20 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    and automatically reconnects prior to uploading the program.  To get the
    the same functionality, we must flag this state (the "-84" error result) by
    converting the return to -2 for the upper layer.
+   
+   On Mac OS a common error is -34 = epipe, but adding it to this list causes:
+   Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
-  if (res == -5 || res == -84)
-    return -2;
-  if (res != 0)
-    return -1;
-  else
-    return 0;
+  if (res == -5 || res == -34 || res == -84) {
+    if (res = -34) {
+      usb_close(deviceHandle->device);
+      deviceHandle->device = NULL;
+    }
+    
+    return 1; // recoverable errors
+  } else {
+    return res;
+  }
 }
 
 int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_size, unsigned char* program, micronucleus_callback prog) {

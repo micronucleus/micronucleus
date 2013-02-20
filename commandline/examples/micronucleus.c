@@ -72,11 +72,11 @@ int main(int argc, char **argv) {
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
   timeout = 0; // no timeout by default
-  #if defined(WIN)
-    use_ansi = 0;
-  #else
+  //#if defined(WIN)
+  //  use_ansi = 0;
+  //#else
     use_ansi = 1;
-  #endif
+  //#endif
   
   while (arg_pointer < argc) {
     if (strcmp(argv[arg_pointer], "--run") == 0) {
@@ -101,9 +101,9 @@ int main(int argc, char **argv) {
       puts("                           for driving GUIs");
       puts("                    --run: Ask bootloader to run the program when finished");
       puts("                           uploading provided program");
-      #ifndef WIN
+      //#ifndef WIN
       puts("                --no-ansi: Don't use ANSI in terminal output");
-      #endif
+      //#endif
       puts("      --timeout [integer]: Timeout after waiting specified number of seconds");
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
@@ -215,10 +215,12 @@ int main(int argc, char **argv) {
   printf("> Erasing the memory ...\n");
   res = micronucleus_eraseFlash(my_device, printProgress);
   
-  if (res == -2) { // erase disconnection bug workaround
+  if (res == 1) { // erase disconnection bug workaround
     printf(">> Eep! Connection to device lost during erase! Not to worry\n");
     printf(">> This happens on some computers - reconnecting...\n");
     my_device = NULL;
+    
+    delay(CONNECT_WAIT);
     
     int deciseconds_till_reconnect_notice = 50; // notice after 5 seconds
     while (my_device == NULL) {
@@ -282,7 +284,11 @@ static void printProgress(float progress) {
     printf("{status:\"%s\",step:%d,steps:%d,progress:%f}\n", progress_friendly_name, progress_step, progress_total_steps, progress);
   } else {
     if (last_step == progress_step && use_ansi) {
-      printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
+      #ifndef WIN
+        printf("\033[1F\033[2K"); // move cursor to previous line and erase last update in this progress sequence
+      #else
+        printf("\r"); // return carriage to start of line so we can type over existing text
+      #endif
     }
     
     float total_progress = ((float) progress_step - 1.0f) / (float) progress_total_steps;
