@@ -183,6 +183,7 @@ these macros are defined, the boot loader uses them.
 // number of bytes before the boot loader vectors to store the tiny application vector table
 #define TINYVECTOR_RESET_OFFSET     4
 #define TINYVECTOR_USBPLUS_OFFSET   2
+#define TINYVECTOR_OSCCAL_OFFSET    6
 
 #define RESET_VECTOR_OFFSET         0
 #define USBPLUS_VECTOR_OFFSET       2
@@ -213,15 +214,17 @@ these macros are defined, the boot loader uses them.
 // set clock prescaler to a value before running user program
 //#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
 
-
-/*#if LOW_POWER_MODE
+#define bootLoaderInit()
+#define bootLoaderExit()
+#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+#if LOW_POWER_MODE
   // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
   // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
   #define bootLoaderStartCondition() \
     (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
 #else
   #define bootLoaderStartCondition() 1
-#endif*/
+#endif
 
 /* ----------------------- Optional MCU Description ------------------------ */
 
@@ -241,25 +244,24 @@ these macros are defined, the boot loader uses them.
 /* #define USB_INTR_VECTOR         INT0_vect */
 
 // todo: change to pin 5
-#define DEUXVIS_JUMPER_PIN 5
-#define digitalRead(pin) ((PINB >> pin) & 0b00000001)
-#define bootLoaderStartCondition() (!digitalRead(DEUXVIS_JUMPER_PIN))
-#define bootLoaderCondition()   (1)
+//#define DEUXVIS_JUMPER_PIN 5
+//#define digitalRead(pin) ((PINB >> pin) & 0b00000001)
+//#define bootLoaderStartCondition() (!digitalRead(DEUXVIS_JUMPER_PIN))
+//#define bootLoaderCondition()   (1)
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
-static inline void  bootLoaderInit(void) {
+//static inline void  bootLoaderInit(void) {
+//  // DeuxVis pin-5 pullup
+//  DDRB |= _BV(DEUXVIS_JUMPER_PIN); // is an input
+//  PORTB |= _BV(DEUXVIS_JUMPER_PIN); // has pullup enabled
+//  _delay_ms(10);
+//}
+//static inline void  bootLoaderExit(void) {
   // DeuxVis pin-5 pullup
-  DDRB |= _BV(DEUXVIS_JUMPER_PIN); // is an input
-  PORTB |= _BV(DEUXVIS_JUMPER_PIN); // has pullup enabled
-  _delay_ms(10);
-}
-
-static inline void  bootLoaderExit(void) {
-  // DeuxVis pin-5 pullup
-  PORTB = 0;
-  DDRB = 0;
-}
+//  PORTB = 0;
+//  DDRB = 0;
+//}
 
 #endif /* __ASSEMBLER__ */
 

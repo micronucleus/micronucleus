@@ -180,10 +180,10 @@ static void writeWordToPageBuffer(uint16_t data) {
     // for info on how the tiny vector table works
     if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
-    }
-    
-    if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
+    } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
+    } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
+        data = OSCCAL;
     }
     
     
@@ -196,9 +196,9 @@ static void writeWordToPageBuffer(uint16_t data) {
     boot_page_fill(currentAddress, data);
     sei();
     
-	// only need to erase if there is data already in the page that doesn't match what we're programming
-	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
-	//if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
+    // only need to erase if there is data already in the page that doesn't match what we're programming
+    // TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
+    //if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
     //if ((pgm_read_word(currentAddress) & data) != data) {
     //    fireEvent(EVENT_PAGE_NEEDS_ERASE);
     //}
@@ -381,6 +381,11 @@ int main(void) {
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
+    
+    unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET + 1);
+    if (stored_osc_calibration != 0xFF) {
+        OSCCAL = stored_osc_calibration;
+    }
     
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
