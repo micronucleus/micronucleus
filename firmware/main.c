@@ -10,7 +10,7 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 5
+#define MICRONUCLEUS_VERSION_MINOR 6
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
@@ -368,6 +368,17 @@ static inline void leaveBootloader(void) {
     // clear magic word from bottom of stack before jumping to the app
     *(uint8_t*)(RAMEND) = 0x00;
     *(uint8_t*)(RAMEND-1) = 0x00;
+    
+    // adjust clock to previous calibration value, so user program always starts with same calibration
+    // as when it was uploaded originally
+    // TODO: Test this and find out, do we need the +1 offset?
+    unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
+    if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
+        //OSCCAL = stored_osc_calibration; // this should really be a gradual change, but maybe it's alright anyway?
+        // do the gradual change - failed to score extra free bytes anyway in 1.06
+        while (OSCCAL > stored_osc_calibration) OSCCAL--;
+        while (OSCCAL < stored_osc_calibration) OSCCAL++;
+    }
 
     // jump to application reset vector at end of flash
     asm volatile ("rjmp __vectors - 4");
@@ -381,11 +392,6 @@ int main(void) {
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
-    
-    unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET + 1);
-    if (stored_osc_calibration != 0xFF) {
-        OSCCAL = stored_osc_calibration;
-    }
     
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();

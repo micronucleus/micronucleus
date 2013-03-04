@@ -1,10 +1,11 @@
-== 1.06 - unreleased ==
+== 1.06 - 2013-3-4 ==
 
 firmware:
  o Store 16.5mhz oscillator calibration value in tiny vector table
- o At startup, restore oscillator calibration value before initialising USB
+ o At user program startup, restore oscillator calibration value stored together with program
    -> User programs always start on the calibration value from the last time they were uploaded
-   -> Bootloader is ready to talk over USB sooner, because it is closer to already being calibrated at startup
+ o Slightly too big to have 6076 programmable bytes, reverted to having 6012 bytes free for user program
+   -> Hopefully a future version can slim down again and get another page free!
 
 == 1.05 - 2013-2-8 ==
 
