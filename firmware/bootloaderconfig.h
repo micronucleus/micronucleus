@@ -12,6 +12,9 @@
 #ifndef __bootloaderconfig_h_included__
 #define __bootloaderconfig_h_included__
 
+// uncomment this to enable the 'jumper from d5 to gnd to enable programming' mode
+//#define BUILD_JUMPER_MODE 1
+
 #ifndef BOOTLOADER_ADDRESS
 #define BOOTLOADER_ADDRESS 0
 #endif
@@ -214,16 +217,37 @@ these macros are defined, the boot loader uses them.
 // set clock prescaler to a value before running user program
 //#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
 
-#define bootLoaderInit()
-#define bootLoaderExit()
-#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
-#if LOW_POWER_MODE
-  // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
-  // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
-  #define bootLoaderStartCondition() \
-    (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
+#ifdef BUILD_JUMPER_MODE
+	#define START_JUMPER_PIN 5
+	#define digitalRead(pin) (PINB & _BV(pin))
+	#define bootLoaderStartCondition() (!digitalRead(START_JUMPER_PIN))
+	#define bootLoaderCondition() 1
+	
+	#ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
+		static inline void  bootLoaderInit(void) {
+		 	// DeuxVis pin-5 pullup
+			DDRB |= _BV(START_JUMPER_PIN); // is an input
+			PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
+			_delay_ms(10);
+		}
+		static inline void  bootLoaderExit(void) {
+		  // DeuxVis pin-5 pullup
+		 	PORTB = 0;
+		  DDRB = 0;
+		}
+	#endif /* __ASSEMBLER__ */
 #else
-  #define bootLoaderStartCondition() 1
+	#define bootLoaderInit()
+	#define bootLoaderExit()
+	#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+	#if LOW_POWER_MODE
+	  // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
+	  // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
+	  #define bootLoaderStartCondition() \
+	    (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
+	#else
+	  #define bootLoaderStartCondition() 1
+	#endif
 #endif
 
 /* ----------------------- Optional MCU Description ------------------------ */
