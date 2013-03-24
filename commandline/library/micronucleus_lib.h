@@ -85,6 +85,7 @@ typedef struct _micronucleus {
   unsigned int write_sleep; // milliseconds
   unsigned int erase_sleep; // milliseconds
   unsigned int bootloader_start_addr;
+  unsigned int osccal_value;
 } micronucleus;
 
 typedef void (*micronucleus_callback)(float progress);

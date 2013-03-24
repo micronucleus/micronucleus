@@ -58,8 +58,8 @@ micronucleus* micronucleus_connect() {
         nucleus->device = usb_open(dev);
         
         // get nucleus info
-        unsigned char buffer[5];
-        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, buffer, 5, MICRONUCLEUS_USB_TIMEOUT);
+        unsigned char buffer[6];
+        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
         assert(res >= 4);
         
         nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -71,10 +71,14 @@ micronucleus* micronucleus_connect() {
           nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
         else
           nucleus->erase_sleep = nucleus->write_sleep;
-        if(res >= 5)
+        if(res >= 6) {
           nucleus->bootloader_start_addr = nucleus->flash_size + buffer[4];
-        else
+          nucleus->osccal_value = buffer[5];
+        }
+        else {
           nucleus->bootloader_start_addr = 0;
+          nucleus->osccal_value = 0;
+        }
       }
     }
   }
@@ -115,8 +119,8 @@ int micronucleus_addVectorsToFlash(micronucleus* deviceHandle, unsigned char* bu
   buffer[deviceHandle->bootloader_start_addr - MICRONUCLEUS_VECTORS_TINYVECTOR_RESET_OFFSET + 1] = (unsigned char)(originalResetVector / 256);
   buffer[deviceHandle->bootloader_start_addr - MICRONUCLEUS_VECTORS_TINYVECTOR_USBPLUS_OFFSET] = (unsigned char)(originalIntVector);
   buffer[deviceHandle->bootloader_start_addr - MICRONUCLEUS_VECTORS_TINYVECTOR_USBPLUS_OFFSET + 1] = (unsigned char)(originalIntVector / 256);
-  
-  // TODO: collect and store OSCCAL
+  buffer[deviceHandle->bootloader_start_addr - MICRONUCLEUS_VECTORS_TINYVECTOR_OSCCAL_OFFSET] = (unsigned char)(deviceHandle->osccal_value);
+  buffer[deviceHandle->bootloader_start_addr - MICRONUCLEUS_VECTORS_TINYVECTOR_OSCCAL_OFFSET + 1] = (unsigned char)(deviceHandle->osccal_value / 256);
 
   // now the entire application section (including tinyvector table) needs to be written to flash, not just what the user's program contains
   *endAddr = deviceHandle->bootloader_start_addr;

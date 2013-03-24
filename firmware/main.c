@@ -118,7 +118,6 @@ static inline void leaveBootloader(void);
 }))
 
 /* ------------------------------------------------------------------------ */
-static uchar fillAddress;
 static uint16_t spmAddress;
 static uchar spmCommand;
 
@@ -126,17 +125,19 @@ static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
     idlePolls = 0; // reset idle polls when we get usb traffic
     
-    static uchar replyBuffer[5] = {
+    static uchar replyBuffer[6] = {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
         MICRONUCLEUS_WRITE_SLEEP,
-        POSTSCRIPT_SIZE
+        POSTSCRIPT_SIZE,
+        0
     };
     
     if (rq->bRequest == 0) { // get device info
         usbMsgPtr = (usbMsgPtr_t)replyBuffer;
-        return 5;
+        replyBuffer[5] = OSCCAL;
+        return sizeof(replyBuffer);
         
     } else if (rq->bRequest & SPM_COMMAND_MASK) { // spm operation
         spmCommand = rq->bRequest & ~(SPM_COMMAND_MASK);
