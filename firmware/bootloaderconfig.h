@@ -192,6 +192,7 @@ these macros are defined, the boot loader uses them.
 #define USBPLUS_VECTOR_OFFSET       2
 
 #define SPM_COMMAND_MASK			0x80
+#define LOADPAGE_COMMAND_MASK		0x40
 
 //#if BOOTLOADER_CAN_EXIT == 0
 //#    define BOOTLOADER_CAN_EXIT 1

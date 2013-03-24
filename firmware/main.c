@@ -100,7 +100,6 @@ uint16_t idlePolls = 0; // how long have we been idle?
 
 /* ------------------------------------------------------------------------ */
 static uchar usbFunctionSetup(uchar data[8]);
-static uchar usbFunctionWrite(uchar *data, uchar length);
 static inline void initForUsbConnectivity(void);
 static inline void tiny85FlashInit(void);
 static inline void leaveBootloader(void);
@@ -139,14 +138,15 @@ static uchar usbFunctionSetup(uchar data[8]) {
         usbMsgPtr = (usbMsgPtr_t)replyBuffer;
         return 5;
         
-    } else if (rq->bRequest == 1) { // write page
-        fillAddress = 0;
-        return USB_NO_MSG; // hands off work to usbFunctionWrite
-        
     } else if (rq->bRequest & SPM_COMMAND_MASK) { // spm operation
         spmCommand = rq->bRequest & ~(SPM_COMMAND_MASK);
         spmAddress = rq->wIndex.word;
         fireEvent(EVENT_SPM_OPERATION);       
+
+    } else if (rq->bRequest & LOADPAGE_COMMAND_MASK) {
+        cli();
+        boot_page_fill(rq->bRequest & ~LOADPAGE_COMMAND_MASK, rq->wIndex.word);
+        sei();
 
     } else { // exit bootloader
 #       if BOOTLOADER_CAN_EXIT
@@ -155,27 +155,6 @@ static uchar usbFunctionSetup(uchar data[8]) {
     }
     
     return 0;
-}
-
-// read in a page over usb, and write it in to the flash write buffer
-static uchar usbFunctionWrite(uchar *data, uchar length) {
-    //if (length > writeLength) length = writeLength; // test for missing final page bug
-    //writeLength -= length;
-    
-    do {
-        // make sure an interrupt can't separate loading the SPMCSR register and executing the SPM instruction
-        cli();
-        boot_page_fill(fillAddress, *(uint16_t *) data);
-        sei();
-        data += 2; // advance data pointer
-        length -= 2;
-        fillAddress+=2;
-    } while(length);
-    
-    // if we have now reached another page boundary, we're done
-    //uchar isLast = (writeLength == 0);
-    uchar isLast = ((fillAddress % SPM_PAGESIZE) == 0);
-    return isLast; // let vusb know we're done with this request
 }
 
 /* ------------------------------------------------------------------------ */

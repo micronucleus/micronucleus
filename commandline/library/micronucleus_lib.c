@@ -1,7 +1,7 @@
 /*
   Created: September 2012
   by ihsan Kehribar <ihsan@kehribar.me>
-  
+
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -219,15 +219,17 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
              MICRONUCLEUS_USB_TIMEOUT);
     }
     else {
-      // ask microcontroller to load this page's data into the write buffer
-      res = usb_control_msg(deviceHandle->device,
+      int i;
+      for(i=0; i<page_length; i+=2) {
+        res = usb_control_msg(deviceHandle->device,
              USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
-             1,
-             page_length, 0,
-             page_buffer, page_length,
+             0x40 | i,
+             0, page_buffer[i] + (page_buffer[i+1] * 256),
+             0, 0,
              MICRONUCLEUS_USB_TIMEOUT);
 
-      if (res != page_length) return -1;
+        if (res < 0) return -1;
+      }
 
       // ask microcontroller to write the data to flash
       res = usb_control_msg(deviceHandle->device,
