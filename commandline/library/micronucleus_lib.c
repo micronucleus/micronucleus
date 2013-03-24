@@ -45,8 +45,8 @@ micronucleus* micronucleus_connect() {
       /* Check if this device is a micronucleus */
       if (dev->descriptor.idVendor == MICRONUCLEUS_VENDOR_ID && dev->descriptor.idProduct == MICRONUCLEUS_PRODUCT_ID)  {
         nucleus = malloc(sizeof(micronucleus));
-        nucleus->version.major = (dev->descriptor.bcdUSB >> 8) & 0xFF;
-        nucleus->version.minor = dev->descriptor.bcdUSB & 0xFF;
+        nucleus->version.major = (dev->descriptor.bcdDevice >> 8) & 0xFF;
+        nucleus->version.minor = dev->descriptor.bcdDevice & 0xFF;
         
         if (nucleus->version.major > MICRONUCLEUS_MAX_MAJOR_VERSION) {
 	        fprintf(stderr, "Warning: device with unknown new version of Micronucleus detected.\n");
