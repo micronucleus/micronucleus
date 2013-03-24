@@ -191,6 +191,8 @@ these macros are defined, the boot loader uses them.
 #define RESET_VECTOR_OFFSET         0
 #define USBPLUS_VECTOR_OFFSET       2
 
+#define SPM_COMMAND_MASK			0x80
+
 //#if BOOTLOADER_CAN_EXIT == 0
 //#    define BOOTLOADER_CAN_EXIT 1
 //#endif
@@ -205,10 +207,11 @@ these macros are defined, the boot loader uses them.
 #define USB_INTR_PENDING_BIT    PCIF
 #define USB_INTR_VECTOR         PCINT0_vect
 
+// 300us needed to separate usbPoll and runSpmOperation (USB traffic was seen on scope around 200us after setting EVENT_SPM_OPERATION)
+#define IDLE_POLL_DELAY_US	300UL
 
 /* max 6200ms to not overflow idlePolls variable */
 #define AUTO_EXIT_MS    5000
-//#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
 
 // uncomment for chips with clkdiv8 enabled in fuses
 //#define LOW_POWER_MODE 1
@@ -239,7 +242,7 @@ these macros are defined, the boot loader uses them.
 #else
 	#define bootLoaderInit()
 	#define bootLoaderExit()
-	#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+	#define bootLoaderCondition()   (idlePolls < ((AUTO_EXIT_MS * 1000UL) / IDLE_POLL_DELAY_US))
 	#if LOW_POWER_MODE
 	  // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
 	  // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there

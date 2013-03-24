@@ -44,7 +44,24 @@
 #define MICRONUCLEUS_VENDOR_ID   0x16D0
 #define MICRONUCLEUS_PRODUCT_ID  0x0753
 #define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
-#define MICRONUCLEUS_MAX_MAJOR_VERSION 1
+#define MICRONUCLEUS_MAX_MAJOR_VERSION 2
+/*******************************************************************************/
+
+/********************************************************************************
+* Messy Bootloader Architectecture details
+********************************************************************************/
+#define MICRONUCLEUS_VECTORS_RESET_VECTOR_OFFSET         0
+#define MICRONUCLEUS_VECTORS_USBPLUS_VECTOR_OFFSET       2
+
+#define MICRONUCLEUS_VECTORS_TINYVECTOR_RESET_OFFSET     4
+#define MICRONUCLEUS_VECTORS_TINYVECTOR_USBPLUS_OFFSET   2
+#define MICRONUCLEUS_VECTORS_TINYVECTOR_OSCCAL_OFFSET    6
+
+#define MICRONUCLEUS_VECTORS_FLASHEND 0x1FFF
+
+#define MICRONUCLEUS_SPM_COMMAND_MASK   0x80
+#define MICRONUCLEUS_SPM_COMMAND_ERASE  ((1<<0) | (1<<1))
+#define MICRONUCLEUS_SPM_COMMAND_WRITE  ((1<<0) | (1<<2))
 /*******************************************************************************/
 
 /********************************************************************************
@@ -67,6 +84,7 @@ typedef struct _micronucleus {
   unsigned int pages;       // total number of pages to program
   unsigned int write_sleep; // milliseconds
   unsigned int erase_sleep; // milliseconds
+  unsigned int bootloader_start_addr;
 } micronucleus;
 
 typedef void (*micronucleus_callback)(float progress);
@@ -98,5 +116,10 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_len
 ********************************************************************************/
 int micronucleus_startApp(micronucleus* deviceHandle);
 /*******************************************************************************/
+
+/********************************************************************************
+* Modifies the application binary so the bootloader can use it
+********************************************************************************/
+int micronucleus_addVectorsToFlash(micronucleus* deviceHandle, unsigned char* buffer, int *endAddr);
 
 #endif

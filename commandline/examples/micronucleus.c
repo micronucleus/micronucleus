@@ -181,6 +181,8 @@ int main(int argc, char **argv) {
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
   printf("> Whole page count: %d\n", my_device->pages);
   printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
+  if(my_device->bootloader_start_addr)
+    printf("> Boot Start Addr: %x\n", my_device->bootloader_start_addr);
   
   setProgressData("parsing", 3);
   printProgress(0.0);
@@ -210,7 +212,9 @@ int main(int argc, char **argv) {
     printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - my_device->flash_size);
     return EXIT_FAILURE;
   }
-  
+
+  micronucleus_addVectorsToFlash(my_device, dataBuffer, &endAddress);
+
   setProgressData("erasing", 4);
   printf("> Erasing the memory ...\n");
   res = micronucleus_eraseFlash(my_device, printProgress);
