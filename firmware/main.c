@@ -32,13 +32,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 /* ------------------------------------------------------------------------ */
 
-#ifndef ulong
-#   define ulong    unsigned long
-#endif
-#ifndef uint
-#   define uint     unsigned int
-#endif
-
 #ifndef BOOTLOADER_CAN_EXIT
 #   define  BOOTLOADER_CAN_EXIT     0
 #endif
@@ -53,14 +46,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #endif
 
 /* ------------------------------------------------------------------------ */
-
-#define addr_t uint
-
-// typedef union longConverter{
-//     addr_t  l;
-//     uint    w[sizeof(addr_t)/2];
-//     uchar   b[sizeof(addr_t)];
-// } longConverter_t;
 
 //////// Stuff Bluebie Added
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
@@ -103,7 +88,7 @@ uint16_t idlePolls = 0; // how long have we been idle?
 
 
 static uint16_t vectorTemp[2];  // remember data to create tinyVector table before BOOTLOADER_ADDRESS
-static addr_t currentAddress;   // current progmem address, used for erasing and writing
+static uint16_t currentAddress;   // current progmem address, used for erasing and writing
 
 
 /* ------------------------------------------------------------------------ */
@@ -230,8 +215,8 @@ static uchar usbFunctionSetup(uchar data[8])
 	idlePolls = 0; // reset idle polls when we get usb traffic
 
 	static uchar replyBuffer[4] = {
-		(((uint)PROGMEM_SIZE) >> 8) & 0xff,
-		((uint)PROGMEM_SIZE) & 0xff,
+		(((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
+		((uint16_t)PROGMEM_SIZE) & 0xff,
 		SPM_PAGESIZE,
 		MICRONUCLEUS_WRITE_SLEEP
 	};
