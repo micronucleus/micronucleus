@@ -52,11 +52,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #   define bootLoaderCondition()    BOOTLOADER_CONDITION
 #endif
 
-/* device compatibility: */
-#ifndef GICR    /* ATMega*8 don't have GICR, use MCUCR instead */
-#   define GICR     MCUCR
-#endif
-
 /* ------------------------------------------------------------------------ */
 
 #define addr_t uint
