@@ -49,28 +49,6 @@ USB_INTR_VECTOR:
     in      YL, SREG				; 
     push    YL						; 
 
-#ifdef TINY85MODE
-; look for magic word "B007" at the bottom of the stack
-	lds YL, RAMEND
-	cpi YL, 0xB0
-	brne cleanupAndJumpToApp
-
-	lds YL, RAMEND-1
-	cpi YL, 0x07
-	breq cleanupBootloaderIntStack
-
-cleanupAndJumpToApp:
-; magic word was not found, put registers back to where they were before this ISR ran, and jump to application ISR
-	pop YL
-	out      SREG, YL
-	pop YL
-	
-	rjmp __vectors - TINYVECTOR_USBPLUS_OFFSET
-
-cleanupBootloaderIntStack:
-; magic word was found, put registers 
-	CLR YL					; [-19] ensure we meet below requirements for YL < 0x80 
-#endif
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------

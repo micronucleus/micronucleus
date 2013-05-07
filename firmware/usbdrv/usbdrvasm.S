@@ -68,6 +68,7 @@ the file appropriate for the given clock rate.
     .type   USB_INTR_VECTOR, @function
     .global usbCrc16
     .global usbCrc16Append
+    .global waitForJ
 #endif /* __IAR_SYSTEMS_ASM__ */
 
 

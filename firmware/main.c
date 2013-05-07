@@ -47,16 +47,187 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 /* ------------------------------------------------------------------------ */
 
-//////// Stuff Bluebie Added
-// postscript are the few bytes at the end of programmable memory which store tinyVectors
-// and used to in USBaspLoader-tiny85 store the checksum iirc
-#define POSTSCRIPT_SIZE 4
-#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
+/*
+ * Initialize stack and the zero register.
+ *
+ * This is essentially the same code as it would be insetrted when linking
+ * against the normal crt*.o files.  This is needed because of the
+ * "-nostartfiles" flag used to get rid of the interrupt table.
+ *
+ * This also takes care of pushing the magic "BOOT" indicator onto the stack.
+ */
+void __initialize_cpu(void) __attribute__ ((naked)) __attribute__ ((section (".init2")));
+void __initialize_cpu(void)
+{
+
+	asm volatile ( "clr __zero_reg__" );				// r1 set to 0
+	asm volatile ( "out __SREG__, r1" );				// clear status register
+	asm volatile ( "ldi r28, %0" :: "M" (RAMEND & 0xFF) );		// Initilize stack pointer.
+	asm volatile ( "ldi r29, %0" :: "M" ((RAMEND >> 8) & 0xFF) );
+	asm volatile ( "out __SP_H__, r29" );
+	asm volatile ( "out __SP_L__, r28" );
+
+
+	/* push the word "B007" at the bottom of the stack (RAMEND - RAMEND-1) */
+
+	asm volatile ("ldi r28, 0xB0" ::);
+	asm volatile ("push r28" ::);
+	asm volatile ("ldi r28, 0x07" ::);
+	asm volatile ("push r28" ::);
+
+}
+
+/*
+ * Jump to main.
+ *
+ * Again, normally the standard crt*.o files would do this, but we dont link
+ * them in.
+ */
+
+void __jump_to_main(void) __attribute__ ((naked)) __attribute__ ((section (".init9")));
+void __jump_to_main(void)
+{
+	asm volatile ( "rjmp main");                // start main()
+}
+
+/*
+ * A replacement for the normal interrupt table:
+ *
+ * Our linker script has a special section ".tinytable" that is placed into the
+ * .text section before anything else, just where normaly the vector table is
+ * located.
+ *
+ * - first element is the jump to our own initialization (__initialize_cpu()) to
+ *   start execution on a freshly initialized device.
+ *
+ * - second element is the place to store the osccal value
+ *
+ * - third element is the applications entry point. This is set when we flash
+ *   the applications interrupt table.
+ *
+ * - fourth element is the applications interrupt vector for vUSB.
+ *
+ * The above fields are located in the last few words of the programable flash
+ * and that page may be erased.
+ *
+ */
+
+#define MY_RESET_OFFSET	0
+void __my_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __my_reset(void) { asm volatile ( "rjmp __initialize_cpu"); }
+
+/*
+ * ld does not let us put data into a code section. So this is defined as a function
+ * instead, but do not call it !
+ */
+#define STORED_OSCCAL_OFFSET 2
+void __stored_osccal(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __stored_osccal(void) { asm volatile ( "nop" ); }
+
+#define APP_RESET_OFFSET 4
+void __app_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __app_reset(void) { asm volatile ( "rjmp __initialize_cpu"); }
+
+#define APP_USB_VECTOR_OFFSET 6
+void __app_usb_vector(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __app_usb_vector(void) { asm volatile ( "rjmp __initialize_cpu"); }
+
+#define TINY_TABLE_LEN 8
 
 // verify the bootloader address aligns with page size
-#if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
-#  error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+#if (BOOTLOADER_ADDRESS + TINY_TABLE_LEN) % SPM_PAGESIZE != 0
+#  error "BOOTLOADER_ADDRESS in makefile must be aligned"
 #endif
+
+/*
+ * Safeguard against erase w/o successive write tothe vector table.
+ */
+void __my_reset2(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __my_reset2(void) { asm volatile ( "rjmp __initialize_cpu"); }
+
+/*
+ * Wrapper for the vUSB interrupt.
+ *
+ * We look at the two bytes on top of the stack. If those read "B007",
+ * we call our own vUSB ISR, otherwise we jump to the applications ISR.
+ *
+ * The extra latency to get to the bootloader vUSB ISR is 11 cycles.
+ *
+ * The cost to get to the apps vUSB vector depends on the current stack
+ * content, if the final jump to the app is a relative jump and whether
+ * "APP_USES_VUSB" is defined.
+ *
+ * With APP_USES_VUSB
+ *   8k devices: best case 10 cycles, worst case 13 cycles
+ *  16k devices;           11 cycles,            14 cycles
+ *
+ * W/o APP_USES_VUSB
+ *   8k devices: best case 19 cycles, worst case 23 cycles
+ *  16k devices:           20 cycles,            24 cycles
+ */
+
+void __wrap_vusb_intr(void) __attribute__ ((naked));
+void __wrap_vusb_intr(void)
+{
+	/* Save SREG and YL */
+
+	asm volatile ("push r28");
+	asm volatile ("in r28, __SREG__");
+	asm volatile ("push r28");
+
+	/* Check our signature above the stack */
+	asm volatile ("lds r28, %0" :: "" (RAMEND));		// +  2
+	asm volatile ("cpi r28, 0xB0");				// +  1
+	asm volatile ("brne jumpToApp");			// +  1   +2
+
+	asm volatile ("lds r28, %0" :: "" (RAMEND - 1));	// +  2
+	asm volatile ("cpi r28, 0x07");				// +  1
+	asm volatile ("brne jumpToApp");			// +  1	  +2
+
+	/*
+	 * Jump to vUSB interrupt vector.
+	 *
+	 * This jump skips the register save in the ISR so we don't have to
+	 * restore SREG and YL. This is a bit hackish though because it makes
+	 * assumptions about what exactly gets pushed before "waitForJ". The
+	 * 16, 18 and 20MHz versions of the code for example also push YH while
+	 * the others do not.
+	 */
+
+#if (USB_CFG_CLOCK_KHZ == 16000) || (USB_CFG_CLOCK_KHZ == 18000) || (USB_CFG_CLOCK_KHZ == 20000)
+	asm volatile ("push r29");
+#endif
+	asm volatile ( "clr r28" );				// +  1
+	asm volatile ( "rjmp waitForJ" );			// +  2
+								// = 11
+	/*
+	 * Jump to the Applications ISR.
+	 *
+	 * If we can assume that the application also uses this vector for vUSB,
+	 * we can shortcut the register save there too. Otherwise we need to
+	 * restore the stack.
+	 *
+	 */
+	asm volatile ( "jumpToApp:" );				// + 5 or + 9 cycles to get here
+#ifndef APP_USES_VUSB
+#    define APP_VUSB_OFFSET 0
+	asm volatile ( "pop r28" );				// +  2
+	asm volatile ( "out __SREG__, r28" );			// +  1
+	asm volatile ( "pop r28" );				// +  2
+#else
+#  if (USB_CFG_CLOCK_KHZ == 16000) || (USB_CFG_CLOCK_KHZ == 18000) || (USB_CFG_CLOCK_KHZ == 20000)
+#    define APP_VUSB_OFFSET 4
+	asm volatile ("push r29");
+#  else
+#    define APP_VUSB_OFFSET 3
+#  endif
+	asm volatile ( "clr r28" );				// +  1
+#endif
+	asm volatile ( "rjmp __app_usb_vector" );		// +  4/5  (2*rjmp or rjmp+jmp)
+}
+
+
+//////// Stuff Bluebie Added
 
 #ifdef AUTO_EXIT_MS
 #  if AUTO_EXIT_MS < (MICRONUCLEUS_WRITE_SLEEP * (BOOTLOADER_ADDRESS / SPM_PAGESIZE))
@@ -150,23 +321,39 @@ static void writeFlashPage(void)
 			       );					    \
 		       }))
 
+#define addr2rjmp(addr, location) \
+	( 0xC000 + ((addr - location - 1) & 0xFFF))
+
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data)
 {
-	// first two interrupt vectors get replaced with a jump to the bootloader's vector table
-	if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2))
-		data = 0xC000 + (BOOTLOADER_ADDRESS / 2) - 1;
+
+	if (currentAddress == (RESET_VECTOR_OFFSET * 2)) {
+		// Id like to jump directly to __initialize_cpu, but stupid
+		// cpp/c interactions would cost 6 bytes.
+		data = addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET);
+	}
+	else if (currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
+		// same 6 bytes as above, but no-trampoline spares 2 cycles
+		// interrupt latency, which I think is worth the expense.
+		data = addr2rjmp((int16_t)__wrap_vusb_intr, USBPLUS_VECTOR_OFFSET);
+	}
 
 	// at end of page just before bootloader, write in tinyVector table
 	// see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
 	// for info on how the tiny vector table works
-	if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)
-		data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS) / 2 + 2 + RESET_VECTOR_OFFSET;
-	else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET)
-		data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS) / 2 + 1 + USBPLUS_VECTOR_OFFSET;
-	else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET)
+	else if (currentAddress ==  BOOTLOADER_ADDRESS + MY_RESET_OFFSET) {
+		data = addr2rjmp((int16_t)__initialize_cpu, BOOTLOADER_ADDRESS + MY_RESET_OFFSET);
+	}
+	else if (currentAddress == BOOTLOADER_ADDRESS + APP_RESET_OFFSET) {
+		data = addr2rjmp(vectorTemp[0], (BOOTLOADER_ADDRESS + APP_RESET_OFFSET)/2);
+	}
+	else if (currentAddress == BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET) {
+		data = addr2rjmp(vectorTemp[1], (BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET)/2);
+	}
+	else if (currentAddress == BOOTLOADER_ADDRESS + STORED_OSCCAL_OFFSET) {
 		data = OSCCAL;
-
+	}
 
 	// clear page buffer as a precaution before filling the buffer on the first page
 	// in case the bootloader somehow ran after user program and there was something
@@ -215,8 +402,8 @@ static uchar usbFunctionSetup(uchar data[8])
 	idlePolls = 0; // reset idle polls when we get usb traffic
 
 	static uchar replyBuffer[4] = {
-		(((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
-		((uint16_t)PROGMEM_SIZE) & 0xff,
+		(((uint16_t)BOOTLOADER_ADDRESS) >> 8) & 0xff,
+		((uint16_t)BOOTLOADER_ADDRESS) & 0xff,
 		SPM_PAGESIZE,
 		MICRONUCLEUS_WRITE_SLEEP
 	};
@@ -240,6 +427,8 @@ static uchar usbFunctionSetup(uchar data[8])
 	return 0;
 }
 
+#define rjmp2addr(rjmp, location) \
+	(((rjmp) & 0xFFF) + location + 1)
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length)
@@ -249,16 +438,16 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 
 	do {
 		// remember vectors or the tinyvector table
-		if (currentAddress == RESET_VECTOR_OFFSET * 2)
-			vectorTemp[0] = *(short *)data;
-
-		if (currentAddress == USBPLUS_VECTOR_OFFSET * 2)
-			vectorTemp[1] = *(short *)data;
-
-		// make sure we don't write over the bootloader!
-		if (currentAddress >= BOOTLOADER_ADDRESS)
-			//__boot_page_fill_clear();
+		if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+			vectorTemp[0] = rjmp2addr(*(uint16_t *)data, RESET_VECTOR_OFFSET);
+		}
+		else if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
+			vectorTemp[1] = rjmp2addr((*(uint16_t *)data) + APP_VUSB_OFFSET, USBPLUS_VECTOR_OFFSET) ;
+		}
+		else if (currentAddress >= BOOTLOADER_ADDRESS) {
+			// make sure we don't write over the bootloader!
 			break;
+		}
 
 		writeWordToPageBuffer(*(uint16_t *)data);
 		data += 2; // advance data pointer
@@ -272,19 +461,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 	if (isLast) fireEvent(EVENT_WRITE_PAGE);        // ask runloop to write our page
 
 	return isLast;                                  // let vusb know we're done with this request
-}
-
-/* ------------------------------------------------------------------------ */
-
-void PushMagicWord(void) __attribute__ ((naked)) __attribute__ ((section(".init3")));
-
-// put the word "B007" at the bottom of the stack (RAMEND - RAMEND-1)
-void PushMagicWord(void)
-{
-	asm volatile ("ldi r16, 0xB0" ::);
-	asm volatile ("push r16" ::);
-	asm volatile ("ldi r16, 0x07" ::);
-	asm volatile ("push r16" ::);
 }
 
 /* ------------------------------------------------------------------------ */
@@ -304,9 +480,8 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
-	if (pgm_read_word(RESET_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS / 2) - 1 ||
-	    pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS / 2) - 1)
-
+	if (pgm_read_word(RESET_VECTOR_OFFSET * 2)   != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
+	    pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) !=	addr2rjmp((int16_t)__wrap_vusb_intr, USBPLUS_VECTOR_OFFSET))
 		fillFlashWithVectors();
 
 	// TODO: necessary to reset currentAddress?
@@ -361,7 +536,7 @@ static inline void leaveBootloader(void)
 	//       the tiny table.
 	//
 	// TODO: Test this and find out, do weneed the +1 offset?
-	unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
+	unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS + STORED_OSCCAL_OFFSET);
 	if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
 		//OSCCAL = stored_osc_calibration; // this should really be a gradual change, but maybe it's alright anyway?
 		// do the gradual change - failed to score extra free bytes anyway in 1.06
@@ -371,7 +546,7 @@ static inline void leaveBootloader(void)
 #endif
 
 	// jump to application reset vector at end of flash
-	asm volatile ("rjmp __vectors - 4");
+	__app_reset();
 }
 
 int main(void)

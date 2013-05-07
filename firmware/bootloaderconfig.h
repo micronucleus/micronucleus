@@ -181,12 +181,7 @@ these macros are defined, the boot loader uses them.
 #  error "uBoot is only designed for attiny85"
 #endif
 
-#define TINY85MODE
-
 // number of bytes before the boot loader vectors to store the tiny application vector table
-#define TINYVECTOR_RESET_OFFSET     4
-#define TINYVECTOR_USBPLUS_OFFSET   2
-#define TINYVECTOR_OSCCAL_OFFSET    6
 
 #define RESET_VECTOR_OFFSET         0
 #define USBPLUS_VECTOR_OFFSET       2
