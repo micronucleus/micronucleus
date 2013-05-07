@@ -351,9 +351,16 @@ static inline void leaveBootloader(void)
 	*(uint8_t *)(RAMEND) = 0x00;
 	*(uint8_t *)(RAMEND - 1) = 0x00;
 
+#ifndef RESTORE_OSCCAL
 	// adjust clock to previous calibration value, so user program always starts with same calibration
-	// as when it was uploaded originally
-	// TODO: Test this and find out, do we need the +1 offset?
+	// as when it was uploaded originally.
+	//
+	// Note: not using the stored calibration for the bootloader itself
+	//       will allow the device to be un-bricked if somehow an invalid
+	//       calibration, that brings the device out-of-spec, ended up in
+	//       the tiny table.
+	//
+	// TODO: Test this and find out, do weneed the +1 offset?
 	unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
 	if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
 		//OSCCAL = stored_osc_calibration; // this should really be a gradual change, but maybe it's alright anyway?
@@ -361,6 +368,7 @@ static inline void leaveBootloader(void)
 		while (OSCCAL > stored_osc_calibration) OSCCAL--;
 		while (OSCCAL < stored_osc_calibration) OSCCAL++;
 	}
+#endif
 
 	// jump to application reset vector at end of flash
 	asm volatile ("rjmp __vectors - 4");
@@ -411,8 +419,8 @@ int main(void)
 		} while (bootLoaderCondition()); /* main event loop runs so long as bootLoaderCondition remains truthy */
 	}
 
-	// set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
 #if LOW_POWER_MODE
+	// set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
 #  ifdef SET_CLOCK_PRESCALER
 	CLKPR = 1 << CLKPCE;
 	CLKPR = SET_CLOCK_PRESCALER;
@@ -422,8 +430,8 @@ int main(void)
 #  endif
 #endif
 
-	// slowly bring down OSCCAL to it's original value before launching in to user program
 #ifdef RESTORE_OSCCAL
+	// slowly bring down OSCCAL to it's original value before launching in to user program
 	while (OSCCAL > osccal_default) OSCCAL -= 1;
 #endif
 	leaveBootloader();
