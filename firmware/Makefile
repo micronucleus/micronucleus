@@ -43,8 +43,6 @@ CFLAGS = \
 	-DF_CPU=$(F_CPU) \
 	$(DEFINES)
 
-LDSCRIPT=my-avr25.x
-
 LDFLAGS = \
 	-Wl,--relax \
 	-Wl,--gc-sections \
