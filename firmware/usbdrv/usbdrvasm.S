@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm.S 785 2010-05-30 17:57:07Z cs $
  */
 
 /*
