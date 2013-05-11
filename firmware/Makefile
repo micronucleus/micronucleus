@@ -13,10 +13,13 @@
 #     make flash   			# to load the boot loader into flash
 #     make disablereset		# for ATtiny85 target - to use external reset line for IO (CAUTION: this is not easy to enable again, see README)
 
-HARDWARE=tiny-85-2.mk
-# HARDWARE=tiny-861-c12.mk
+ALL_HARDWARE=$(basename $(notdir $(wildcard hardware/*.mk)))
 
-include hardware/$(HARDWARE)
+ifeq (,$(filter target-%,$(notdir $(CURDIR))))
+include target.mk
+else
+
+include $(SRCDIR)/hardware/$(HARDWARE).mk
 
 PROGRAMMER = -c USBasp
 # PROGRAMMER = -c stk500 -P /dev/ttyACM0
@@ -36,8 +39,9 @@ CFLAGS = \
 	-fno-move-loop-invariants \
 	-fno-tree-scev-cprop \
 	-fno-inline-small-functions \
-	-I. -Ilibs-device \
 	-I $(HW_INCLUDE_DIR) \
+	-I $(SRCDIR) \
+	-I $(SRCDIR)/libs-device \
 	-nostartfiles \
 	-mmcu=$(DEVICE) \
 	-DF_CPU=$(F_CPU) \
@@ -48,18 +52,22 @@ LDFLAGS = \
 	-Wl,--gc-sections \
 	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS) \
 	-Wl,-Map=main.map \
-	-T$(LDSCRIPT)
+	-T$(SRCDIR)/$(LDSCRIPT)
 
-OBJECTS =  usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o
+OBJECTS =  usbdrv/usbdrvasm.o main.o
+
+VPATH=..
 
 # symbolic targets:
 all: main.hex
 
 .c.o:
-	$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$<.lst
+	@echo "CC  $@ ..."
+	@$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$(notdir $<).lst
 
 .S.o:
-	$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+	@echo "ASM $@ ..."
+	@$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
 # "-x assembler-with-cpp" should not be necessary since this is the default
 # file type for the .S (with capital S) extension. However, upper case
 # characters are not always preserved on Windows. To ensure WinAVR
@@ -85,12 +93,14 @@ clean:
 
 # file targets:
 main.bin:	$(OBJECTS)
-	$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
+	@echo "LD  $@"
+	@$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
 
 main.hex:	main.bin
-	rm -f main.hex main.eep.hex
-	avr-objcopy -j .text -j .data -O ihex main.bin main.hex
-	avr-size main.hex
+	@echo "HEX $@"
+	@rm -f main.hex main.eep.hex
+	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
+	@avr-size main.hex
 
 disasm:	main.bin
 	avr-objdump -S -d main.bin
@@ -98,4 +108,4 @@ disasm:	main.bin
 cpp:
 	$(CC) $(CFLAGS) -E main.c
 
-
+endif

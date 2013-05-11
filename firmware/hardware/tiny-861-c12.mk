@@ -39,6 +39,6 @@ BOOTLOADER_ADDRESS = 17F8
 #
 FUSEOPT= -U lfuse:w:0xff:m -U hfuse:w:0xd7:m -U efuse:w:0xfe:m
 
-HW_INCLUDE_DIR=hardware/tiny-861-c12
+HW_INCLUDE_DIR=$(SRCDIR)/hardware/tiny-861-c12
 
 

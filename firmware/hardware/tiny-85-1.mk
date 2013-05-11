@@ -1,4 +1,4 @@
 
-include tiny-85.mk
-HW_INCLUDE_DIR=include/tiny-85-1
+include $(SRCDIR)/hardware/tiny-85.common
+HW_INCLUDE_DIR=$(SRCDIR)/hardware/tiny-85-1
 
