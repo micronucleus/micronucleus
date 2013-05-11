@@ -563,6 +563,7 @@ static inline void leaveBootloader(void)
 
 	// jump to application reset vector at end of flash
 	__app_reset();
+	__builtin_unreachable();
 }
 
 int main(void)
