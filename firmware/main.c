@@ -21,14 +21,31 @@
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <avr/boot.h>
-//#include <avr/eeprom.h>
 #include <util/delay.h>
-//#include <string.h>
 
 static void leaveBootloader() __attribute__((__noreturn__));
 
+#include <hardware.h>
+
+/*
+ * The RC oscilator can only be used with 16.5 and 12.8 MHz and
+ * only when using the RC oscilator any OSCCAL manipulations are
+ * necessary.
+ */
+#if (F_CPU != 16500000) && (F_CPU != 12800000)
+#  ifndef WITH_CRYSTAL
+#    define WITH_CRYSTAL 1
+#  endif
+#endif
+
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
+
+#ifndef WITH_CRYSTAL
+#    include <libs-device/osccal.c>
+#else
+#  undef RESTORE_OSCCAL
+#endif
 
 /* ------------------------------------------------------------------------ */
 
@@ -170,7 +187,6 @@ void __wrap_vusb_intr(void) __attribute__ ((naked));
 void __wrap_vusb_intr(void)
 {
 	/* Save SREG and YL */
-
 	asm volatile ("push r28");
 	asm volatile ("in r28, __SREG__");
 	asm volatile ("push r28");
@@ -333,10 +349,10 @@ static void writeWordToPageBuffer(uint16_t data)
 		// cpp/c interactions would cost 6 bytes.
 		data = addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET);
 	}
-	else if (currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
+	else if (currentAddress == (USB_INTR_VECTOR_NUM * 2)) {
 		// same 6 bytes as above, but no-trampoline spares 2 cycles
 		// interrupt latency, which I think is worth the expense.
-		data = addr2rjmp((int16_t)__wrap_vusb_intr, USBPLUS_VECTOR_OFFSET);
+		data = addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
 	}
 
 	// at end of page just before bootloader, write in tinyVector table
@@ -441,8 +457,8 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 		if (currentAddress == RESET_VECTOR_OFFSET * 2) {
 			vectorTemp[0] = rjmp2addr(*(uint16_t *)data, RESET_VECTOR_OFFSET);
 		}
-		else if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
-			vectorTemp[1] = rjmp2addr((*(uint16_t *)data) + APP_VUSB_OFFSET, USBPLUS_VECTOR_OFFSET) ;
+		else if (currentAddress == USB_INTR_VECTOR_NUM * 2) {
+			vectorTemp[1] = rjmp2addr(((*(uint16_t *)data) + APP_VUSB_OFFSET), USB_INTR_VECTOR_NUM) ;
 		}
 		else if (currentAddress >= BOOTLOADER_ADDRESS) {
 			// make sure we don't write over the bootloader!
@@ -480,8 +496,8 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
-	if (pgm_read_word(RESET_VECTOR_OFFSET * 2)   != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
-	    pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) !=	addr2rjmp((int16_t)__wrap_vusb_intr, USBPLUS_VECTOR_OFFSET))
+	if (pgm_read_word(RESET_VECTOR_OFFSET * 2) != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
+	    pgm_read_word(USB_INTR_VECTOR_NUM * 2) != addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM))
 		fillFlashWithVectors();
 
 	// TODO: necessary to reset currentAddress?
@@ -526,7 +542,7 @@ static inline void leaveBootloader(void)
 	*(uint8_t *)(RAMEND) = 0x00;
 	*(uint8_t *)(RAMEND - 1) = 0x00;
 
-#ifndef RESTORE_OSCCAL
+#if !defined(RESTORE_OSCCAL) && !defined(WITH_CRYSTAL)
 	// adjust clock to previous calibration value, so user program always starts with same calibration
 	// as when it was uploaded originally.
 	//

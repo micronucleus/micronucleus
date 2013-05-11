@@ -20,6 +20,7 @@
 /* All the port and pin assignments, as well as the clock speed and CRC
    setting are now in bootloaderconfig.h: */
 
+#include <hardware.h>
 #include "bootloaderconfig.h"
 
 /* --------------------------- Functional Range ---------------------------- */
@@ -157,12 +158,12 @@
  * usbFunctionWrite(). Use the global usbCurrentDataToken and a static variable
  * for each control- and out-endpoint to check for duplicate packets.
  */
-//#if USB_CFG_CLOCK_KHZ==16500
-#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
-#include "osccal.h"
-//#else
-//#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
-//#endif
+#ifndef WITH_CRYSTAL
+#  define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
+#  include "osccal.h"
+#else
+#  define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
+#endif
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */
