@@ -25,6 +25,7 @@
 
 static void leaveBootloader() __attribute__((__noreturn__));
 
+#include "chipid.h"
 #include <hardware.h>
 
 /*
@@ -36,6 +37,10 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #  ifndef WITH_CRYSTAL
 #    define WITH_CRYSTAL 1
 #  endif
+#endif
+
+#ifndef MN_WIRING
+#  define MN_WIRING	255
 #endif
 
 #include "bootloaderconfig.h"
@@ -416,11 +421,13 @@ static uchar usbFunctionSetup(uchar data[8])
 
 	idlePolls = 0; // reset idle polls when we get usb traffic
 
-	static uchar replyBuffer[4] = {
+	static uchar replyBuffer[] = {
 		(((uint16_t)BOOTLOADER_ADDRESS) >> 8) & 0xff,
 		((uint16_t)BOOTLOADER_ADDRESS) & 0xff,
 		SPM_PAGESIZE,
-		MICRONUCLEUS_WRITE_SLEEP
+		MICRONUCLEUS_WRITE_SLEEP,
+		MN_CHIP_ID,
+		MN_WIRING
 	};
 
 	if (rq->bRequest == 0) { // get device info

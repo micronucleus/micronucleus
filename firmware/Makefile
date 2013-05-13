@@ -21,8 +21,8 @@ else
 
 include $(SRCDIR)/hardware/$(HARDWARE).mk
 
-PROGRAMMER = -c USBasp
-# PROGRAMMER = -c stk500 -P /dev/ttyACM0
+# PROGRAMMER = -c USBasp
+PROGRAMMER = -c stk500 -P /dev/ttyACM0
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
