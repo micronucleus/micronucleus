@@ -15,7 +15,7 @@ LDSCRIPT=my-avr25.x
 # The tiny861 has a flash page size of 64 bytes and with 2-byte interrupt
 # vectors, the tiny tables has 8 bytes.
 #
-BOOTLOADER_ADDRESS = 17F8
+BOOTLOADER_ADDRESS = 17FA
 
 #
 # fuse low byte (lfuse)

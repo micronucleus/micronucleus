@@ -114,42 +114,41 @@ void __jump_to_main(void)
  * .text section before anything else, just where normaly the vector table is
  * located.
  *
- * - first element is the jump to our own initialization (__initialize_cpu()) to
- *   start execution on a freshly initialized device.
+ * - first element is the applications entry point. This is set when we flash
+ *   the applications interrupt table, otherwise it contains a jump to the
+ *   bootloader init code.
  *
- * - second element is the place to store the osccal value
+ * - second element is the applications interrupt vector for vUSB.
  *
- * - third element is the applications entry point. This is set when we flash
- *   the applications interrupt table.
- *
- * - fourth element is the applications interrupt vector for vUSB.
+ * - third element is the place to store the osccal value
  *
  * The above fields are located in the last few words of the programable flash
  * and that page may be erased.
  *
  */
 
-#define MY_RESET_OFFSET	0
-void __my_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
-void __my_reset(void) { asm volatile ( "rjmp __initialize_cpu"); }
+#define APP_RESET_OFFSET 0
+void __app_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable"))) __attribute__((__noreturn__));
+void __app_reset(void)
+{
+	asm volatile ( "rjmp __initialize_cpu");
+	__builtin_unreachable();
+}
+
+#define APP_USB_VECTOR_OFFSET 2
+void __app_usb_vector(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
+void __app_usb_vector(void) { asm volatile ( "rjmp __initialize_cpu"); }
 
 /*
  * ld does not let us put data into a code section. So this is defined as a function
  * instead, but do not call it !
  */
-#define STORED_OSCCAL_OFFSET 2
+#define STORED_OSCCAL_OFFSET 4
 void __stored_osccal(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
 void __stored_osccal(void) { asm volatile ( "nop" ); }
 
-#define APP_RESET_OFFSET 4
-void __app_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
-void __app_reset(void) { asm volatile ( "rjmp __initialize_cpu"); }
 
-#define APP_USB_VECTOR_OFFSET 6
-void __app_usb_vector(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
-void __app_usb_vector(void) { asm volatile ( "rjmp __initialize_cpu"); }
-
-#define TINY_TABLE_LEN 8
+#define TINY_TABLE_LEN 6
 
 // verify the bootloader address aligns with page size
 #if (BOOTLOADER_ADDRESS + TINY_TABLE_LEN) % SPM_PAGESIZE != 0
@@ -157,7 +156,7 @@ void __app_usb_vector(void) { asm volatile ( "rjmp __initialize_cpu"); }
 #endif
 
 /*
- * Safeguard against erase w/o successive write tothe vector table.
+ * Safeguard against erase w/o successive write to the vector table.
  */
 void __my_reset2(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
 void __my_reset2(void) { asm volatile ( "rjmp __initialize_cpu"); }
@@ -346,11 +345,12 @@ static void writeWordToPageBuffer(uint16_t data)
 
 	if (currentAddress == (RESET_VECTOR_OFFSET * 2)) {
 		// Id like to jump directly to __initialize_cpu, but stupid
-		// cpp/c interactions would cost 6 bytes.
-		data = addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET);
+		// cpp/c interactions would cost 2 bytes extra
+		// data = addr2rjmp((int16_t)__initialize_cpu, USB_INTR_VECTOR_NUM);
+		data = addr2rjmp((BOOTLOADER_ADDRESS / 2) + TINY_TABLE_LEN, RESET_VECTOR_OFFSET);
 	}
 	else if (currentAddress == (USB_INTR_VECTOR_NUM * 2)) {
-		// same 6 bytes as above, but no-trampoline spares 2 cycles
+		// same 2 bytes as above, but no-trampoline spares 2 cycles
 		// interrupt latency, which I think is worth the expense.
 		data = addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
 	}
@@ -358,9 +358,6 @@ static void writeWordToPageBuffer(uint16_t data)
 	// at end of page just before bootloader, write in tinyVector table
 	// see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
 	// for info on how the tiny vector table works
-	else if (currentAddress ==  BOOTLOADER_ADDRESS + MY_RESET_OFFSET) {
-		data = addr2rjmp((int16_t)__initialize_cpu, BOOTLOADER_ADDRESS + MY_RESET_OFFSET);
-	}
 	else if (currentAddress == BOOTLOADER_ADDRESS + APP_RESET_OFFSET) {
 		data = addr2rjmp(vectorTemp[0], (BOOTLOADER_ADDRESS + APP_RESET_OFFSET)/2);
 	}
@@ -444,7 +441,8 @@ static uchar usbFunctionSetup(uchar data[8])
 }
 
 #define rjmp2addr(rjmp, location) \
-	(((rjmp) & 0xFFF) + location + 1)
+	(rjmp + location + 1)
+//	(((rjmp) & 0xFFF) + location + 1)
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length)
@@ -563,7 +561,6 @@ static inline void leaveBootloader(void)
 
 	// jump to application reset vector at end of flash
 	__app_reset();
-	__builtin_unreachable();
 }
 
 int main(void)
