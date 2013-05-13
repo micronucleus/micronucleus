@@ -132,7 +132,9 @@ void __app_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinyta
 void __app_reset(void)
 {
 	asm volatile ( "rjmp __initialize_cpu");
+#if (__GNU_C__ >= 4) && (__GNU_C_MINOR__ >= 5)
 	__builtin_unreachable();
+#endif
 }
 
 #define APP_USB_VECTOR_OFFSET 2

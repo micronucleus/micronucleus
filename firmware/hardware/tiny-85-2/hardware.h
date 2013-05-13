@@ -16,6 +16,11 @@
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
 
+#ifndef PCINT0_vect_num
+#  define PCINT0_vect_num       2
+#endif
+
+
 // setup interrupt for Pin Change for D+
 #define USB_INTR_CFG            PCMSK
 #define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)

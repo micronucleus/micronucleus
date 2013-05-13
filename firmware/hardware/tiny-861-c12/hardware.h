@@ -3,6 +3,10 @@
 #ifndef DEVICE_HARDWARE
 #define DEVICE_HARDWARE 1
 
+#ifndef PCINT_vect_num
+#  define PCINT_vect_num	2
+#endif
+
 #define USB_CFG_IOPORTNAME      B
 #define USB_CFG_DMINUS_BIT      6
 #define USB_CFG_DPLUS_BIT       3
