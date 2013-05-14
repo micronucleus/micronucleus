@@ -3,7 +3,7 @@
 #ifndef DEVICE_HARDWARE
 #define DEVICE_HARDWARE 1
 
-#define MN_WIRING	1
+#define MICRONUCLEUS_WIRING	1
 
 #ifndef PCINT_vect_num
 #  define PCINT_vect_num	2

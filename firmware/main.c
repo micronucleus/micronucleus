@@ -39,8 +39,8 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #  endif
 #endif
 
-#ifndef MN_WIRING
-#  define MN_WIRING	255
+#ifndef MICRONUCLEUS_WIRING
+#  define MICRONUCLEUS_WIRING	255
 #endif
 
 #include "bootloaderconfig.h"
@@ -426,8 +426,8 @@ static uchar usbFunctionSetup(uchar data[8])
 		((uint16_t)BOOTLOADER_ADDRESS) & 0xff,
 		SPM_PAGESIZE,
 		MICRONUCLEUS_WRITE_SLEEP,
-		MN_CHIP_ID,
-		MN_WIRING
+		MICRONUCLEUS_CHIP_ID,
+		MICRONUCLEUS_WIRING
 	};
 
 	if (rq->bRequest == 0) { // get device info
