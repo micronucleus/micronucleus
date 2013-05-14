@@ -30,11 +30,21 @@
 #  define MN_CHIP_ID	13
 #elif defined(__AVR_ATtiny167__)
 #  define MN_CHIP_ID	14
+#  ifndef VECTOR_SIZE
+#    define VECTOR_SIZE 4
+#  endif
 #elif defined(__AVR_ATtiny1634__)
 #  define MN_CHIP_ID	14
+#  ifndef VECTOR_SIZE
+#    define VECTOR_SIZE 4
+#  endif
 #else
 #  warning "Your chips family is not recognized."
 #  define MN_CHIP_ID	255
+#endif
+
+#ifndef VECTOR_SIZE
+#  define VECTOR_SIZE 2
 #endif
 
 #endif

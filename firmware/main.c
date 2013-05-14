@@ -350,13 +350,13 @@ static void writeFlashPage(void)
 static void writeWordToPageBuffer(uint16_t data)
 {
 
-	if (currentAddress == (RESET_VECTOR_OFFSET * 2)) {
+	if (currentAddress == (RESET_VECTOR_OFFSET * VECTOR_SIZE)) {
 		// Id like to jump directly to __initialize_cpu, but stupid
 		// cpp/c interactions would cost 2 bytes extra
 		// data = addr2rjmp((int16_t)__initialize_cpu, USB_INTR_VECTOR_NUM);
 		data = addr2rjmp((BOOTLOADER_ADDRESS / 2) + TINY_TABLE_LEN, RESET_VECTOR_OFFSET);
 	}
-	else if (currentAddress == (USB_INTR_VECTOR_NUM * 2)) {
+	else if (currentAddress == (USB_INTR_VECTOR_NUM * VECTOR_SIZE)) {
 		// same 2 bytes as above, but no-trampoline spares 2 cycles
 		// interrupt latency, which I think is worth the expense.
 		data = addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
@@ -461,10 +461,10 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 
 	do {
 		// remember vectors or the tinyvector table
-		if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+		if (currentAddress == RESET_VECTOR_OFFSET * VECTOR_SIZE) {
 			vectorTemp[0] = rjmp2addr(*(uint16_t *)data, RESET_VECTOR_OFFSET);
 		}
-		else if (currentAddress == USB_INTR_VECTOR_NUM * 2) {
+		else if (currentAddress == USB_INTR_VECTOR_NUM * VECTOR_SIZE) {
 			vectorTemp[1] = rjmp2addr(((*(uint16_t *)data) + APP_VUSB_OFFSET), USB_INTR_VECTOR_NUM) ;
 		}
 		else if (currentAddress >= BOOTLOADER_ADDRESS) {
@@ -503,8 +503,8 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
-	if (pgm_read_word(RESET_VECTOR_OFFSET * 2) != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
-	    pgm_read_word(USB_INTR_VECTOR_NUM * 2) != addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM))
+	if (pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
+	    pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) != addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM))
 		fillFlashWithVectors();
 
 	// TODO: necessary to reset currentAddress?
