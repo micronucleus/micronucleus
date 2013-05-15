@@ -432,7 +432,7 @@ static uchar usbFunctionSetup(uchar data[8])
 
 	if (rq->bRequest == 0) { // get device info
 		usbMsgPtr = replyBuffer;
-		return 4;
+		return sizeof(replyBuffer);
 	} else if (rq->bRequest == 1) { // write page
 		//writeLength = rq->wValue.word;
 		currentAddress = rq->wIndex.word;
