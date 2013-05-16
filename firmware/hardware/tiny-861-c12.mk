@@ -4,7 +4,7 @@
 
 F_CPU = 12000000
 DEVICE=attiny861
-LDSCRIPT=my-avr25.x
+LDSCRIPT_SUFFIX=-avr25.x
 
 # Where to put the bootloader:
 #

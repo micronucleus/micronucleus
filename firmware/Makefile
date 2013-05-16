@@ -49,17 +49,19 @@ CFLAGS = \
 
 LDFLAGS = \
 	-Wl,--relax \
-	-Wl,--gc-sections \
-	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS) \
-	-Wl,-Map=main.map \
-	-T$(SRCDIR)/$(LDSCRIPT)
+	-Wl,--gc-sections
 
-OBJECTS =  usbdrv/usbdrvasm.o main.o
+BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o
+
+BOOTLOADER_LDFLAGS= \
+	-Wl,-Map=bootloader.map \
+	-T$(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX) \
+	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS)
 
 VPATH=..
 
 # symbolic targets:
-all: main.hex
+all: bootloader.hex
 
 .c.o:
 	@echo "CC  $@ ..."
@@ -77,7 +79,7 @@ all: main.hex
 	$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i
+	$(AVRDUDE) -U flash:w:bootloader.hex:i
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i
@@ -89,23 +91,22 @@ disablereset:
 	$(AVRDUDE) $(FUSEOPT_t85_DISABLERESET)
 
 clean:
-	rm -f main.hex main.bin main.c.lst main.map *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
+	rm -f bootloader.hex bootloader.elf bootloader.c.lst bootloader.map *.o usbdrv/*.o bootloader.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
 
 # file targets:
-main.bin:	$(OBJECTS)
+bootloader.elf:	$(BOOTLOADER_OBJECTS)
 	@echo "LD  $@"
-	@$(CC) $(CFLAGS) -o $@ $(OBJECTS) $(LDFLAGS)
+	@$(CC) $(CFLAGS) -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
 
-main.hex:	main.bin
+bootloader.hex:	bootloader.elf
 	@echo "HEX $@"
-	@rm -f main.hex main.eep.hex
-	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
-	@avr-size main.hex
+	@avr-objcopy -j .text -j .data -O ihex $< $@
+	@avr-size $@
 
-disasm:	main.bin
-	avr-objdump -S -d main.bin
+disasm:	bootloader.elf
+	avr-objdump -S -d bootloader.elf
 
 cpp:
-	$(CC) $(CFLAGS) -E main.c
+	$(CC) $(CFLAGS) -E bootloader.c
 
 endif
