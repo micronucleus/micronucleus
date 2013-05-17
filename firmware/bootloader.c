@@ -307,7 +307,7 @@ static inline void eraseApplication(void)
 	// while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
 	// to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
 	// during upload
-	currentAddress = BOOTLOADER_ADDRESS;
+	currentAddress = BOOTLOADER_ADDRESS + TINY_TABLE_LEN;
 	cli();
 	while (currentAddress) {
 		currentAddress -= SPM_PAGESIZE;
@@ -354,7 +354,7 @@ static void writeWordToPageBuffer(uint16_t data)
 		// Id like to jump directly to __initialize_cpu, but stupid
 		// cpp/c interactions would cost 2 bytes extra
 		// data = addr2rjmp((int16_t)__initialize_cpu, USB_INTR_VECTOR_NUM);
-		data = addr2rjmp((BOOTLOADER_ADDRESS / 2) + TINY_TABLE_LEN, RESET_VECTOR_OFFSET);
+		data = addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET);
 	}
 	else if (currentAddress == (USB_INTR_VECTOR_NUM * VECTOR_SIZE)) {
 		// same 2 bytes as above, but no-trampoline spares 2 cycles
