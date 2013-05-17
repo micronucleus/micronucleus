@@ -42,7 +42,6 @@ CFLAGS = \
 	-I $(HW_INCLUDE_DIR) \
 	-I $(SRCDIR) \
 	-I $(SRCDIR)/libs-device \
-	-nostartfiles \
 	-mmcu=$(DEVICE) \
 	-DF_CPU=$(F_CPU) \
 	$(DEFINES)
@@ -54,22 +53,34 @@ LDFLAGS = \
 BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o
 
 BOOTLOADER_LDFLAGS= \
+	-nostartfiles \
 	-Wl,-Map=bootloader.map \
 	-T$(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX) \
 	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS)
 
+UPGRADE_OBJECTS = upgrade-with-bootloader.o
+
+UPGRADE_LDFLAGS= \
+	-Wl,-Map=upgrade.map \
+	-T$(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
+
+# define as empty to get verbose output
+Q=@
+
 VPATH=..
 
 # symbolic targets:
-all: bootloader.hex
+all: bootloader.hex upgrade.hex
+
+#upgrade.hex
 
 .c.o:
-	@echo "CC  $@ ..."
-	@$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$(notdir $<).lst
+	$(Q)echo "CC  $< ..."
+	$(Q)$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$(notdir $<).lst
 
 .S.o:
-	@echo "ASM $@ ..."
-	@$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+	$(Q)echo "ASM $< ..."
+	$(Q)$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
 # "-x assembler-with-cpp" should not be necessary since this is the default
 # file type for the .S (with capital S) extension. However, upper case
 # characters are not always preserved on Windows. To ensure WinAVR
@@ -78,8 +89,30 @@ all: bootloader.hex
 .c.s:
 	$(CC) $(CFLAGS) -S $< -o $@
 
+%.hex : %.elf
+	$(Q)echo "HEX $@"
+	$(Q)avr-objcopy -j .text -j .data -O ihex $< $@
+	$(Q)avr-size $@
+
+%.raw : %.elf
+	$(Q)echo "HEX $@"
+	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
+
+upgrade-with-bootloader.o:	upgrade.o bootloader.raw
+	@avr-objcopy --add-section .payload=bootloader.raw \
+	            --set-section-flags .payload=alloc \
+                    -O elf32-avr $< $@
+
+upgrade.hex:    upgrade.elf
+	$(Q)avr-objcopy -j .text -j .data -j .payload -O ihex upgrade.elf upgrade.hex
+	$(Q)avr-size upgrade.hex
+
+
 flash:	all
 	$(AVRDUDE) -U flash:w:bootloader.hex:i
+
+flash-upgrade:	all
+	$(AVRDUDE) -U flash:w:upgrade.hex:i
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i
@@ -93,18 +126,19 @@ disablereset:
 clean:
 	rm -f bootloader.hex bootloader.elf bootloader.c.lst bootloader.map *.o usbdrv/*.o bootloader.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
 
-# file targets:
 bootloader.elf:	$(BOOTLOADER_OBJECTS)
-	@echo "LD  $@"
-	@$(CC) $(CFLAGS) -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
+	$(Q)echo "LD  $@"
+	$(Q)$(CC) $(CFLAGS) -nostartfiles -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
 
-bootloader.hex:	bootloader.elf
-	@echo "HEX $@"
-	@avr-objcopy -j .text -j .data -O ihex $< $@
-	@avr-size $@
+upgrade.elf:	$(UPGRADE_OBJECTS)
+	$(Q)echo "LD  $@"
+	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
 
 disasm:	bootloader.elf
 	avr-objdump -S -d bootloader.elf
+
+disasm-upgrade:	upgrade.elf
+	avr-objdump -S -d upgrade.elf
 
 cpp:
 	$(CC) $(CFLAGS) -E bootloader.c
