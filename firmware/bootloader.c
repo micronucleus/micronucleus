@@ -52,6 +52,17 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #  undef RESTORE_OSCCAL
 #endif
 
+#ifndef FLASH_SIZE
+#  define FLASH_SIZE (FLASHEND + 1)
+#endif
+#ifndef FLASH_WORDS
+#  define FLASH_WORDS	(FLASH_SIZE / 2)
+#endif
+#ifndef VECTOR_WORDS
+#  define VECTOR_WORDS	(VECTOR_SIZE / 2)
+#endif
+
+
 /* ------------------------------------------------------------------------ */
 
 #ifndef BOOTLOADER_CAN_EXIT
@@ -137,25 +148,33 @@ void __app_reset(void) __attribute__ ((naked)) __attribute__ ((section (".tinyta
 void __app_reset(void)
 {
 	asm volatile ( "rjmp __initialize_cpu");
+#if VECTOR_SIZE == 4
+	asm volatile ( "nop");
+#endif
 #if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 5)
 	__builtin_unreachable();
 #endif
 }
 
-#define APP_USB_VECTOR_OFFSET 2
+#define APP_USB_VECTOR_OFFSET (APP_RESET_OFFSET + VECTOR_SIZE)
 void __app_usb_vector(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
-void __app_usb_vector(void) { asm volatile ( "rjmp __initialize_cpu"); }
+void __app_usb_vector(void) {
+	asm volatile ( "rjmp __initialize_cpu");
+#if VECTOR_SIZE == 4
+	asm volatile ( "nop");
+#endif
+}
 
 /*
  * ld does not let us put data into a code section. So this is defined as a function
  * instead, but do not call it !
  */
-#define STORED_OSCCAL_OFFSET 4
+#define STORED_OSCCAL_OFFSET (APP_USB_VECTOR_OFFSET + VECTOR_SIZE)
 void __stored_osccal(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
 void __stored_osccal(void) { asm volatile ( "nop" ); }
 
 
-#define TINY_TABLE_LEN 6
+#define TINY_TABLE_LEN (STORED_OSCCAL_OFFSET + 2)
 
 // verify the bootloader address aligns with page size
 #if (BOOTLOADER_ADDRESS + TINY_TABLE_LEN) % SPM_PAGESIZE != 0
@@ -343,34 +362,64 @@ static void writeFlashPage(void)
 			       );					    \
 		       }))
 
-#define addr2rjmp(addr, location) \
-	( 0xC000 + ((addr - location - 1) & 0xFFF))
+inline static uint16_t addr2rjmp(const uint16_t addr, const uint16_t location)
+{
+	return ( 0xC000 + ((addr - location - 1) & 0xFFF));
+}
 
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data)
 {
 
+	/*
+	 * Note for 16k devices:
+	 *
+	 * We assume that the bootloader resides somewhere within the last 4k
+	 * of the flash. This assumptions allows us to use the shorter and
+	 * faster "rjmp" instructions in the vector table and we don't have to
+	 * write the second word in the vector.
+	 *
+	 * To jump back to the application vectors, we always use absolute
+	 * jumps. This maybe costs an additional cycle in vUSB interrupt
+	 * latency but saves some code size.
+	 *
+	 */
 	if (currentAddress == (RESET_VECTOR_OFFSET * VECTOR_SIZE)) {
-		// Id like to jump directly to __initialize_cpu, but stupid
+		// I'd like to jump directly to __initialize_cpu, but stupid
 		// cpp/c interactions would cost 2 bytes extra
-		// data = addr2rjmp((int16_t)__initialize_cpu, USB_INTR_VECTOR_NUM);
-		data = addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET);
+		data = addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS);
 	}
 	else if (currentAddress == (USB_INTR_VECTOR_NUM * VECTOR_SIZE)) {
 		// same 2 bytes as above, but no-trampoline spares 2 cycles
 		// interrupt latency, which I think is worth the expense.
-		data = addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
+		// data = addr2rjmp((uint16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
+		data = addr2rjmp((uint16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS);
 	}
 
 	// at end of page just before bootloader, write in tinyVector table
 	// see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
 	// for info on how the tiny vector table works
+#if VECTOR_SIZE == 2
 	else if (currentAddress == BOOTLOADER_ADDRESS + APP_RESET_OFFSET) {
 		data = addr2rjmp(vectorTemp[0], (BOOTLOADER_ADDRESS + APP_RESET_OFFSET)/2);
 	}
 	else if (currentAddress == BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET) {
 		data = addr2rjmp(vectorTemp[1], (BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET)/2);
 	}
+#else
+        else if ( currentAddress == BOOTLOADER_ADDRESS + APP_RESET_OFFSET ) {
+                data = 0x940c;
+        }
+        else if ( currentAddress == BOOTLOADER_ADDRESS + APP_RESET_OFFSET + 2 ) {
+                data = vectorTemp[0];
+        }
+        else if ( currentAddress == BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET ) {
+                data = 0x940c;
+        }
+        else if ( currentAddress == BOOTLOADER_ADDRESS + APP_USB_VECTOR_OFFSET + 2 ) {
+                data = vectorTemp[1] + APP_USB_VECTOR_OFFSET;
+        }
+#endif
 	else if (currentAddress == BOOTLOADER_ADDRESS + STORED_OSCCAL_OFFSET) {
 		data = OSCCAL;
 	}
@@ -449,9 +498,33 @@ static uchar usbFunctionSetup(uchar data[8])
 	return 0;
 }
 
-#define rjmp2addr(rjmp, location) \
-	(rjmp + location + 1)
-//	(((rjmp) & 0xFFF) + location + 1)
+/*
+ * Decode an rjmp instruction word and return the absolute address the rjump
+ * would jump to.
+ *
+ * The returned address is in words, offset must be given in words too.
+ */
+#if VECTOR_SIZE == 2
+static inline uint16_t rjmp2addr(const uint16_t rjmp, const uint16_t location)
+{
+	return rjmp + location + 1;
+}
+#else
+static uint16_t rjmp2addr(const uint16_t rjmp, const uint16_t offset ) {
+
+        // check sign bit
+        if ( rjmp & 0x0800 ) {
+                // jump backwards
+                int16_t addr = rjmp | 0xF000; // extend distance to 16 bit negative int.
+                addr += offset + 1;
+
+                return addr & (FLASHEND/2);
+        } else {
+                int16_t addr = rjmp & 0xFFF;
+                return addr + offset + 1;
+        }
+}
+#endif
 
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length)
@@ -464,10 +537,22 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 		if (currentAddress == RESET_VECTOR_OFFSET * VECTOR_SIZE) {
 			vectorTemp[0] = rjmp2addr(*(uint16_t *)data, RESET_VECTOR_OFFSET);
 		}
+#if VECTOR_SIZE == 4
+		else if (currentAddress == RESET_VECTOR_OFFSET * VECTOR_SIZE + 2) {
+			if ( ((*(uint16_t *)data) != 0) && ((*(uint16_t *)data) != 0xFFFF) )
+				vectorTemp[0] = (*(uint16_t *)data);
+		}
+#endif
 		else if (currentAddress == USB_INTR_VECTOR_NUM * VECTOR_SIZE) {
 			vectorTemp[1] = rjmp2addr(((*(uint16_t *)data) + APP_VUSB_OFFSET), USB_INTR_VECTOR_NUM) ;
 		}
-		else if (currentAddress >= BOOTLOADER_ADDRESS) {
+#if VECTOR_SIZE == 4
+		else if (currentAddress == USB_INTR_VECTOR_NUM * VECTOR_SIZE + 2) {
+			if ( ((*(uint16_t *)data) != 0) && ((*(uint16_t *)data) != 0xFFFF) )
+				vectorTemp[1] = (*(uint16_t *)data);
+		}
+#endif
+		else if (currentAddress >= BOOTLOADER_ADDRESS + TINY_TABLE_LEN) {
 			// make sure we don't write over the bootloader!
 			break;
 		}
@@ -503,9 +588,13 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
-	if (pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) != addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET) ||
-	    pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) != addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM))
+	if (pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) !=
+	        addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET * VECTOR_WORDS) ||
+	    pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) !=
+	        addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS))
+	{
 		fillFlashWithVectors();
+	}
 
 	// TODO: necessary to reset currentAddress?
 	currentAddress = 0;
