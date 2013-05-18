@@ -220,7 +220,7 @@ USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
  * Note that calls to the functions usbFunctionRead() and usbFunctionWrite()
  * are only done if enabled by the configuration in usbconfig.h.
  */
-USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq);
+usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq);
 /* You need to implement this function ONLY if you provide USB descriptors at
  * runtime (which is an expert feature). It is very similar to
  * usbFunctionSetup() above, but it is called only to request USB descriptor
