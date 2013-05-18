@@ -17,6 +17,7 @@ all-targets: $(OBJDIRS)
 $(OBJDIRS):
 	+@[ -d $@ ] || mkdir -p $@
 	+@[ -d $@/usbdrv ] || mkdir -p $@/usbdrv
+	+@echo "######################## $@ ##########################"
 	+@$(MAKETARGET)
 
 
