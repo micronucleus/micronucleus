@@ -433,13 +433,6 @@ static void writeWordToPageBuffer(uint16_t data)
 	boot_page_fill(currentAddress, data);
 	sei();
 
-	// only need to erase if there is data already in the page that doesn't match what we're programming
-	// TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
-	//if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
-	//if ((pgm_read_word(currentAddress) & data) != data) {
-	//    fireEvent(EVENT_PAGE_NEEDS_ERASE);
-	//}
-
 	// increment progmem address by one word
 	currentAddress += 2;
 }
@@ -447,14 +440,6 @@ static void writeWordToPageBuffer(uint16_t data)
 // fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
 static void fillFlashWithVectors(void)
 {
-	//int16_t i;
-	//
-	// fill all or remainder of page with 0xFFFF (as if unprogrammed)
-	//for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
-	//    writeWordToPageBuffer(0xFFFF); // is where vector tables are sorted out
-	//}
-
-	// TODO: Or more simply:
 	do
 		writeWordToPageBuffer(0xFFFF);
 	while (currentAddress % SPM_PAGESIZE);
@@ -529,9 +514,6 @@ static uint16_t rjmp2addr(const uint16_t rjmp, const uint16_t offset ) {
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length)
 {
-	//if (length > writeLength) length = writeLength; // test for missing final page bug
-	//writeLength -= length;
-
 	do {
 		// remember vectors or the tinyvector table
 		if (currentAddress == RESET_VECTOR_OFFSET * VECTOR_SIZE) {
@@ -563,7 +545,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length)
 	} while (length);
 
 	// if we have now reached another page boundary, we're done
-	//uchar isLast = (writeLength == 0);
 	uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
 	// definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
 	if (isLast) fireEvent(EVENT_WRITE_PAGE);        // ask runloop to write our page
@@ -612,16 +593,6 @@ static inline void tiny85FlashWrites(void)
 		writeFlashPage();               // otherwise just write it
 }
 
-// finishes up writing to the flash, including adding the tinyVector tables at the end of memory
-// TODO: can this be simplified? EG: currentAddress = PROGMEM_SIZE; fillFlashWithVectors();
-// static inline void tiny85FinishWriting(void) {
-//     // make sure remainder of flash is erased and write checksum and application reset vectors
-//     if (didWriteSomething) {
-//         while (currentAddress < BOOTLOADER_ADDRESS) {
-//             fillFlashWithVectors();
-//         }
-//     }
-// }
 
 // reset system to a normal state and launch user program
 static inline void leaveBootloader(void)
