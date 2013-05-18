@@ -126,11 +126,11 @@ disablereset:
 clean:
 	rm -f bootloader.hex bootloader.elf bootloader.c.lst bootloader.map *.o usbdrv/*.o bootloader.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
 
-bootloader.elf:	$(BOOTLOADER_OBJECTS)
+bootloader.elf:	$(BOOTLOADER_OBJECTS) $(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX)
 	$(Q)echo "LD  $@"
 	$(Q)$(CC) $(CFLAGS) -nostartfiles -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
 
-upgrade.elf:	$(UPGRADE_OBJECTS)
+upgrade.elf:	$(UPGRADE_OBJECTS) $(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
 	$(Q)echo "LD  $@"
 	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
 
