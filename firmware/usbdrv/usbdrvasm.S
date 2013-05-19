@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm.S 785 2010-05-30 17:57:07Z cs $
  */
 
 /*
@@ -68,6 +67,7 @@ the file appropriate for the given clock rate.
     .type   USB_INTR_VECTOR, @function
     .global usbCrc16
     .global usbCrc16Append
+    .global waitForJ
 #endif /* __IAR_SYSTEMS_ASM__ */
 
 

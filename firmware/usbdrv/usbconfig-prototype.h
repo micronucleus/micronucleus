@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbconfig-prototype.h 785 2010-05-30 17:57:07Z cs $
  */
 
 #ifndef __usbconfig_h_included__
@@ -355,6 +354,15 @@ section at the end of this file).
 #define USB_CFG_DESCR_PROPS_HID                     0
 #define USB_CFG_DESCR_PROPS_HID_REPORT              0
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0
+
+
+#define usbMsgPtr_t unsigned short
+/* If usbMsgPtr_t is not defined, it defaults to 'uchar *'. We define it to
+ * a scalar type here because gcc generates slightly shorter code for scalar
+ * arithmetics than for pointer arithmetics. Remove this define for backward
+ * type compatibility or define it to an 8 bit type if you use data in RAM only
+ * and all RAM is below 256 bytes (tiny memory model in IAR CC).
+ */
 
 /* ----------------------- Optional MCU Description ------------------------ */
 

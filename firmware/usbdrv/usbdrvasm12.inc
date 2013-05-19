@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: usbdrvasm12.inc 740 2009-04-13 18:23:31Z cs $
  */
 
 /* Do not link this file! Link usbdrvasm.S instead, which includes the
@@ -41,50 +40,8 @@ DATAx (rx) to ACK/NAK/STALL (tx)                    2   7.5    16-60
 USB_INTR_VECTOR:
 ;order of registers pushed: YL, SREG [sofError], YH, shift, x1, x2, x3, cnt
     push    YL              ;2 [35] push only what is necessary to sync with edge ASAP
-	
     in      YL, SREG        ;1 [37]
     push    YL              ;2 [39]
-
-	in		YL, TIMSK
-	cpi		YL, 0
-	breq	compare2						; don't go to app if equal (possible bootloader)
-
-	; prep and jump to app vector
-	pop YL
-	out      SREG, YL
-	pop YL
-	rjmp __vectors - 2
-
-compare2:
-	in		YL, TCNT2
-	cpi		YL, 0xFF	
-	breq	bootloaderExt0					; don't go to app if equal (bootloader)
-
-	; prep and jump to app vector
-	pop YL
-	out      SREG, YL
-	pop YL
-	
-	; some errors with 1 nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	;nop
-	
-	
-	rjmp __vectors - 2
-
-
-bootloaderExt0:
-	ldi YL, 0
-	
-
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------

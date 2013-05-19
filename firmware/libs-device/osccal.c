@@ -4,7 +4,6 @@
  * Tabsize: 4
  * Copyright: (c) 2008 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: osccal.c 762 2009-08-12 17:10:30Z cs $
  */
 
 #include <avr/io.h>

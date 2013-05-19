@@ -44,51 +44,6 @@ names BOOTLOADER_INIT and BOOTLOADER_CONDITION for this functionality. If
 these macros are defined, the boot loader uses them.
 */
 
-#define TINY85_HARDWARE_CONFIG_1 	1
-#define TINY85_HARDWARE_CONFIG_2 	2
-
-/* ---------------------------- Hardware Config ---------------------------- */
-#define HARDWARE_CONFIG 		TINY85_HARDWARE_CONFIG_2
-
-#define USB_CFG_IOPORTNAME      B
-/* This is the port where the USB bus is connected. When you configure it to
- * "B", the registers PORTB, PINB and DDRB will be used.
- */
-
-#ifndef __AVR_ATtiny85__
-#	define USB_CFG_DMINUS_BIT      0
-/* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
- * This may be any bit in the port.
- */
-#	define USB_CFG_DPLUS_BIT       2
-/* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
- * This may be any bit in the port. Please note that D+ must also be connected
- * to interrupt pin INT0!
- */
-#endif
- 
-#if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_1)
-#	define USB_CFG_DMINUS_BIT      0
-/* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
- * This may be any bit in the port.
- */
-#	define USB_CFG_DPLUS_BIT       2
-/* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
- * This may be any bit in the port, but must be configured as a pin change interrupt.
- */
- #endif
- 
-#if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_2)
-#	define USB_CFG_DMINUS_BIT      3
-/* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
- * This may be any bit in the port.
- */
-#	define USB_CFG_DPLUS_BIT       4
-/* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
- * This may be any bit in the port, but must be configured as a pin change interrupt.
- */
- #endif
-
 #define USB_CFG_CLOCK_KHZ       (F_CPU/1000)
 /* Clock rate of the AVR in MHz. Legal values are 12000, 16000 or 16500.
  * The 16.5 MHz version of the code requires no crystal, it tolerates +/- 1%
@@ -96,6 +51,8 @@ these macros are defined, the boot loader uses them.
  * of 2000 ppm and thus a crystal!
  * Default if not specified: 12 MHz
  */
+
+#define RESET_VECTOR_OFFSET         0
 
 /* ----------------------- Optional Hardware Config ------------------------ */
 
@@ -115,49 +72,11 @@ these macros are defined, the boot loader uses them.
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
 
-//#define HAVE_EEPROM_PAGED_ACCESS    0
-/* If HAVE_EEPROM_PAGED_ACCESS is defined to 1, page mode access to EEPROM is
- * compiled in. Whether page mode or byte mode access is used by AVRDUDE
- * depends on the target device. Page mode is only used if the device supports
- * it, e.g. for the ATMega88, 168 etc. You can save quite a bit of memory by
- * disabling page mode EEPROM access. Costs ~ 138 bytes.
- */
-//#define HAVE_EEPROM_BYTE_ACCESS     0
-/* If HAVE_EEPROM_BYTE_ACCESS is defined to 1, byte mode access to EEPROM is
- * compiled in. Byte mode is only used if the device (as identified by its
- * signature) does not support page mode for EEPROM. It is required for
- * accessing the EEPROM on the ATMega8. Costs ~54 bytes.
- */
 #define BOOTLOADER_CAN_EXIT         1
 /* If this macro is defined to 1, the boot loader will exit shortly after the
  * programmer closes the connection to the device. Costs ~36 bytes.
  * Required for TINY85MODE
  */
-//#define HAVE_CHIP_ERASE             0
-/* If this macro is defined to 1, the boot loader implements the Chip Erase
- * ISP command. Otherwise pages are erased on demand before they are written.
- */
-//#define SIGNATURE_BYTES             0x1e, 0x93, 0x0b, 0     /* ATtiny85 */
-/* This macro defines the signature bytes returned by the emulated USBasp to
- * the programmer software. They should match the actual device at least in
- * memory size and features. If you don't define this, values for ATMega8,
- * ATMega88, ATMega168 and ATMega328 are guessed correctly.
- */
-
-/* The following block guesses feature options so that the resulting code
- * should fit into 2k bytes boot block with the given device and clock rate.
- * Activate by passing "-DUSE_AUTOCONFIG=1" to the compiler.
- * This requires gcc 3.4.6 for small enough code size!
- */
-// #if USE_AUTOCONFIG
-// #   undef HAVE_EEPROM_PAGED_ACCESS
-// #   define HAVE_EEPROM_PAGED_ACCESS     (USB_CFG_CLOCK_KHZ >= 16000)
-// #   undef HAVE_EEPROM_BYTE_ACCESS
-// #   define HAVE_EEPROM_BYTE_ACCESS      1
-// #   undef BOOTLOADER_CAN_EXIT
-// #   define BOOTLOADER_CAN_EXIT          1
-// #   undef SIGNATURE_BYTES
-// #endif /* USE_AUTOCONFIG */
 
 /* ------------------------------------------------------------------------- */
 
@@ -171,40 +90,6 @@ these macros are defined, the boot loader uses them.
 
 
 #define JUMPER_BIT  0   /* jumper is connected to this bit in port B, active low */
-
-#ifndef MCUCSR          /* compatibility between ATMega8 and ATMega88 */
-#   define MCUCSR   MCUSR
-#endif
-
-/* tiny85 Architecture Specifics */
-#ifndef __AVR_ATtiny85__
-#  error "uBoot is only designed for attiny85"
-#endif
-
-#define TINY85MODE
-
-// number of bytes before the boot loader vectors to store the tiny application vector table
-#define TINYVECTOR_RESET_OFFSET     4
-#define TINYVECTOR_USBPLUS_OFFSET   2
-#define TINYVECTOR_OSCCAL_OFFSET    6
-
-#define RESET_VECTOR_OFFSET         0
-#define USBPLUS_VECTOR_OFFSET       2
-
-//#if BOOTLOADER_CAN_EXIT == 0
-//#    define BOOTLOADER_CAN_EXIT 1
-//#endif
-
-// setup interrupt for Pin Change for D+
-#define USB_INTR_CFG            PCMSK
-#define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
-#define USB_INTR_CFG_CLR        0
-#define USB_INTR_ENABLE         GIMSK
-#define USB_INTR_ENABLE_BIT     PCIE
-#define USB_INTR_PENDING        GIFR
-#define USB_INTR_PENDING_BIT    PCIF
-#define USB_INTR_VECTOR         PCINT0_vect
-
 
 /* max 6200ms to not overflow idlePolls variable */
 #define AUTO_EXIT_MS    5000

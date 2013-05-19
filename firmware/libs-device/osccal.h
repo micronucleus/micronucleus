@@ -4,7 +4,6 @@
  * Tabsize: 4
  * Copyright: (c) 2008 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: osccal.h 762 2009-08-12 17:10:30Z cs $
  */
 
 /*
@@ -19,7 +18,6 @@ low level timing measurements, usbMeasureFrameLength() is called. This
 function must be enabled in usbconfig.h by defining
 USB_CFG_HAVE_MEASURE_FRAME_LENGTH to 1. It is recommended to call
 calibrateOscillator() from the reset hook in usbconfig.h:
-*/
 
 #ifndef __ASSEMBLER__
 #include <avr/interrupt.h>  // for sei()
@@ -27,7 +25,6 @@ extern void calibrateOscillator(void);
 #endif
 #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){cli(); calibrateOscillator(); sei();}
 
-/*
 This routine is an alternative to the continuous synchronization described
 in osctune.h.
 
@@ -53,13 +50,14 @@ deviation! All other frequency modules require at least 0.2% precision.
 #ifndef __OSCCAL_H_INCLUDED__
 #define __OSCCAL_H_INCLUDED__
 
-//void    calibrateOscillator(void);
+#ifndef __ASSEMBLER__
+void    calibrateOscillator(void);
 /* This function calibrates the RC oscillator so that the CPU runs at F_CPU.
  * It MUST be called immediately after the end of a USB RESET condition!
  * Disable all interrupts during the call!
  * It is recommended that you store the resulting value in EEPROM so that a
  * good guess value is available after the next reset.
  */
-
+#endif
 
 #endif /* __OSCCAL_H_INCLUDED__ */
