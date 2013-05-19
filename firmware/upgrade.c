@@ -24,6 +24,11 @@
 #include <avr/wdt.h>
 #include <avr/boot.h>
 
+#include "chipid.h"
+#include <hardware.h>
+
+#define TINY_TABLE_LEN (VECTOR_SIZE * 2 + 2)
+
 #define PAGE_WORDS  (SPM_PAGESIZE / 2)
 
 /*
@@ -44,8 +49,6 @@ extern const PROGMEM char __payload_start;
 extern const PROGMEM char __payload_end;
 
 uint16_t *bootloader_data = (uint16_t *)&__payload_start;
-
-uint16_t bootloader_size = 0;
 
 static void erase_page(uint16_t address)
 {
@@ -106,7 +109,7 @@ static void forward_interrupt_vector_table(void)
 	load_table(0, vector_table);
 
 	/* modify reset vector */
-	vector_table[0] = addr2rjmp((BOOTLOADER_ADDRESS / 2), 0);
+	vector_table[0] = addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN)/ 2), 0);
 
 	erase_page(0);
 	write_page(0, vector_table);
@@ -119,43 +122,47 @@ static void write_new_bootloader(void)
 
 	uint16_t write_addr = BOOTLOADER_ADDRESS - (BOOTLOADER_ADDRESS % SPM_PAGESIZE);
 	uint16_t offset = 0;
+	uint16_t bootloader_words = (&__payload_end - &__payload_start) / 2;
 
 	while (write_addr < BOOTLOADER_ADDRESS) {
 		boot_page_fill_safe(write_addr, 0xFFFF);
 		write_addr += 2;
 	}
 
-	for (offset = 0; offset < (bootloader_size / 2); offset ++) {
+	for (offset = 0; offset < bootloader_words ; offset ++) {
 		uint16_t data = pgm_read_word( bootloader_data + offset );
 		boot_page_fill_safe(write_addr, data);
 		write_addr += 2;
 
-		if ( write_addr % SPM_PAGESIZE == 0) {
-			boot_page_erase_safe(write_addr - 1);
-			boot_page_write_safe(write_addr - 1);
+		if ( (write_addr % SPM_PAGESIZE) == 0) {
+			boot_page_erase_safe(write_addr - SPM_PAGESIZE);
+			boot_spm_busy_wait();
+			boot_page_write_safe(write_addr - SPM_PAGESIZE);
+			boot_spm_busy_wait();
 		}
 	}
 
-	if ( write_addr % SPM_PAGESIZE != 0) {
+	if ( (write_addr % SPM_PAGESIZE) != 0) {
 		while ( (write_addr % SPM_PAGESIZE) != 0 ) {
 			boot_page_fill_safe(write_addr, 0xFFFF);
 			write_addr += 2;
 		}
 
-		boot_page_erase_safe(write_addr - 1);
-		boot_page_write_safe(write_addr - 1);
+		boot_page_erase_safe(write_addr - SPM_PAGESIZE);
+		boot_spm_busy_wait();
+		boot_page_write_safe(write_addr - SPM_PAGESIZE);
+		boot_spm_busy_wait();
 	}
 }
 
-static void reboot(void)
+static inline void reboot(void)
 {
-	asm volatile ( "rjmp 0" );
+	asm volatile ( "rjmp __vectors" );
 }
 
 int main(void)
 {
 	cli();
-	bootloader_size = &__payload_end - &__payload_start;
 
 	// pinsOff(0xFF);  // pull down all pins
 	// outputs(0xFF);  // all to ground - force usb disconnect
