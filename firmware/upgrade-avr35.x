@@ -73,7 +73,7 @@ SECTIONS
   .text   :
   {
     *(.vectors)
-    . = ALIGN(128);
+    . = ALIGN(256);
     KEEP(*(.vectors))
     /* For data that needs to reside in the lower 64k of progmem.  */
     *(.progmem.gcc*)
