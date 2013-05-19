@@ -569,10 +569,10 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
-	if (pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) !=
-	        addr2rjmp((BOOTLOADER_ADDRESS / 2), RESET_VECTOR_OFFSET * VECTOR_WORDS) ||
-	    pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) !=
-	        addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS))
+	if ((pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) !=
+	         addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS)) ||
+	    (pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) !=
+	         addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
 	{
 		fillFlashWithVectors();
 	}
