@@ -44,11 +44,11 @@ names BOOTLOADER_INIT and BOOTLOADER_CONDITION for this functionality. If
 these macros are defined, the boot loader uses them.
 */
 
-#define TINY85_HARDWARE_CONFIG_1 	1
-#define TINY85_HARDWARE_CONFIG_2 	2
+#define TINY85_HARDWARE_CONFIG_1  1
+#define TINY85_HARDWARE_CONFIG_2  2
 
 /* ---------------------------- Hardware Config ---------------------------- */
-#define HARDWARE_CONFIG 		TINY85_HARDWARE_CONFIG_2
+#define HARDWARE_CONFIG     TINY85_HARDWARE_CONFIG_2
 
 #define USB_CFG_IOPORTNAME      B
 /* This is the port where the USB bus is connected. When you configure it to
@@ -56,11 +56,11 @@ these macros are defined, the boot loader uses them.
  */
 
 #ifndef __AVR_ATtiny85__
-#	define USB_CFG_DMINUS_BIT      0
+# define USB_CFG_DMINUS_BIT      0
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
-#	define USB_CFG_DPLUS_BIT       2
+# define USB_CFG_DPLUS_BIT       2
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port. Please note that D+ must also be connected
  * to interrupt pin INT0!
@@ -68,22 +68,22 @@ these macros are defined, the boot loader uses them.
 #endif
  
 #if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_1)
-#	define USB_CFG_DMINUS_BIT      0
+# define USB_CFG_DMINUS_BIT      0
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
-#	define USB_CFG_DPLUS_BIT       2
+# define USB_CFG_DPLUS_BIT       2
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
  #endif
  
 #if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_2)
-#	define USB_CFG_DMINUS_BIT      3
+# define USB_CFG_DMINUS_BIT      3
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
-#	define USB_CFG_DPLUS_BIT       4
+# define USB_CFG_DPLUS_BIT       4
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
@@ -218,36 +218,34 @@ these macros are defined, the boot loader uses them.
 //#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
 
 #ifdef BUILD_JUMPER_MODE
-	#define START_JUMPER_PIN 5
-	#define digitalRead(pin) (PINB & _BV(pin))
-	#define bootLoaderStartCondition() (!digitalRead(START_JUMPER_PIN))
-	#define bootLoaderCondition() 1
-	
-	#ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
-		static inline void  bootLoaderInit(void) {
-		 	// DeuxVis pin-5 pullup
-			DDRB |= _BV(START_JUMPER_PIN); // is an input
-			PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
-			_delay_ms(10);
-		}
-		static inline void  bootLoaderExit(void) {
-		  // DeuxVis pin-5 pullup
-		 	PORTB = 0;
-		  DDRB = 0;
-		}
-	#endif /* __ASSEMBLER__ */
+  #define START_JUMPER_PIN 5
+  #define digitalRead(pin) (PINB & _BV(pin))
+  #define bootLoaderStartCondition() (!digitalRead(START_JUMPER_PIN))
+  #define bootLoaderCondition() 1
+  
+  #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
+    static inline void  bootLoaderInit(void) {
+      // DeuxVis pin-5 pullup
+      PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
+      _delay_ms(10);
+    }
+    static inline void  bootLoaderExit(void) {
+      // DeuxVis pin-5 pullup
+      PORTB = 0;
+    }
+  #endif /* __ASSEMBLER__ */
 #else
-	#define bootLoaderInit()
-	#define bootLoaderExit()
-	#define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
-	#if LOW_POWER_MODE
-	  // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
-	  // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
-	  #define bootLoaderStartCondition() \
-	    (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
-	#else
-	  #define bootLoaderStartCondition() 1
-	#endif
+  #define bootLoaderInit()
+  #define bootLoaderExit()
+  #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+  #if LOW_POWER_MODE
+    // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
+    // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
+    #define bootLoaderStartCondition() \
+      (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
+  #else
+    #define bootLoaderStartCondition() 1
+  #endif
 #endif
 
 /* ----------------------- Optional MCU Description ------------------------ */
