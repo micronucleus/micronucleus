@@ -14,10 +14,9 @@
 // bootloader protection, where the bootloader exists at the end of flash
 //
 // Be very careful to not power down the AVR while upgrader is running.
-// If you connect a piezo between pb0 and pb1 you'll hear a bleep when the update
-// is complete. You can also connect an LED with pb0 positive and pb1 or gnd negative and
-// it will blink
+//
 
+#include <string.h>
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -36,13 +35,13 @@
  *       they are just addresses and do not have a size.
  *
  * Note: The compiler does not regard any address calculations with
- *       these addreses as constant, so we cannot set the bootloader size
- *       through a static initializer - we do it later in "main()".
+ *       these addreses as constant, so we cannot store the bootloader size
+ *       in a global variable, which would require a static initializer.
  *
  * Note: the type we assign here does matter. Taking the address of a function
  *       returns a word number, addresses to data items are in byte numbers
- *       instead.  Thus, when we later calculate the bootloader size, we will
- *       get that size in bytes.
+ *       instead.  Thus, by declaring those addreses as "const PROGMEM char",
+ *       we will get the size in bytes later.
  */
 extern void __ctors_end(void);
 extern const PROGMEM char __payload_start;
@@ -99,14 +98,23 @@ static void secure_interrupt_vector_table(void)
 	write_page(0, vector_table);
 }
 
-// write in forwarding interrupt vector table
+/*
+ * write in forwarding interrupt vector table.
+ *
+ * We leave all words at 0xFF, except for the bootloader start address.
+ *
+ * When the bootloader starts up, it will note that the vUSB interrupt vector
+ * does not match its own idea of the address and will attempt to fix that. But
+ * the bootloader does not erase the page, so when writing, it can only set bits
+ * to zero.
+ *
+ */
 static void forward_interrupt_vector_table(void)
 {
 	uint16_t vector_table[PAGE_WORDS];
 
-	// int iter = 0;
-
-	load_table(0, vector_table);
+	//load_table(0, vector_table);
+	memset(vector_table, 0xFF, sizeof(vector_table));
 
 	/* modify reset vector */
 	vector_table[0] = addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN)/ 2), 0);
@@ -115,51 +123,59 @@ static void forward_interrupt_vector_table(void)
 	write_page(0, vector_table);
 }
 
-
 // erase bootloader's section and write over it with new bootloader code
 static void write_new_bootloader(void)
 {
 
+	uint16_t page_buffer[PAGE_WORDS];
+	uint8_t  page_word = 0;
 	uint16_t write_addr = BOOTLOADER_ADDRESS - (BOOTLOADER_ADDRESS % SPM_PAGESIZE);
 	uint16_t offset = 0;
 	uint16_t bootloader_words = (&__payload_end - &__payload_start) / 2;
 
 	while (write_addr < BOOTLOADER_ADDRESS) {
-		boot_page_fill_safe(write_addr, 0xFFFF);
+		page_buffer[ page_word ] = 0xFFFF;
 		write_addr += 2;
+		page_word ++;
 	}
 
 	for (offset = 0; offset < bootloader_words ; offset ++) {
 		uint16_t data = pgm_read_word( bootloader_data + offset );
-		boot_page_fill_safe(write_addr, data);
+
+		page_buffer[ page_word ] = data;
 		write_addr += 2;
+		page_word ++;
 
 		if ( (write_addr % SPM_PAGESIZE) == 0) {
-			boot_page_erase_safe(write_addr - SPM_PAGESIZE);
-			boot_spm_busy_wait();
-			boot_page_write_safe(write_addr - SPM_PAGESIZE);
-			boot_spm_busy_wait();
+
+			erase_page(write_addr - SPM_PAGESIZE);
+			write_page(write_addr - SPM_PAGESIZE, page_buffer);
+			page_word = 0;
 		}
 	}
 
 	if ( (write_addr % SPM_PAGESIZE) != 0) {
 		while ( (write_addr % SPM_PAGESIZE) != 0 ) {
-			boot_page_fill_safe(write_addr, 0xFFFF);
+			page_buffer[ page_word ] = 0xFFFF;
 			write_addr += 2;
+			page_word ++;
 		}
 
-		boot_page_erase_safe(write_addr - SPM_PAGESIZE);
-		boot_spm_busy_wait();
-		boot_page_write_safe(write_addr - SPM_PAGESIZE);
-		boot_spm_busy_wait();
+		erase_page(write_addr - SPM_PAGESIZE);
+		write_page(write_addr - SPM_PAGESIZE, page_buffer);
 	}
 }
 
+static inline void reboot(void) __attribute__((__noreturn__));
 static inline void reboot(void)
 {
 	asm volatile ( "rjmp __vectors" );
+#if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
+	        __builtin_unreachable();
+#endif
 }
 
+int main(void) __attribute__((__noreturn__));
 int main(void)
 {
 	cli();
@@ -175,7 +191,5 @@ int main(void)
 	forward_interrupt_vector_table();
 
 	reboot();
-
-	return 0;
 }
 
