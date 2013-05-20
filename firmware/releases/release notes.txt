@@ -1,3 +1,10 @@
+== 1.06-jumper-v2 - 2013-5-20 ==
+
+firmware:
+ o Fix horrible bug reported by @giannoug where jumper pin is made in to an output instead of input!
+ -- **Install update immediately** - current version creates short circuits!!!
+ -- Previous version of 1.06 jumper deleted due to short circuits - do not use previous versions either
+
 == 1.06 - 2013-3-4 ==
 
 firmware:
