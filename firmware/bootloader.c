@@ -151,7 +151,7 @@ void __app_reset(void)
 #if VECTOR_SIZE == 4
 	asm volatile ( "nop");
 #endif
-#if (__GNUC__ >= 4) && (__GNUC_MINOR__ >= 5)
+#if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 	__builtin_unreachable();
 #endif
 }
