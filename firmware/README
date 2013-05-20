@@ -1,0 +1,74 @@
+
+Building
+--------
+
+Just running "make" will build the bootloader and the upgrade firmware for all
+targets.
+
+Some operations, such as flashing the bootloader for example, are only useful
+for a single target though. just tell the makefile which target you want, for
+example
+
+  make target-tiny-861-c12 flash
+
+
+Adding a target
+---------------
+
+Choose a target name, add a makefile include <name.mk> and a directory <name>
+that contains the C include "hardware.h".
+
+Use one of the other targets as an example.
+
+
+Options
+-------
+
+* RESTORE_OSCCAL
+
+Restores the RC calibration to the value it had when entering the bootloader.
+
+Saves 40 bytes over the standard method (restore OSCCAL to the value used when
+the applications has been uploaded).
+
+
+* LOW_POWER_MODE
+
+Assume the chip is normally running at reduced clock speed to save power. This
+option disables the clock prescaler when entering the bootloader, and resets it
+when leaving.
+
+Costs 20 bytes.
+
+
+* BUILD_JUMPER_MODE
+
+Enters the bootloader only when a pin is pulled low and stays there until the
+pin is high again. Avoids the normal 5s delay after device reset.
+
+Costs 6 bytes.
+
+
+* WITH_CRYSTAL
+
+Removes support for RC calibration. Automatically selected for vUSB frequencies
+that require a crystal.
+
+Reduces size by about 266 bytes.
+
+
+* APP_USES_VUSB
+
+Assumes that the application is using the exact same vUSB version with
+the exact same interrupt configuration as the bootloader.
+
+Reduces the worst-case interrupt latency induced by the bootloader from
+23 to 14 cycles and reduces the size by 4 bytes.
+
+This option may help if your application uses vUSB plus some other interrupts
+and you experience USB communication problems when the bootloader is installed.
+
+However, this option is dangerous if the application uses the vUSB interrupt
+for something else.
+
+
