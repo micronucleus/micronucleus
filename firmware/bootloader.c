@@ -184,6 +184,7 @@ void __stored_osccal(void) { asm volatile ( "nop" ); }
 /*
  * Safeguard against erase w/o successive write to the vector table.
  */
+#define BOOTLOADER_ENTRY (BOOTLOADER_ADDRESS + TINY_TABLE_LEN)
 void __my_reset2(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
 void __my_reset2(void) { asm volatile ( "rjmp __initialize_cpu"); }
 
@@ -208,7 +209,8 @@ void __my_reset2(void) { asm volatile ( "rjmp __initialize_cpu"); }
  *  16k devices:           20 cycles,            24 cycles
  */
 
-void __wrap_vusb_intr(void) __attribute__ ((naked));
+#define BOOTLOADER_INTERRUPT (BOOTLOADER_ENTRY + 2)
+void __wrap_vusb_intr(void) __attribute__ ((naked)) __attribute__ ((section (".tinytable")));
 void __wrap_vusb_intr(void)
 {
 	/* Save SREG and YL */
@@ -387,13 +389,13 @@ static void writeWordToPageBuffer(uint16_t data)
 	if (currentAddress == (RESET_VECTOR_OFFSET * VECTOR_SIZE)) {
 		// I'd like to jump directly to __initialize_cpu, but stupid
 		// cpp/c interactions would cost 2 bytes extra
-		data = addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS);
+		data = addr2rjmp(BOOTLOADER_ENTRY / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS);
 	}
 	else if (currentAddress == (USB_INTR_VECTOR_NUM * VECTOR_SIZE)) {
 		// same 2 bytes as above, but no-trampoline spares 2 cycles
 		// interrupt latency, which I think is worth the expense.
-		// data = addr2rjmp((uint16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM);
-		data = addr2rjmp((uint16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS);
+		//data = addr2rjmp((uint16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS);
+		data = addr2rjmp(BOOTLOADER_INTERRUPT / 2, USB_INTR_VECTOR_NUM * VECTOR_WORDS);
 	}
 
 	// at end of page just before bootloader, write in tinyVector table
@@ -569,10 +571,11 @@ static inline void tiny85FlashInit(void)
 	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
 	// this needs to happen for usb communication to work later - essential to first run after bootloader
 	// being installed
+	         // addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
 	if ((pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) !=
-	         addr2rjmp((BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS)) ||
+	         addr2rjmp( BOOTLOADER_ENTRY / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS)) ||
 	    (pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) !=
-	         addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
+	         addr2rjmp(BOOTLOADER_INTERRUPT / 2, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
 	{
 		fillFlashWithVectors();
 	}
