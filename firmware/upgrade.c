@@ -118,6 +118,8 @@ static void forward_interrupt_vector_table(void)
 
 	/* modify reset vector */
 	vector_table[0] = addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN)/ 2), 0);
+	vector_table[USB_INTR_VECTOR_NUM * (VECTOR_SIZE / 2)] =
+		addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN + 2)/ 2), USB_INTR_VECTOR_NUM);
 
 	erase_page(0);
 	write_page(0, vector_table);
