@@ -72,6 +72,7 @@ SECTIONS
   /* Internal text space or external memory.  */
   .text   :
   {
+    FILL(0xFF);
     *(.vectors)
     . = ALIGN(256);
     KEEP(*(.vectors))
