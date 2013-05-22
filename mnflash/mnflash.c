@@ -110,8 +110,6 @@ int main(int argc, char ** argv)
 	device_destroy(dev);
 	dev = NULL;
 
-	device_destroy(dev);
-
 	exit(0);
 }
 
