@@ -39,6 +39,7 @@ CFLAGS = \
 	-fno-move-loop-invariants \
 	-fno-tree-scev-cprop \
 	-fno-inline-small-functions \
+	-mbranch-cost=5 \
 	-I $(HW_INCLUDE_DIR) \
 	-I $(SRCDIR) \
 	-I $(SRCDIR)/libs-device \
