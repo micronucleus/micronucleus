@@ -104,7 +104,7 @@ static int uploader_erase(struct uploader_device_info * info)
 {
 	fprintf(stdout,"erasing device ...\n");
 	if (device_custom_write(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
-		fprintf(stderr,"cannot erase device\n");
+		fprintf(stderr,"cannot erase device%s\n", usb_strerror());
 		return 0;
 	}
 
