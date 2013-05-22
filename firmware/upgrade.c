@@ -30,6 +30,12 @@
 
 #define PAGE_WORDS  (SPM_PAGESIZE / 2)
 
+#define USB_CONCAT(a, b)            a ## b
+
+#define USB_PORT(name)	USB_CONCAT(PORT, name)
+#define USB_PIN(name)	USB_CONCAT(PIN, name)
+#define USB_DDR(name)	USB_CONCAT(DDR, name)
+
 /*
  * Note: __payload_{start,end} are symbols provided by the linker. As such
  *       they are just addresses and do not have a size.
@@ -168,12 +174,18 @@ static void write_new_bootloader(void)
 	}
 }
 
+static inline void usb_disconnect(void)
+{
+	USB_PORT(USB_CFG_IOPORTNAME) &= ~_BV(USB_CFG_DMINUS_BIT);
+	USB_DDR(USB_CFG_IOPORTNAME)  |= _BV(USB_CFG_DMINUS_BIT);
+}
+
 static inline void reboot(void) __attribute__((__noreturn__));
 static inline void reboot(void)
 {
 	asm volatile ( "rjmp __vectors" );
 #if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
-	        __builtin_unreachable();
+	__builtin_unreachable();
 #endif
 }
 
@@ -182,15 +194,21 @@ int main(void)
 {
 	cli();
 
-	// pinsOff(0xFF);  // pull down all pins
-	// outputs(0xFF);  // all to ground - force usb disconnect
-	// delay(250);     // milliseconds
-	// inputs(0xFF);   // let them float
-	// delay(250);
+	/*
+	 * Pull down D- (= disconnect USB) so the host does not try to
+	 * enumerate
+	 */
+	usb_disconnect();
 
 	secure_interrupt_vector_table(); // reset our vector table to it's original state
 	write_new_bootloader();
 	forward_interrupt_vector_table();
+
+	/*
+	 * do not let the D- float, it would just cause the host to start a
+	 * re-enumeration long before we have entered the bootloader, which
+	 * will then disconnect again
+	 */
 
 	reboot();
 }
