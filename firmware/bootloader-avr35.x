@@ -71,6 +71,11 @@ SECTIONS
   .rela.plt      : { *(.rela.plt)		}
   /* Internal text space or external memory.  */
   /DISCARD/ : { *(.vectors); }
+  .vectorpage  :
+  {
+    *(.vectorpage)
+    KEEP(*(.vectorpage))
+  }
   .text   :
   {
     *(.tinytable)

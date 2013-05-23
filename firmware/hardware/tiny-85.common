@@ -14,6 +14,7 @@ LDSCRIPT_SUFFIX=-avr25.x
 # - round that down to 94 and substract 8 - our new bootloader address is 94 *64 = 6016, in hex = 1780
 # - substract 8 from that to account for the tiny table, you will get hex = 1778
 BOOTLOADER_ADDRESS = 173A
+PMEM_WRAP=8k
 
 
 #---------------------------------------------------------------------

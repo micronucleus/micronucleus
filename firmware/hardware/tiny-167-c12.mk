@@ -16,6 +16,7 @@ LDSCRIPT_SUFFIX=-avr35.x
 # vectors, the tiny tables has 8 bytes.
 #
 BOOTLOADER_ADDRESS = 37f6
+PMEM_WRAP=16k
 
 #
 # fuse low byte (lfuse)

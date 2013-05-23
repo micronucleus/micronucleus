@@ -313,7 +313,6 @@ static void fillFlashWithVectors(void);
 static uchar usbFunctionSetup(uchar data[8]);
 static uchar usbFunctionWrite(uchar *data, uchar length);
 static inline void initForUsbConnectivity(void);
-static inline void tiny85FlashInit(void);
 static inline void tiny85FlashWrites(void);
 //static inline void tiny85FinishWriting(void);
 static inline void leaveBootloader(void);
@@ -566,24 +565,6 @@ static inline void initForUsbConnectivity(void)
 	sei();
 }
 
-static inline void tiny85FlashInit(void)
-{
-	// check for erased first page (no bootloader interrupt vectors), add vectors if missing
-	// this needs to happen for usb communication to work later - essential to first run after bootloader
-	// being installed
-	         // addr2rjmp((int16_t)__wrap_vusb_intr, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
-	if ((pgm_read_word(RESET_VECTOR_OFFSET * VECTOR_SIZE) !=
-	         addr2rjmp( BOOTLOADER_ENTRY / 2, RESET_VECTOR_OFFSET * VECTOR_WORDS)) ||
-	    (pgm_read_word(USB_INTR_VECTOR_NUM * VECTOR_SIZE) !=
-	         addr2rjmp(BOOTLOADER_INTERRUPT / 2, USB_INTR_VECTOR_NUM * VECTOR_WORDS)))
-	{
-		fillFlashWithVectors();
-	}
-
-	// TODO: necessary to reset currentAddress?
-	currentAddress = 0;
-}
-
 static inline void tiny85FlashWrites(void)
 {
 	_delay_us(2000); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
@@ -646,7 +627,6 @@ int main(void)
 #endif
 
 	wdt_disable();  /* main app may have enabled watchdog */
-	tiny85FlashInit();
 	bootLoaderInit();
 
 
@@ -672,7 +652,10 @@ int main(void)
 
 #if BOOTLOADER_CAN_EXIT
 			if (isEvent(EVENT_EXECUTE)) // when host requests device run uploaded program
+			{
+				//idlePolls = ((AUTO_EXIT_MS - 21) * 10UL);
 				break;
+			}
 
 #endif
 

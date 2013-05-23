@@ -51,13 +51,15 @@ LDFLAGS = \
 	-Wl,--relax \
 	-Wl,--gc-sections
 
-BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o
+BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o bootloader-vectors.o
 
 BOOTLOADER_LDFLAGS= \
 	-nostartfiles \
 	-Wl,-Map=bootloader.map \
 	-T$(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX) \
-	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS)
+	-Wl,--section-start=.text=$(BOOTLOADER_ADDRESS) \
+	-Wl,--section-start=.vectorpage=0 \
+	-Wl,--pmem-wrap-around=$(PMEM_WRAP) \
 
 UPGRADE_OBJECTS = upgrade-with-bootloader.o
 
@@ -95,19 +97,31 @@ all: bootloader.hex upgrade.hex
 	$(Q)avr-objcopy -j .text -j .data -O ihex $< $@
 	$(Q)avr-size $@
 
-%.raw : %.elf
+bootloader.raw : bootloader.elf
 	$(Q)echo "HEX $@"
 	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
+	$(Q)avr-size --target=binary $@
+
+bootloader.elf:	$(BOOTLOADER_OBJECTS) $(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX)
+	$(Q)echo "LD  $@"
+	$(Q)$(CC) $(CFLAGS) -nostartfiles -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
+
+bootloader.hex : bootloader.elf
+	$(Q)echo "HEX $@"
+	$(Q)avr-objcopy -j .vectorpage -j .text -j .data -O ihex $< $@
 
 upgrade-with-bootloader.o:	upgrade.o bootloader.raw
 	@avr-objcopy --add-section .payload=bootloader.raw \
 	            --set-section-flags .payload=alloc \
                     -O elf32-avr $< $@
 
+upgrade.elf:	$(UPGRADE_OBJECTS) $(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
+	$(Q)echo "LD  $@"
+	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
+
 upgrade.hex:    upgrade.elf
 	$(Q)avr-objcopy -j .text -j .data -j .payload -O ihex upgrade.elf upgrade.hex
 	$(Q)avr-size upgrade.hex
-
 
 flash:	all
 	$(AVRDUDE) -U flash:w:bootloader.hex:i
@@ -126,14 +140,6 @@ disablereset:
 
 clean:
 	rm -f bootloader.hex bootloader.elf bootloader.c.lst bootloader.map *.o usbdrv/*.o bootloader.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
-
-bootloader.elf:	$(BOOTLOADER_OBJECTS) $(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX)
-	$(Q)echo "LD  $@"
-	$(Q)$(CC) $(CFLAGS) -nostartfiles -o $@ $(BOOTLOADER_OBJECTS) $(LDFLAGS) $(BOOTLOADER_LDFLAGS)
-
-upgrade.elf:	$(UPGRADE_OBJECTS) $(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
-	$(Q)echo "LD  $@"
-	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
 
 disasm:	bootloader.elf
 	avr-objdump -S -d bootloader.elf
