@@ -37,6 +37,10 @@
 #  endif
 #endif
 
+#if defined(RESTORE_OSCCAL) || defined(WITH_CRYSTAL) || defined(KEEP_OSCCAL)
+#  define SKIP_OSCCAL_FROM_FLASH 1
+#endif
+
 #ifndef MICRONUCLEUS_WIRING
 #  define MICRONUCLEUS_WIRING	255
 #endif
@@ -393,10 +397,11 @@ static void writeWordToPageBuffer(uint16_t data)
                 data = vectorTemp[1] + APP_USB_VECTOR_OFFSET;
         }
 #endif
+#ifndef SKIP_OSCCAL_FROM_FLASH
 	else if (currentAddress == BOOTLOADER_ADDRESS + STORED_OSCCAL_OFFSET) {
 		data = OSCCAL;
 	}
-
+#endif
 	// clear page buffer as a precaution before filling the buffer on the first page
 	// in case the bootloader somehow ran after user program and there was something
 	// in the page buffer already
@@ -560,7 +565,7 @@ static inline void leaveBootloader(void)
 	*(uint8_t *)(RAMEND) = 0x00;
 	*(uint8_t *)(RAMEND - 1) = 0x00;
 
-#if !defined(RESTORE_OSCCAL) && !defined(WITH_CRYSTAL) && !defined(KEEP_OSCCAL)
+#ifndef SKIP_OSCCAL_FROM_FLASH
 	// adjust clock to previous calibration value, so user program always starts with same calibration
 	// as when it was uploaded originally.
 	//
