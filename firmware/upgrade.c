@@ -107,13 +107,6 @@ static void secure_interrupt_vector_table(void)
 /*
  * write in forwarding interrupt vector table.
  *
- * We leave all words at 0xFF, except for the bootloader start address.
- *
- * When the bootloader starts up, it will note that the vUSB interrupt vector
- * does not match its own idea of the address and will attempt to fix that. But
- * the bootloader does not erase the page, so when writing, it can only set bits
- * to zero.
- *
  */
 static void forward_interrupt_vector_table(void)
 {

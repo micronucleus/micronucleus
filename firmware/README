@@ -32,6 +32,21 @@ Saves 40 bytes over the standard method (restore OSCCAL to the value used when
 the applications has been uploaded).
 
 
+* KEEP_OSCCAL
+
+If your device is normaly connected to USB and/or you do not care too much that
+it may run at 16/12MHz instead of 16.5/12.8 MHz, you can set this define and save
+42 bytes.
+
+
+* WITH_CRYSTAL
+
+Removes support for RC calibration. Automatically selected for vUSB frequencies
+that require a crystal.
+
+Reduces size by about 266 bytes.
+
+
 * LOW_POWER_MODE
 
 Assume the chip is normally running at reduced clock speed to save power. This
@@ -47,14 +62,6 @@ Enters the bootloader only when a pin is pulled low and stays there until the
 pin is high again. Avoids the normal 5s delay after device reset.
 
 Costs 6 bytes.
-
-
-* WITH_CRYSTAL
-
-Removes support for RC calibration. Automatically selected for vUSB frequencies
-that require a crystal.
-
-Reduces size by about 266 bytes.
 
 
 * APP_USES_VUSB

@@ -560,7 +560,7 @@ static inline void leaveBootloader(void)
 	*(uint8_t *)(RAMEND) = 0x00;
 	*(uint8_t *)(RAMEND - 1) = 0x00;
 
-#if !defined(RESTORE_OSCCAL) && !defined(WITH_CRYSTAL)
+#if !defined(RESTORE_OSCCAL) && !defined(WITH_CRYSTAL) && !defined(KEEP_OSCCAL)
 	// adjust clock to previous calibration value, so user program always starts with same calibration
 	// as when it was uploaded originally.
 	//
