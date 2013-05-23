@@ -72,12 +72,6 @@ these macros are defined, the boot loader uses them.
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
 
-#define BOOTLOADER_CAN_EXIT         1
-/* If this macro is defined to 1, the boot loader will exit shortly after the
- * programmer closes the connection to the device. Costs ~36 bytes.
- * Required for TINY85MODE
- */
-
 /* ------------------------------------------------------------------------- */
 
 /* Example configuration: Port D bit 3 is connected to a jumper which ties
