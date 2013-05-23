@@ -551,9 +551,6 @@ static inline void tiny85FlashWrites(void)
 static inline void leaveBootloader() __attribute__((__noreturn__));
 static inline void leaveBootloader(void)
 {
-	_delay_ms(10); // removing delay causes USB errors
-
-	//DBG1(0x01, 0, 0);
 	bootLoaderExit();
 	cli();
 	USB_INTR_ENABLE = 0;
@@ -621,8 +618,12 @@ int main(void)
 
 			if (isEvent(EVENT_EXECUTE)) // when host requests device run uploaded program
 			{
-				//idlePolls = ((AUTO_EXIT_MS - 21) * 10UL);
+#ifdef BUILD_JUMPER_MODE
+				_delay_ms(10);
 				break;
+#else
+				idlePolls = ((AUTO_EXIT_MS - 21) * 10UL);
+#endif
 			}
 
 			clearEvents();
