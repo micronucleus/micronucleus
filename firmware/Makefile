@@ -61,7 +61,8 @@ BOOTLOADER_LDFLAGS= \
 	-Wl,--section-start=.vectorpage=0 \
 	-Wl,--pmem-wrap-around=$(PMEM_WRAP) \
 
-UPGRADE_OBJECTS = upgrade-with-bootloader.o
+UPGRADE_OBJECTS = \
+	upgrade-with-bootloader.o
 
 UPGRADE_LDFLAGS= \
 	-Wl,-Map=upgrade.map \
@@ -97,8 +98,10 @@ all: bootloader.hex upgrade.hex
 	$(Q)avr-objcopy -j .text -j .data -O ihex $< $@
 	$(Q)avr-size $@
 
+#--------- bootloader specific -------
+
 bootloader.raw : bootloader.elf
-	$(Q)echo "HEX $@"
+	$(Q)echo "RAW $@"
 	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
 	$(Q)avr-size --target=binary $@
 
@@ -110,7 +113,32 @@ bootloader.hex : bootloader.elf
 	$(Q)echo "HEX $@"
 	$(Q)avr-objcopy -j .vectorpage -j .text -j .data -O ihex $< $@
 
-upgrade-with-bootloader.o:	upgrade.o bootloader.raw
+flash:	bootloader.hex
+	$(AVRDUDE) -U flash:w:bootloader.hex:i
+
+disasm:	bootloader.elf
+	avr-objdump -S -d bootloader.elf
+
+
+#--------- upgrade specific -------
+
+UPGRADEABLE_FIRMWARE=bootloader.elf
+
+upgrade-trampolines.sym: $(UPGRADEABLE_FIRMWARE)
+	$(SRCDIR)/syms-for-bootloader.sh $< >$@
+
+upgrade-trampolines.elf:	upgrade-trampolines.o upgrade-trampolines.sym
+	$(Q)$(CC) $(CFLAGS) \
+		-Wl,--just-symbols=upgrade-trampolines.sym\
+		-Wl,--pmem-wrap-around=$(PMEM_WRAP) \
+		-Wl,--relax  \
+		-nostartfiles -o $@ $<
+
+upgrade-trampolines.raw:	upgrade-trampolines.elf
+	$(Q)echo "RAW $@"
+	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
+
+upgrade-with-bootloader.o:	upgrade.o upgrade-trampolines.raw bootloader.raw
 	@avr-objcopy --add-section .payload=bootloader.raw \
 	            --set-section-flags .payload=alloc \
                     -O elf32-avr $< $@
@@ -123,11 +151,13 @@ upgrade.hex:    upgrade.elf
 	$(Q)avr-objcopy -j .text -j .data -j .payload -O ihex upgrade.elf upgrade.hex
 	$(Q)avr-size upgrade.hex
 
-flash:	all
-	$(AVRDUDE) -U flash:w:bootloader.hex:i
+disasm-upgrade:	upgrade.elf
+	avr-objdump -S -d upgrade.elf
 
-flash-upgrade:	all
+flash-upgrade:	upgrade.hex
 	$(AVRDUDE) -U flash:w:upgrade.hex:i
+
+#--------- other targets -------
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i
@@ -140,12 +170,6 @@ disablereset:
 
 clean:
 	rm -f bootloader.hex bootloader.elf bootloader.c.lst bootloader.map *.o usbdrv/*.o bootloader.s usbdrv/oddebug.s usbdrv/usbdrv.s libs-device/osccal.o
-
-disasm:	bootloader.elf
-	avr-objdump -S -d bootloader.elf
-
-disasm-upgrade:	upgrade.elf
-	avr-objdump -S -d upgrade.elf
 
 cpp:
 	$(CC) $(CFLAGS) -E bootloader.c
