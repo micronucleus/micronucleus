@@ -61,6 +61,7 @@ const char * sections[] = {
 	".text",
 	".data",
 	".payload",
+	".payloadvectors",
 	".signature",
 	NULL
 };
@@ -157,14 +158,14 @@ struct firmware_blob * elf_load(const char *filename)
 
 				elf_add_section_to_blob(blob, scn, -1 );
 			}
-			else if (strcmp(name, ".payload") == 0) {
+			else if ((strcmp(name, ".payload") == 0) || (strcmp(name, ".payloadvectors") == 0)) {
 				if (shdr.sh_type != SHT_PROGBITS)
 					erret(".payload is not a PROGBITS section\n");
 
 				if ((shdr.sh_flags & SHF_EXECINSTR) != 0)
 					erret(".payload is executable\n");
 
-				elf_add_section_to_blob(blob, scn, -1 );
+				elf_add_section_to_blob(blob, scn, shdr.sh_addr);
 			}
 			else if (strcmp(name, ".signature") == 0) {
 				Elf_Data  *data = NULL;
