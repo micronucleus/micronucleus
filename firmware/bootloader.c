@@ -321,10 +321,11 @@ static inline void eraseApplication(void)
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void)
 {
+	uint8_t sreg = SREG;
 	cli();
 	boot_page_write(currentAddress - 2);
 	boot_spm_busy_wait(); // Wait until the memory is written.
-	sei();
+	SREG = sreg;
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
@@ -347,6 +348,7 @@ inline static uint16_t addr2rjmp(const uint16_t addr, const uint16_t location)
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data)
 {
+	uint8_t sreg;
 
 	/*
 	 * Note for 16k devices:
@@ -407,9 +409,10 @@ static void writeWordToPageBuffer(uint16_t data)
 	// in the page buffer already
 	if (currentAddress == 0x0000) __boot_page_fill_clear();
 
+	sreg = SREG;
 	cli();
 	boot_page_fill(currentAddress, data);
-	sei();
+	SREG = sreg;
 
 	// increment progmem address by one word
 	currentAddress += 2;
