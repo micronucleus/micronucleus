@@ -162,12 +162,20 @@ SECTIONS
   } 
   .payload  : AT(ADDR (.text) + SIZEOF (.text) + SIZEOF (.data))
   {
-    KEEP(*(.payload*))
+    KEEP(*(.payload))
     *(.payload)
     . = ALIGN(2);
   } > text
   __payload_start = LOADADDR(.payload);
   __payload_end = __payload_start + SIZEOF(.payload);
+  .payloadvectors  : AT(__payload_end)
+  {
+    KEEP(*(.payloadvectors))
+    *(.payloadvectors)
+    . = ALIGN(2);
+  } > text
+  __payload_vectors_start = LOADADDR(.payloadvectors);
+  __payload_vectors_end = __payload_vectors_start + SIZEOF(.payloadvectors);
   .bss   : AT (ADDR (.bss))
   {
      PROVIDE (__bss_start = .) ;

@@ -136,19 +136,22 @@ upgrade-trampolines.elf:	upgrade-trampolines.o upgrade-trampolines.sym
 
 upgrade-trampolines.raw:	upgrade-trampolines.elf
 	$(Q)echo "RAW $@"
-	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
+	$(Q)avr-objcopy -j .text -O binary $< $@
 
 upgrade-with-bootloader.o:	upgrade.o upgrade-trampolines.raw bootloader.raw
-	@avr-objcopy --add-section .payload=bootloader.raw \
-	            --set-section-flags .payload=alloc \
-                    -O elf32-avr $< $@
+	@avr-objcopy \
+		--add-section .payloadvectors=upgrade-trampolines.raw \
+		--set-section-flags .payloadvectors=alloc \
+		--add-section .payload=bootloader.raw \
+		--set-section-flags .payload=alloc \
+		-O elf32-avr $< $@
 
 upgrade.elf:	$(UPGRADE_OBJECTS) $(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
 	$(Q)echo "LD  $@"
 	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
 
 upgrade.hex:    upgrade.elf
-	$(Q)avr-objcopy -j .text -j .data -j .payload -O ihex upgrade.elf upgrade.hex
+	$(Q)avr-objcopy -j .text -j .data -j .payload -j .payloadvectors -O ihex $< $@
 	$(Q)avr-size upgrade.hex
 
 disasm-upgrade:	upgrade.elf

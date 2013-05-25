@@ -52,8 +52,11 @@
 extern void __ctors_end(void);
 extern const PROGMEM char __payload_start;
 extern const PROGMEM char __payload_end;
+extern const PROGMEM char __payload_vectors_start;
+extern const PROGMEM char __payload_vectors_end;
 
 uint16_t *bootloader_data = (uint16_t *)&__payload_start;
+uint16_t *vector_data = (uint16_t *)&__payload_vectors_start;
 
 static void erase_page(uint16_t address)
 {
@@ -95,10 +98,12 @@ static void load_table(uint16_t address, uint16_t words[PAGE_WORDS])
 static void secure_interrupt_vector_table(void)
 {
 	uint16_t vector_table[PAGE_WORDS];
+	uint16_t vector_words = (&__payload_vectors_end - &__payload_vectors_start) / 2;
 
 	load_table(0, vector_table);
 
 	vector_table[0] = addr2rjmp( (uint16_t)&(__ctors_end), 0);
+	vector_table[1] = vector_words;
 
 	erase_page(0);
 	write_page(0, vector_table);
@@ -110,18 +115,54 @@ static void secure_interrupt_vector_table(void)
  */
 static void forward_interrupt_vector_table(void)
 {
-	uint16_t vector_table[PAGE_WORDS];
+	uint16_t page_buffer[PAGE_WORDS];
+	uint16_t vector_words = (&__payload_vectors_end - &__payload_vectors_start) / 2;
 
-	//load_table(0, vector_table);
-	memset(vector_table, 0xFF, sizeof(vector_table));
+	memset(page_buffer, 0xFF, sizeof(page_buffer));
 
-	/* modify reset vector */
-	vector_table[0] = addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN)/ 2), 0);
-	vector_table[USB_INTR_VECTOR_NUM * (VECTOR_SIZE / 2)] =
-		addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN + 2)/ 2), USB_INTR_VECTOR_NUM * (VECTOR_SIZE/2));
+	if ( vector_words < 1 ) {
 
-	erase_page(0);
-	write_page(0, vector_table);
+		/* modify reset vector */
+		page_buffer[0] = addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN)/ 2), 0);
+		page_buffer[USB_INTR_VECTOR_NUM * (VECTOR_SIZE / 2)] =
+			addr2rjmp(((BOOTLOADER_ADDRESS + TINY_TABLE_LEN + 2)/ 2), USB_INTR_VECTOR_NUM * (VECTOR_SIZE/2));
+
+		erase_page(0);
+		write_page(0, page_buffer);
+	} else {
+		/*
+		 * FIXME: this is essentially replicated code. Would be nice
+		 * to have a flashcpy() function, memcpy() style.
+		 */
+		uint16_t write_addr = 0;
+		uint16_t offset = 0;
+		uint8_t  page_word = 0;
+
+		for (offset = 0; offset < vector_words ; offset ++) {
+			uint16_t data = pgm_read_word( vector_data + offset );
+
+			page_buffer[ page_word ] = data;
+			write_addr += 2;
+			page_word ++;
+
+			if ( (write_addr > 0) && (write_addr % SPM_PAGESIZE) == 0) {
+				erase_page(write_addr - SPM_PAGESIZE);
+				write_page(write_addr - SPM_PAGESIZE, page_buffer);
+				page_word = 0;
+			}
+		}
+
+		if ( (write_addr % SPM_PAGESIZE) != 0) {
+			while ( (write_addr % SPM_PAGESIZE) != 0 ) {
+				page_buffer[ page_word ] = 0xFFFF;
+				write_addr += 2;
+				page_word ++;
+			}
+
+			erase_page(write_addr - SPM_PAGESIZE);
+			write_page(write_addr - SPM_PAGESIZE, page_buffer);
+		}
+	}
 }
 
 // erase bootloader's section and write over it with new bootloader code
