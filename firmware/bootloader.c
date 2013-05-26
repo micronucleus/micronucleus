@@ -311,14 +311,16 @@ static inline void eraseApplication(void)
 	// while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
 	// to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
 	// during upload
-	currentAddress = BOOTLOADER_ADDRESS + TINY_TABLE_LEN;
+	uint8_t currentPage = (BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / SPM_PAGESIZE;
 	cli();
-	while (currentAddress) {
-		currentAddress -= SPM_PAGESIZE;
+	while (currentPage) {
+		currentPage --;
 
-		boot_page_erase(currentAddress);
+		boot_page_erase(currentPage * SPM_PAGESIZE);
 		boot_spm_busy_wait();
 	}
+
+	currentAddress = 0;
 
 	fillFlashWithVectors();
 	sei();
@@ -410,11 +412,6 @@ static void writeWordToPageBuffer(uint16_t data)
 		data = OSCCAL;
 	}
 #endif
-	// clear page buffer as a precaution before filling the buffer on the first page
-	// in case the bootloader somehow ran after user program and there was something
-	// in the page buffer already
-	if (currentAddress == 0x0000) __boot_page_fill_clear();
-
 	sreg = SREG;
 	cli();
 	boot_page_fill(currentAddress, data);
@@ -614,6 +611,13 @@ int main(void)
 	if (bootLoaderStartCondition()) {
 
 		disable_clkpr();
+
+		/*
+		 * clear page buffer as a precaution before filling the buffer on the first page
+		 * in case the bootloader somehow ran after user program and there was something
+		 * in the page buffer already
+		 */
+		__boot_page_fill_clear();
 
 		initForUsbConnectivity();
 
