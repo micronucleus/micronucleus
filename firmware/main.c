@@ -148,11 +148,12 @@ static inline void eraseApplication(void) {
 
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
+    uint8_t previous_sreg = SREG; // backup current interrupt setting
     didWriteSomething = 1;
     cli();
     boot_page_write(currentAddress - 2);
     boot_spm_busy_wait(); // Wait until the memory is written.
-    sei();
+    SREG = previous_sreg; // restore interrupts to previous state
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
@@ -170,6 +171,8 @@ static void writeFlashPage(void) {
 
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
+    uint8_t previous_sreg;
+    
     // first two interrupt vectors get replaced with a jump to the bootloader's vector table
     if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
         data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
@@ -192,9 +195,10 @@ static void writeWordToPageBuffer(uint16_t data) {
     // in the page buffer already
     if (currentAddress == 0x0000) __boot_page_fill_clear();
     
-    cli();
+    previous_sreg = SREG; // backup previous interrupt settings
+    cli(); // ensure interrupts are disabled
     boot_page_fill(currentAddress, data);
-    sei();
+    SREG = previous_sreg; // restore previous interrupt setting
     
     // only need to erase if there is data already in the page that doesn't match what we're programming
     // TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
