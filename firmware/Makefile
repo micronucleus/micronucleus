@@ -52,6 +52,8 @@ LDFLAGS = \
 	-Wl,--relax \
 	-Wl,--gc-sections
 
+BOOTLOADER_SOURCES =  usbdrv/usbdrvasm.S bootloader.c bootloader-vectors.S
+
 BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o bootloader-vectors.o
 
 BOOTLOADER_LDFLAGS= \
@@ -77,7 +79,11 @@ VPATH=..
 # symbolic targets:
 all: bootloader.hex upgrade.hex
 
-#upgrade.hex
+bootloader.dep:	$(BOOTLOADER_SOURCES)
+	@echo GEN $@
+	$(Q)$(CC) -M $(CFLAGS) $^ -o $@
+
+-include bootloader.dep
 
 .c.o:
 	$(Q)echo "CC  $< ..."
@@ -97,14 +103,12 @@ all: bootloader.hex upgrade.hex
 %.hex : %.elf
 	$(Q)echo "HEX $@"
 	$(Q)avr-objcopy -j .text -j .data -O ihex $< $@
-	$(Q)avr-size $@
 
 #--------- bootloader specific -------
 
 bootloader.raw : bootloader.elf
-	$(Q)echo "RAW $@"
+	$(Q)echo "GEN $@"
 	$(Q)avr-objcopy -j .text -j .data -O binary $< $@
-	$(Q)avr-size --target=binary $@
 
 bootloader.elf:	$(BOOTLOADER_OBJECTS) $(SRCDIR)/bootloader$(LDSCRIPT_SUFFIX)
 	$(Q)echo "LD  $@"
@@ -126,9 +130,11 @@ disasm:	bootloader.elf
 UPGRADEABLE_FIRMWARE=bootloader.elf
 
 upgrade-trampolines.sym: $(UPGRADEABLE_FIRMWARE)
-	$(SRCDIR)/syms-for-bootloader.sh $< >$@
+	@echo GEN $@
+	$(Q)$(SRCDIR)/syms-for-bootloader.sh $< >$@
 
 upgrade-trampolines.elf:	upgrade-trampolines.o upgrade-trampolines.sym
+	@echo "LD  $@"
 	$(Q)$(CC) $(CFLAGS) \
 		-Wl,--just-symbols=upgrade-trampolines.sym\
 		-Wl,--pmem-wrap-around=$(PMEM_WRAP) \
@@ -136,11 +142,12 @@ upgrade-trampolines.elf:	upgrade-trampolines.o upgrade-trampolines.sym
 		-nostartfiles -o $@ $<
 
 upgrade-trampolines.raw:	upgrade-trampolines.elf
-	$(Q)echo "RAW $@"
+	@echo "GEN $@"
 	$(Q)avr-objcopy -j .text -O binary $< $@
 
 upgrade-with-bootloader.o:	upgrade.o upgrade-trampolines.raw bootloader.raw
-	@avr-objcopy \
+	@echo "GEN $@"
+	$(Q)avr-objcopy \
 		--add-section .payloadvectors=upgrade-trampolines.raw \
 		--set-section-flags .payloadvectors=alloc \
 		--add-section .payload=bootloader.raw \
@@ -148,12 +155,12 @@ upgrade-with-bootloader.o:	upgrade.o upgrade-trampolines.raw bootloader.raw
 		-O elf32-avr $< $@
 
 upgrade.elf:	$(UPGRADE_OBJECTS) $(SRCDIR)/upgrade$(LDSCRIPT_SUFFIX)
-	$(Q)echo "LD  $@"
+	@echo "LD  $@"
 	$(Q)$(CC) $(CFLAGS) -o $@ $(UPGRADE_OBJECTS) $(LDFLAGS) $(UPGRADE_LDFLAGS)
 
 upgrade.hex:    upgrade.elf
+	@echo "GEN $@"
 	$(Q)avr-objcopy -j .text -j .data -j .payload -j .payloadvectors -O ihex $< $@
-	$(Q)avr-size upgrade.hex
 
 disasm-upgrade:	upgrade.elf
 	avr-objdump -S -d upgrade.elf

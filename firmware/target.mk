@@ -9,8 +9,8 @@ endif
 MAKETARGET = $(MAKE) --no-print-directory -C $@ HARDWARE=$(patsubst target-%,%,$@) -f $(CURDIR)/Makefile \
 	SRCDIR=$(CURDIR) $(MAKECMDGOALS)
 
-
 all-targets: $(OBJDIRS)
+	./sizes.sh
 
 .PHONY: $(OBJDIRS)
 
