@@ -25,16 +25,12 @@
 
 #include "chipid.h"
 #include <hardware.h>
+#include "portnames.h"
 
 #define TINY_TABLE_LEN (VECTOR_SIZE * 2 + 2)
 
 #define PAGE_WORDS  (SPM_PAGESIZE / 2)
 
-#define USB_CONCAT(a, b)            a ## b
-
-#define USB_PORT(name)	USB_CONCAT(PORT, name)
-#define USB_PIN(name)	USB_CONCAT(PIN, name)
-#define USB_DDR(name)	USB_CONCAT(DDR, name)
 
 /*
  * Note: __payload_{start,end} are symbols provided by the linker. As such
@@ -210,8 +206,8 @@ static void write_new_bootloader(void)
 
 static inline void usb_disconnect(void)
 {
-	USB_PORT(USB_CFG_IOPORTNAME) &= ~_BV(USB_CFG_DMINUS_BIT);
-	USB_DDR(USB_CFG_IOPORTNAME)  |= _BV(USB_CFG_DMINUS_BIT);
+	PORT_PORT(USB_CFG_IOPORTNAME) &= ~_BV(USB_CFG_DMINUS_BIT);
+	PORT_DDR(USB_CFG_IOPORTNAME)  |= _BV(USB_CFG_DMINUS_BIT);
 }
 
 static inline void reboot(void) __attribute__((__noreturn__));
