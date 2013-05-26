@@ -25,6 +25,9 @@
 
 #include "chipid.h"
 #include <hardware.h>
+#include "usbdrv/usbdrv.c"
+
+#define RESET_VECTOR_OFFSET	0
 
 /*
  * The RC oscilator can only be used with 16.5 and 12.8 MHz and
@@ -45,9 +48,6 @@
 #  define MICRONUCLEUS_WIRING	255
 #endif
 
-#include "bootloaderconfig.h"
-#include "usbdrv/usbdrv.c"
-
 #ifndef WITH_CRYSTAL
 #    include <libs-device/osccal.c>
 #else
@@ -64,6 +64,17 @@
 #  define VECTOR_WORDS	(VECTOR_SIZE / 2)
 #endif
 
+// include features
+
+#ifndef BUILD_JUMPER_MODE
+#  define TIMER_MODE 1
+#endif
+
+#include "bootloader-timer-mode.h"
+#include "bootloader-low-power-mode.h"
+#include "bootloader-restore-osccal.h"
+#include "bootloader-jumper-mode.h"
+#include "bootloader-led.h"
 
 /* ------------------------------------------------------------------------ */
 
@@ -71,6 +82,9 @@
 #ifdef BOOTLOADER_INIT
 #   define bootLoaderInit()         BOOTLOADER_INIT
 #   define bootLoaderExit()
+#else
+#  define bootLoaderInit()
+#  define bootLoaderExit()
 #endif
 #ifdef BOOTLOADER_CONDITION
 #   define bootLoaderCondition()    BOOTLOADER_CONDITION
@@ -269,13 +283,6 @@ void __wrap_vusb_intr(void)
 
 //////// Stuff Bluebie Added
 
-#ifdef AUTO_EXIT_MS
-#  if AUTO_EXIT_MS < (MICRONUCLEUS_WRITE_SLEEP * (BOOTLOADER_ADDRESS / SPM_PAGESIZE))
-#    warning "AUTO_EXIT_MS is shorter than the time it takes to perform erase function - might affect reliability?"
-#    warning "Try increasing AUTO_EXIT_MS if you have stability problems"
-#  endif
-#endif
-
 // events system schedules functions to run in the main loop
 static uint8_t events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
@@ -287,7 +294,6 @@ static uint8_t events = 0; // bitmap of events to run
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
-uint16_t idlePolls = 0; // how long have we been idle?
 
 uint16_t vectorTemp[2];  // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 uint16_t currentAddress;   // current progmem address, used for erasing and writing
@@ -434,7 +440,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8])
 {
 	usbRequest_t *rq = (void *)data;
 
-	idlePolls = 0; // reset idle polls when we get usb traffic
+	reset_idle_polls(); // reset idle polls when we get usb traffic
 
 	static uint8_t replyBuffer[] = {
 		(((uint16_t)BOOTLOADER_ADDRESS) >> 8) & 0xff,
@@ -587,36 +593,34 @@ static inline void leaveBootloader(void)
 	}
 #endif
 
+	restore_jumper();
+	restore_clkpr();
+	restore_osccal();
+
 	// jump to application reset vector at end of flash
 	__app_reset();
 }
 
 int main(void)
 {
-	/* initialize  */
-#ifdef RESTORE_OSCCAL
-	uint8_t osccal_default = OSCCAL;
-#endif
-#if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
-	uint8_t prescaler_default = CLKPR;
-#endif
-
 	wdt_disable();  /* main app may have enabled watchdog */
+
+	store_osccal();
+	store_clkpr();
+	init_jumper();
+
 	bootLoaderInit();
 
 	if (bootLoaderStartCondition()) {
-#if LOW_POWER_MODE
-		// turn off clock prescalling - chip must run at full speed for usb
-		// if you might run chip at lower voltages, detect that in bootLoaderStartCondition
-		CLKPR = 1 << CLKPCE;
-		CLKPR = 0;
-#endif
+
+		disable_clkpr();
 
 		initForUsbConnectivity();
+
 		do {
 			usbPoll();
 			_delay_us(100);
-			idlePolls++;
+			incr_idle_polls();
 
 			// these next two freeze the chip for ~ 4.5ms, breaking usb protocol
 			// and usually both of these will activate in the same loop, so host
@@ -624,13 +628,13 @@ int main(void)
 			if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
 			if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
-			if (isEvent(EVENT_EXECUTE)) // when host requests device run uploaded program
-			{
-#ifdef BUILD_JUMPER_MODE
+			if (isEvent(EVENT_EXECUTE)) {
+				// host requests device run uploaded program
+#ifdef TIMER_MODE
+				two_more_idle_polls();
+#else
 				_delay_ms(10);
 				break;
-#else
-				idlePolls = ((AUTO_EXIT_MS - 21) * 10UL);
 #endif
 			}
 
@@ -638,21 +642,6 @@ int main(void)
 		} while (bootLoaderCondition()); /* main event loop runs so long as bootLoaderCondition remains truthy */
 	}
 
-#if LOW_POWER_MODE
-	// set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
-#  ifdef SET_CLOCK_PRESCALER
-	CLKPR = 1 << CLKPCE;
-	CLKPR = SET_CLOCK_PRESCALER;
-#  else
-	CLKPR = 1 << CLKPCE;
-	CLKPR = prescaler_default;
-#  endif
-#endif
-
-#ifdef RESTORE_OSCCAL
-	// slowly bring down OSCCAL to it's original value before launching in to user program
-	while (OSCCAL > osccal_default) OSCCAL -= 1;
-#endif
 	leaveBootloader();
 }
 

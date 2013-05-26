@@ -19,6 +19,8 @@ ifeq (,$(filter target-%,$(notdir $(CURDIR))))
 include target.mk
 else
 
+DEFINES :=
+
 include $(SRCDIR)/hardware/$(HARDWARE).mk
 
 # PROGRAMMER = -c USBasp
@@ -29,8 +31,6 @@ PROGRAMMER = -c stk500 -P /dev/ttyACM0
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
-# Options:
-DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
 # Remove the -fno-* options when you use gcc 3, it does not understand them
 CFLAGS = \
 	-Wall \
@@ -45,6 +45,7 @@ CFLAGS = \
 	-I $(SRCDIR)/libs-device \
 	-mmcu=$(DEVICE) \
 	-DF_CPU=$(F_CPU) \
+	-DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) \
 	$(DEFINES)
 
 LDFLAGS = \

@@ -21,7 +21,6 @@
    setting are now in bootloaderconfig.h: */
 
 #include <hardware.h>
-#include "bootloaderconfig.h"
 
 /* --------------------------- Functional Range ---------------------------- */
 
