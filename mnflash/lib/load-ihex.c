@@ -27,8 +27,8 @@
 #include <errno.h>
 #include <string.h>
 
-#include "firmware-blob.h"
-#include "load-ihex.h"
+#include <libmnflash/firmware.h>
+#include <libmnflash/load-ihex.h>
 
 
 static int8_t char2nibble(char nibble)
@@ -69,10 +69,10 @@ static int hex2word(char * hexstr, uint16_t * word)
 	return 0;
 }
 
-struct firmware_blob * ihex_load(const char * filename)
+mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 {
 	FILE * in = NULL;
-	struct firmware_blob * blob = NULL;
+	mnflash_firmware_t * blob = NULL;
 	char  linebuf[256];
 
 	if ( (in = fopen( filename, "r")) == NULL ) {
@@ -80,7 +80,7 @@ struct firmware_blob * ihex_load(const char * filename)
 		return NULL;
 	}
 
-	blob = firmware_blob_new();
+	blob = mnflash_firmware_new();
 	blob->filename = strdup(filename);
 
 	while( fgets(linebuf, sizeof(linebuf), in) != NULL) {
@@ -167,7 +167,7 @@ struct firmware_blob * ihex_load(const char * filename)
 				if ((blob->data == NULL) || (addr < blob->start))
 					blob->start = addr;
 
-				firmware_blob_resize(blob, addr + rec_len);
+				mnflash_firmware_resize(blob, addr + rec_len);
 
 				if ( blob->data == NULL ) {
 					fprintf(stderr, "blob resize failed\n");
@@ -247,7 +247,7 @@ struct firmware_blob * ihex_load(const char * filename)
 	return blob;
 
 errout:
-	firmware_blob_destroy(blob);
+	mnflash_firmware_destroy(blob);
 	fclose(in);
 	return NULL;
 }

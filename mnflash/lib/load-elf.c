@@ -30,11 +30,11 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "hexdump.h"
-#include "firmware-blob.h"
+#include <libmnflash/hexdump.h>
+#include <libmnflash/firmware.h>
 
 
-static int elf_add_section_to_blob(struct firmware_blob * blob, Elf_Scn * section, ssize_t start)
+static int elf_add_section_to_blob(mnflash_firmware_t * blob, Elf_Scn * section, ssize_t start)
 {
 	GElf_Shdr shdr;
 	Elf_Data  *data = NULL;
@@ -45,7 +45,7 @@ static int elf_add_section_to_blob(struct firmware_blob * blob, Elf_Scn * sectio
 	if (start < 0)
 		start = blob->end;
 
-	firmware_blob_resize(blob, start + shdr.sh_size);
+	mnflash_firmware_resize(blob, start + shdr.sh_size);
 
 	while ((data = elf_getdata(section, data)) != NULL) {
 		memcpy(blob->data + blob->end, data->d_buf, data->d_size);
@@ -66,10 +66,10 @@ const char * sections[] = {
 	NULL
 };
 
-struct firmware_blob * elf_load(const char *filename)
+mnflash_firmware_t * mnflash_elf_load(const char *filename)
 {
 	int i, fd;
-	struct firmware_blob * blob = NULL;
+	mnflash_firmware_t * blob = NULL;
 	const char ** wanted = NULL;
 
 	Elf *e = NULL;
@@ -110,7 +110,7 @@ struct firmware_blob * elf_load(const char *filename)
 	if (elf_getshdrstrndx(e, &shstrndx) != 0)
 		erret("getshstrndx() failed: %s.\n", elf_errmsg(-1));
 
-	if ((blob = firmware_blob_new()) == NULL )
+	if ((blob = mnflash_firmware_new()) == NULL )
 		erret("cannot create a new firmware blob\n");
 
 	blob->filename = strdup(filename);
@@ -205,7 +205,7 @@ errout:
 	if ( fd )
 		close(fd);
 	if ( blob )
-		firmware_blob_destroy(blob);
+		mnflash_firmware_destroy(blob);
 	if ( e )
 		elf_end(e);
 

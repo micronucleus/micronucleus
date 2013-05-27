@@ -28,23 +28,23 @@
 #include <usb.h>
 #include <errno.h>
 
-#include "hexdump.h"
-#include "usb-device.h"
+#include <libmnflash/hexdump.h>
+#include <libmnflash/usb-device.h>
 
-static device_t * device_new() {
-	device_t * result = NULL;
+static mnflash_usb_t * mnflash_usb_new() {
+	mnflash_usb_t * result = NULL;
 
-	if ( ! (result = malloc(sizeof(device_t))) ) {
+	if ( ! (result = malloc(sizeof(mnflash_usb_t))) ) {
 		fprintf(stderr, "cannot allocate memory\n");
 		return NULL;
 	}
 
-	memset(result, 0, sizeof(device_t));
+	memset(result, 0, sizeof(mnflash_usb_t));
 
 	return result;
 }
 
-void device_destroy(device_t * dev) {
+void mnflash_usb_destroy(mnflash_usb_t * dev) {
 	if ( dev ) {
 		if ( dev->handle ) {
 			usb_close( dev->handle );
@@ -57,7 +57,7 @@ void device_destroy(device_t * dev) {
 /*
  * Custom read request with retry.
  */
-ssize_t device_custom_read( device_t * dev, uint16_t request, uint16_t index, uint16_t value, void * buffer, size_t buflen )
+ssize_t mnflash_usb_custom_read( mnflash_usb_t * dev, uint16_t request, uint16_t index, uint16_t value, void * buffer, size_t buflen )
 {
 	ssize_t bytesRead = 0;
 	int	retry = 3;
@@ -97,7 +97,7 @@ ssize_t device_custom_read( device_t * dev, uint16_t request, uint16_t index, ui
 /*
  * Custom write request with retry.
  */
-ssize_t device_custom_write( device_t * dev, uint16_t request, uint16_t index, uint16_t value, void * buffer, size_t buflen )
+ssize_t mnflash_usb_custom_write( mnflash_usb_t * dev, uint16_t request, uint16_t index, uint16_t value, void * buffer, size_t buflen )
 {
 	ssize_t bytesWritten = 0;
 	int	retry = 3;
@@ -132,7 +132,7 @@ ssize_t device_custom_write( device_t * dev, uint16_t request, uint16_t index, u
 
 	return bytesWritten;
 }
-static const char * device_mode_string(device_t * dev)
+static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
 {
 	switch( dev->mode ) {
 		case DEV_MODE_NONE:
@@ -146,16 +146,17 @@ static const char * device_mode_string(device_t * dev)
 	return "invalid";
 }
 
-void device_show(device_t * dev)
+void mnflash_usb_show(mnflash_usb_t * dev)
 {
-	fprintf(stdout, "Device in %s, hardware version %d.%d\n", device_mode_string(dev),
+	fprintf(stdout, "Device in %s, hardware version %d.%d\n",
+			mnflash_usb_mode_string(dev),
 			dev->major_version,
 			dev->minor_version );
 }
 
-device_t * device_connect(int loader_only)
+mnflash_usb_t * mnflash_usb_connect(int loader_only)
 {
-	device_t *	result = NULL;
+	mnflash_usb_t *	result = NULL;
 
 	struct usb_bus *bus;
 	struct usb_device *dev;
@@ -181,7 +182,7 @@ device_t * device_connect(int loader_only)
 					continue;
 				}
 
-				if ( !( result = device_new() ) )
+				if ( !( result = mnflash_usb_new() ) )
 					continue;
 
 				result->handle = handle;

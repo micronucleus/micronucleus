@@ -25,15 +25,15 @@
 #include <stdint.h>
 #include <stdio.h>
 #include <ctype.h>
-#include "hexdump.h"
+#include <libmnflash/hexdump.h>
 
-void hexdump_header()
+void mnflash_hexdump_header()
 {
 	fprintf(stdout, "Addr  +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F       ASCII\n");
 	fprintf(stdout, "-------------------------------------------------------------------------\n");
 }
 
-void hexdump(int start, uint8_t * buffer, size_t buflen)
+void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 {
 	int addr = start;
 	unsigned char ascii[17];

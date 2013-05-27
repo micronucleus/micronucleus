@@ -32,16 +32,16 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-#include "firmware-blob.h"
-#include "load-raw.h"
+#include <libmnflash/firmware.h>
+#include <libmnflash/load-raw.h>
 
 #define CHECKINTS 15
 #define BUFSIZE 4096
 
-struct firmware_blob * raw_load(const char * filename)
+mnflash_firmware_t * mnflash_raw_load(const char * filename)
 {
 	int in = 0;
-	struct firmware_blob * blob = NULL;
+	mnflash_firmware_t * blob = NULL;
 	uint8_t buffer[BUFSIZE];
 	size_t  now = 0;
 	ssize_t bytesread = 0;
@@ -51,12 +51,12 @@ struct firmware_blob * raw_load(const char * filename)
 		return NULL;
 	}
 
-	blob = firmware_blob_new();
+	blob = mnflash_firmware_new();
 	blob->filename = strdup(filename);
 
 	while ((bytesread = read(in,buffer,sizeof(buffer))) > 0) {
 
-		firmware_blob_resize(blob, now + bytesread);
+		mnflash_firmware_resize(blob, now + bytesread);
 
 		if ( blob->data == NULL ) {
 			fprintf(stderr, "blob resize failed\n");
@@ -107,7 +107,7 @@ struct firmware_blob * raw_load(const char * filename)
 	return blob;
 
 errout:
-	firmware_blob_destroy(blob);
+	mnflash_firmware_destroy(blob);
 	close(in);
 	return NULL;
 }

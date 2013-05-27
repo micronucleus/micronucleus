@@ -29,15 +29,15 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "usb-device.h"
-#include "firmware.h"
-#include "uploader.h"
+#include <libmnflash/usb-device.h>
+#include <libmnflash/firmware.h>
+#include <libmnflash/uploader.h>
 
 int main(int argc, char ** argv)
 {
-	device_t * dev = NULL;
-	struct uploader_device_info * linfo	= NULL;
-	struct firmware_blob * firmware		= NULL;
+	mnflash_usb_t * dev = NULL;
+	mnflash_device_info_t * linfo	= NULL;
+	mnflash_firmware_t * firmware	= NULL;
 
 	char *firmware_file	= NULL;
 	char * application	= NULL;
@@ -75,7 +75,7 @@ int main(int argc, char ** argv)
 
 	retry = 50;
 	do {
-		if ((dev = device_connect(1)) == NULL) {
+		if ((dev = mnflash_usb_connect(1)) == NULL) {
 			usleep(100000);
 		}
 		retry --;
@@ -86,15 +86,15 @@ int main(int argc, char ** argv)
 		exit(1);
 	}
 
-	device_show(dev);
+	mnflash_usb_show(dev);
 
-	if ((linfo = uploader_get_device_info(dev)) == NULL) {
+	if ((linfo = mnflash_get_device_info(dev)) == NULL) {
 		exit(1);
 	}
-	uploader_info(linfo);
+	mnflash_info(linfo);
 
 	if ( firmware_file ) {
-		firmware = firmware_locate(firmware_file,application,linfo);
+		firmware = mnflash_firmware_locate(firmware_file,application,linfo);
 //		if (firmware)
 //			firmware_dump(firmware);
 	} else {
@@ -103,11 +103,11 @@ int main(int argc, char ** argv)
 
 
 	if (firmware)
-		uploader_upload(linfo, firmware);
+		mnflash_upload(linfo, firmware);
 
 
-	uploader_device_info_destroy(linfo);
-	device_destroy(dev);
+	mnflash_device_info_destroy(linfo);
+	mnflash_usb_destroy(dev);
 	dev = NULL;
 
 	exit(0);

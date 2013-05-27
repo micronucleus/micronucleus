@@ -29,12 +29,12 @@
 #include <string.h>
 #include <getopt.h>
 
-#include "usb-device.h"
-#include "uploader.h"
+#include <libmnflash/usb-device.h>
+#include <libmnflash/uploader.h>
 
-#include "load-elf.h"
-#include "load-ihex.h"
-#include "load-raw.h"
+#include <libmnflash/load-elf.h>
+#include <libmnflash/load-ihex.h>
+#include <libmnflash/load-raw.h>
 
 struct target_name {
 	uint8_t	device;
@@ -50,7 +50,7 @@ struct target_name target_list[] = {
 	{ .target = NULL},
 };
 
-const char * firmware_get_target_name(struct uploader_device_info * linfo) {
+const char * mnflash_firmware_get_target_name(mnflash_device_info_t * linfo) {
 	struct target_name * now = NULL;
 
 	for( now = target_list; now->target != NULL; now ++ ) {
@@ -78,12 +78,12 @@ char * prefixes[] = {
 /*
  * Load firmware file with auto-format detection
  */
-struct firmware_blob * firmware_load_file_autofmt(const char * path)
+mnflash_firmware_t * mnflash_firmware_load_file_autofmt(const char * path)
 {
-	struct firmware_blob * firmware = NULL;
-	if ( (firmware = elf_load(path)) == NULL) {
-		if ( (firmware = ihex_load(path)) == NULL) {
-			if ( (firmware = raw_load(path)) == NULL) {
+	mnflash_firmware_t * firmware = NULL;
+	if ( (firmware = mnflash_elf_load(path)) == NULL) {
+		if ( (firmware = mnflash_ihex_load(path)) == NULL) {
+			if ( (firmware = mnflash_raw_load(path)) == NULL) {
 				fprintf(stderr, "cannot load firmware.\n");
 				return NULL;
 			}
@@ -96,11 +96,11 @@ struct firmware_blob * firmware_load_file_autofmt(const char * path)
 /*
  * Load firmware from directory.
  */
-struct firmware_blob * load_firmware_from_dir(const char * path, const char * app, struct uploader_device_info * linfo)
+mnflash_firmware_t * mnflash_load_firmware_from_dir(const char * path, const char * app, mnflash_device_info_t * linfo)
 {
 	struct stat statbuf;
-	struct firmware_blob * firmware = NULL;
-	const char * stem = firmware_get_target_name(linfo);
+	mnflash_firmware_t * firmware = NULL;
+	const char * stem = mnflash_firmware_get_target_name(linfo);
 	char * name = NULL;
 	size_t len, pflen, extlen;
 	int i,j = 0;
@@ -139,7 +139,7 @@ struct firmware_blob * load_firmware_from_dir(const char * path, const char * ap
 			if (stat(name, &statbuf) == 0) {
 
 				if ((statbuf.st_mode & S_IFMT) == S_IFREG) {
-					firmware = firmware_load_file_autofmt(name);
+					firmware = mnflash_firmware_load_file_autofmt(name);
 				}
 				if (firmware)
 					break;
@@ -154,16 +154,16 @@ struct firmware_blob * load_firmware_from_dir(const char * path, const char * ap
 	return firmware;
 }
 
-struct firmware_blob * firmware_locate(const char * path, const char * app, struct uploader_device_info * linfo)
+mnflash_firmware_t * mnflash_firmware_locate(const char * path, const char * app, mnflash_device_info_t * linfo)
 {
 	struct stat statbuf;
 
 	if (stat(path, &statbuf) == 0) {
 		if ((statbuf.st_mode & S_IFMT) == S_IFREG) {
-			return firmware_load_file_autofmt(path);
+			return mnflash_firmware_load_file_autofmt(path);
 		}
 		else if ((statbuf.st_mode & S_IFMT) == S_IFDIR) {
-			return load_firmware_from_dir(path, app, linfo);
+			return mnflash_load_firmware_from_dir(path, app, linfo);
 		}
 	} else {
 		/* look for file in search path matching stem and hardware */

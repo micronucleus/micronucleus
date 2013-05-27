@@ -27,21 +27,21 @@
 #include <errno.h>
 #include <string.h>
 
-#include "hexdump.h"
-#include "firmware-blob.h"
+#include <libmnflash/hexdump.h>
+#include <libmnflash/firmware.h>
 
-struct firmware_blob * firmware_blob_new(void)
+mnflash_firmware_t * mnflash_firmware_new(void)
 {
-	struct firmware_blob * blob;
+	mnflash_firmware_t * blob;
 
-	if ( (blob = malloc(sizeof(struct firmware_blob))) != NULL ) {
+	if ( (blob = malloc(sizeof(mnflash_firmware_t))) != NULL ) {
 		memset(blob,0,sizeof(*blob));
 	}
 
 	return blob;
 }
 
-void firmware_blob_destroy(struct firmware_blob * blob)
+void mnflash_firmware_destroy(mnflash_firmware_t * blob)
 {
 	if (blob) {
 		free(blob->data);
@@ -54,7 +54,7 @@ void firmware_blob_destroy(struct firmware_blob * blob)
 #define FIRMWARE_ALLOC_SIZE	4096
 #define FIRMWARE_MAX_DATA_SIZE	(1024 * 4096)
 
-void firmware_blob_resize(struct firmware_blob * blob, size_t address) {
+void mnflash_firmware_resize(mnflash_firmware_t * blob, size_t address) {
 	if ( blob->data_size < address || (blob->data == NULL) ) {
 		size_t new_alloc = ((address / FIRMWARE_ALLOC_SIZE) + 1) * FIRMWARE_ALLOC_SIZE;
 
@@ -75,7 +75,7 @@ void firmware_blob_resize(struct firmware_blob * blob, size_t address) {
 	}
 }
 
-void firmware_info(const struct firmware_blob * blob)
+void mnflash_firmware_info(const mnflash_firmware_t * blob)
 {
 	fprintf(stdout, "       File name: %s\n", blob->filename);
 	fprintf(stdout, "Target Signature: 0x%2.2x 0x%2.2x 0x%2.2x\n",
@@ -85,11 +85,11 @@ void firmware_info(const struct firmware_blob * blob)
 	fprintf(stdout, "   Start address: 0x%zx\n", blob->entry);
 }
 
-void firmware_dump(const struct firmware_blob * blob)
+void mnflash_firmware_dump(const mnflash_firmware_t * blob)
 {
-	firmware_info(blob);
-	hexdump_header();
-	hexdump(blob->start, blob->data + blob->start, blob->end - blob->start);
+	mnflash_firmware_info(blob);
+	mnflash_hexdump_header();
+	mnflash_hexdump(blob->start, blob->data + blob->start, blob->end - blob->start);
 	// hexdump(0, blob->data, blob->data_size );
 
 

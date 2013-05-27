@@ -23,17 +23,16 @@
 
 #include <stdio.h>
 #include <memory.h>
-#include "usb-device.h"
-#include "uploader.h"
-#include "firmware.h"
-#include "firmware-blob.h"
-#include "hexdump.h"
+#include <libmnflash/usb-device.h>
+#include <libmnflash/uploader.h>
+#include <libmnflash/firmware.h>
+#include <libmnflash/hexdump.h>
 
 #define DEV_BUF_LEN	8
 
-static struct uploader_device_info * uploader_device_info_new(device_t * dev)
+static mnflash_device_info_t * mnflash_device_info_new(mnflash_usb_t * dev)
 {
-	struct uploader_device_info * result = NULL;
+	mnflash_device_info_t * result = NULL;
 
 	if ( (result = malloc(sizeof(*result))) == NULL )
 		return NULL;
@@ -45,23 +44,23 @@ static struct uploader_device_info * uploader_device_info_new(device_t * dev)
 	return result;
 }
 
-void uploader_device_info_destroy(struct uploader_device_info * info)
+void mnflash_device_info_destroy(mnflash_device_info_t * info)
 {
 	free(info);
 }
 
-struct uploader_device_info * uploader_get_device_info(device_t * dev)
+mnflash_device_info_t * mnflash_get_device_info(mnflash_usb_t * dev)
 {
 	uint8_t buffer[DEV_BUF_LEN];
 	ssize_t readlen = 0;
-	struct uploader_device_info * result = NULL;
+	mnflash_device_info_t * result = NULL;
 
 	if ( dev->mode != DEV_MODE_PROGRAMMING ) {
 		fprintf(stderr, "device not in bootloader\n");
 		return NULL;
 	}
 
-	readlen = device_custom_read(dev, BOOTLOADER_INFO, 0, 0, buffer, DEV_BUF_LEN);
+	readlen = mnflash_usb_custom_read(dev, BOOTLOADER_INFO, 0, 0, buffer, DEV_BUF_LEN);
 
 	if ( readlen < 4 ) {
 		fprintf(stderr, "cannot read bootloader info from device\n");
@@ -71,7 +70,7 @@ struct uploader_device_info * uploader_get_device_info(device_t * dev)
 		return NULL;
 	}
 
-	if ((result = uploader_device_info_new(dev)) == NULL) {
+	if ((result = mnflash_device_info_new(dev)) == NULL) {
 		fprintf(stderr, "cannot initialize uploader struct\n");
 		return NULL;
 	}
@@ -91,19 +90,19 @@ struct uploader_device_info * uploader_get_device_info(device_t * dev)
 	return result;
 }
 
-void uploader_info(struct uploader_device_info * info)
+void mnflash_info(mnflash_device_info_t * info)
 {
 	fprintf(stdout, "           device info: %d/%d (%s)\n",
-			info->device, info->wiring, firmware_get_target_name(info));
+			info->device, info->wiring, mnflash_firmware_get_target_name(info));
 	fprintf(stdout, "available program size: %d bytes\n", info->progmem_size);
 	fprintf(stdout, "      device page size: %d bytes\n", info->page_size);
 	fprintf(stdout, "           write delay: %d ms\n",    info->write_sleep);
 }
 
-static int uploader_erase(struct uploader_device_info * info)
+static int mnflash_erase(mnflash_device_info_t * info)
 {
 	fprintf(stdout,"erasing device ...\n");
-	if (device_custom_write(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
+	if (mnflash_usb_custom_write(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
 		fprintf(stderr,"cannot erase device%s\n", usb_strerror());
 		return 0;
 	}
@@ -114,19 +113,19 @@ static int uploader_erase(struct uploader_device_info * info)
 	return 1;
 }
 
-static int uploader_execute(struct uploader_device_info * info)
+static int mnflash_execute(mnflash_device_info_t * info)
 {
 	ssize_t written = 0;
 
 	fprintf(stdout,"run application ...\n");
-	if ((written = device_custom_write(info->dev, BOOTLOADER_EXECUTE, 0, 0, NULL, 0)) < 0) {
+	if ((written = mnflash_usb_custom_write(info->dev, BOOTLOADER_EXECUTE, 0, 0, NULL, 0)) < 0) {
 		fprintf(stderr,"cannot execute application: %zd\n", written);
 		return 0;
 	}
 	return 1;
 }
 
-int uploader_upload(struct uploader_device_info * info, struct firmware_blob * firmware)
+int mnflash_upload(mnflash_device_info_t * info, mnflash_firmware_t  * firmware)
 {
 	uint16_t page_now = 0;
 	uint8_t	* page_buffer;
@@ -153,7 +152,7 @@ int uploader_upload(struct uploader_device_info * info, struct firmware_blob * f
 		return 0;
 	}
 
-	if ( ! uploader_erase(info) ) {
+	if ( ! mnflash_erase(info) ) {
 		fprintf(stderr, "Failed to erase device flash memory\n");
 		return 0;
 	}
@@ -171,11 +170,11 @@ int uploader_upload(struct uploader_device_info * info, struct firmware_blob * f
 		memset(page_buffer, 0xFF, info->page_size);
 		memcpy(page_buffer, firmware->data + page_now, page_bytes);
 
-		hexdump(page_now, page_buffer, page_bytes);
+		mnflash_hexdump(page_now, page_buffer, page_bytes);
 
 		usleep( 1000 * info->write_sleep );
 
-		writelen = device_custom_write(
+		writelen = mnflash_usb_custom_write(
 				info->dev,
 				BOOTLOADER_WRITE_PAGE,
 				page_now,
@@ -208,7 +207,7 @@ int uploader_upload(struct uploader_device_info * info, struct firmware_blob * f
 
 		usleep( 2000 * info->write_sleep );
 
-		writelen = device_custom_write(
+		writelen = mnflash_usb_custom_write(
 				info->dev,
 				BOOTLOADER_WRITE_PAGE,
 				page_now,
@@ -226,7 +225,7 @@ int uploader_upload(struct uploader_device_info * info, struct firmware_blob * f
 		}
 	}
 
-	uploader_execute(info);
+	mnflash_execute(info);
 
 	return 1;
 }
