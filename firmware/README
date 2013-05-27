@@ -6,8 +6,7 @@ Just running "make" will build the bootloader and the upgrade firmware for all
 targets.
 
 Some operations, such as flashing the bootloader for example, are only useful
-for a single target though. just tell the makefile which target you want, for
-example
+for a single target. Just tell the makefile which target you want, for example
 
   make target-tiny-861-c12 flash
 
@@ -15,67 +14,109 @@ example
 Adding a target
 ---------------
 
-Choose a target name, add a makefile include <name.mk> and a directory <name>
-that contains the C include "hardware.h".
+Choose a target name, <name>, then
 
-Use one of the other targets as an example.
+* add a makefile include <name.mk> which should set the bootloader address,
+  and used frequency. You may add options to the "DEFINES" variable like so
 
+    DEFINES += -DBUILD_JUMPER_MODE
+
+* add a directory <name> and put a file "hardware.h" into it.
+  "hardware.h" should include the vUSB configuration for your particular device,
+  it may also define other options (see below).
+
+
+Currently these targets are defined:
+
+  Hardware              Size
+  ----------------------------------------------------------------------------
+  tiny-167-c12          1928	16k device with 12MHz crystal (WITH_CRYSTAL)
+  tiny-85-1             2088	16.5MHz RC, alternative wiring
+  tiny-85-2             2088	16.5MHz RC, standard config
+  tiny-85-jumper        2070	  std. but with BUILD_JUMPER_MODE
+  tiny-85-jumper-ko     2014	     jumper + KEEP_OSCCAL
+  tiny-85-keep-osccal   2032	  std. but with KEEP_OSCCAL
+  tiny-85-lowpower      2084	  std. but with LOW_POWER_MODE + RESTORE_OSCCAL
+  tiny-861-c12          1804	8k device with 12MHz crystal (WITH_CRYSTAL)
+
+(all sizes with GCC 4.7.2, avr-libc 1.8)
 
 Options
 -------
 
-* RESTORE_OSCCAL
+OSCCAL options:
+...............
 
-Restores the RC calibration to the value it had when entering the bootloader.
+When running on the internal RC oscilator, the oscilator has to be tuned to
+8.25 MHz (16.5MHz/2) within 1% margin. This is currently done by using a rather
+precise timing signal from USB.
 
-Saves 40 bytes over the standard method (restore OSCCAL to the value used when
-the applications has been uploaded).
+If the device is not connected to USB however, no calibration can be done.
+Thus, the RC oscilator is either tuned to 8.25MHz +/- 1% or the factory default
+is active, which is 8MHz +/- 10%
 
+There are several options on how to deal with this
 
-* KEEP_OSCCAL
+  * default behavior
 
-If your device is normaly connected to USB and/or you do not care too much that
-it may run at 16/12MHz instead of 16.5/12.8 MHz, you can set this define and save
-42 bytes.
+    Always restore RC calibration to the value active when the application has
+    been uploaded. This costs 56 bytes.
 
+  * RESTORE_OSCCAL
 
-* WITH_CRYSTAL
+    Restores the RC calibration to the value it had when entering the
+    bootloader. This option is meant mostly to be used with LOW_POWER_MODE.
 
-Removes support for RC calibration. Automatically selected for vUSB frequencies
-that require a crystal.
-
-Reduces size by about 266 bytes.
-
-
-* LOW_POWER_MODE
-
-Assume the chip is normally running at reduced clock speed to save power. This
-option disables the clock prescaler when entering the bootloader, and resets it
-when leaving.
-
-Costs 20 bytes.
+    Saves a few bytes bytes over the standard method but only adjust OSCCAL
+    downwards.
 
 
-* BUILD_JUMPER_MODE
+  * KEEP_OSCCAL
 
-Enters the bootloader only when a pin is pulled low and stays there until the
-pin is high again. Avoids the normal 5s delay after device reset.
+    Do not restore OSCCAL
 
-Costs 6 bytes.
+    If your device is normaly connected to USB and/or you do not care that the
+    frequency is only exact within 10%, define this and save 56 bytes.
 
 
-* APP_USES_VUSB
+  * WITH_CRYSTAL
 
-Assumes that the application is using the exact same vUSB version with
-the exact same interrupt configuration as the bootloader.
+    Automatically selected for vUSB frequencies that require a crystal.
 
-Reduces the worst-case interrupt latency induced by the bootloader from
-23 to 14 cycles and reduces the size by 4 bytes.
+    Removes support for RC calibration entirely. Saves 284 bytes.
 
-This option may help if your application uses vUSB plus some other interrupts
-and you experience USB communication problems when the bootloader is installed.
 
-However, this option is dangerous if the application uses the vUSB interrupt
-for something else.
+Hardware/Application specific
+.............................
+
+  * LOW_POWER_MODE + RESTORE_OSCCAL
+
+    Assume the chip is normally running at reduced clock speed to save power.
+    This option disables the clock prescaler when entering the bootloader, and
+    resets it when leaving. It also enters the bootloader only when D- is
+    pulled high.
+
+    Requires special hardware provisions.
+
+
+  * BUILD_JUMPER_MODE
+
+    Enters the bootloader only when a pin is pulled low and stays there until reset
+    or told to restar by the upload utility.
+
+    Requires special hardware provisions.
+
+
+  * APP_USES_VUSB
+
+    This option may help if your application has issues with interrupt latency,
+    which cause USB communication errors when the bootloader is installed.
+
+    This option reduces the interrupt latency induced by the bootloader by 9 cycles
+    (worst-case: from 23 to 14 cycles) by bypassing stack restoration. To do this,
+    it assumes that the application is using the exact same vUSB version with the
+    exact same interrupt configuration as the bootloader.
+
+    Note: If this precondition is not met, the application will crash. Use with care.
 
 
