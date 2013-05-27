@@ -81,7 +81,7 @@ all: bootloader.hex upgrade.hex
 
 bootloader.dep:	$(BOOTLOADER_SOURCES)
 	@echo GEN $@
-	$(Q)$(CC) -M $(CFLAGS) $^ -o $@
+	$(Q)$(CC) -M $(CFLAGS) $^ > $@
 
 -include bootloader.dep
 
