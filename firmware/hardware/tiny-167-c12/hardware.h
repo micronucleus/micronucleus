@@ -30,4 +30,11 @@
 
 #define WITH_CRYSTAL	1
 
+/*
+ * On this device, one rather would like to use PA2,
+ * which is DO on th ISP.
+ */
+#define LED_PORT	B
+#define	LED_PIN		1
+
 #endif

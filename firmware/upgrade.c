@@ -26,6 +26,7 @@
 #include "chipid.h"
 #include <hardware.h>
 #include "portnames.h"
+#include "bootloader-led.h"
 
 #define TINY_TABLE_LEN (VECTOR_SIZE * 2 + 2)
 
@@ -64,6 +65,8 @@ static void write_page(uint16_t address, uint16_t words[PAGE_WORDS])
 {
 	// fill buffer
 	uint16_t iter = 0;
+
+	led_toggle();
 
 	while (iter < PAGE_WORDS) {
 		boot_page_fill(address + (iter * 2), words[iter]);
@@ -224,6 +227,9 @@ int main(void)
 {
 	cli();
 
+	led_init();
+	led_on();
+
 	/*
 	 * Pull down D- (= disconnect USB) so the host does not try to
 	 * enumerate
@@ -239,6 +245,8 @@ int main(void)
 	 * re-enumeration long before we have entered the bootloader, which
 	 * will then disconnect again
 	 */
+
+	led_off();
 
 	reboot();
 }

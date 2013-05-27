@@ -64,6 +64,8 @@ BOOTLOADER_LDFLAGS= \
 	-Wl,--section-start=.vectorpage=0 \
 	-Wl,--pmem-wrap-around=$(PMEM_WRAP) \
 
+UPGRADE_SOURCES = upgrade.c
+
 UPGRADE_OBJECTS = \
 	upgrade-with-bootloader.o
 
@@ -128,6 +130,12 @@ disasm:	bootloader.elf
 #--------- upgrade specific -------
 
 UPGRADEABLE_FIRMWARE=bootloader.elf
+
+upgrade.dep:	$(UPGRADE_SOURCES)
+	@echo GEN $@
+	$(Q)$(CC) -M $(CFLAGS) $^ > $@
+
+-include upgrade.dep
 
 upgrade-trampolines.sym: $(UPGRADEABLE_FIRMWARE)
 	@echo GEN $@

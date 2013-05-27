@@ -604,6 +604,7 @@ int main(void)
 
 	store_osccal();
 	store_clkpr();
+	led_init();
 	init_jumper();
 
 	bootLoaderInit();
@@ -611,6 +612,7 @@ int main(void)
 	if (bootLoaderStartCondition()) {
 
 		disable_clkpr();
+		led_on();
 
 		/*
 		 * clear page buffer as a precaution before filling the buffer on the first page
@@ -644,6 +646,8 @@ int main(void)
 
 			clearEvents();
 		} while (bootLoaderCondition()); /* main event loop runs so long as bootLoaderCondition remains truthy */
+
+		led_off();
 	}
 
 	leaveBootloader();

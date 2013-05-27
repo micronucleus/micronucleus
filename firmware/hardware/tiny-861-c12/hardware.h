@@ -28,4 +28,12 @@
 
 #define WITH_CRYSTAL	1
 
+/*
+ * The device has a LED and it is connected to PB1. This
+ * PIN is also DO on the ISP, which gives you blinking
+ * while flashing the device over the ISP.
+ */
+#define LED_PORT	B
+#define LED_PIN		1
+
 #endif
