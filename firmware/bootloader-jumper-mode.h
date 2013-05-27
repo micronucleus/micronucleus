@@ -31,7 +31,7 @@ static inline void restore_jumper(void)
 
 #undef  bootLoaderStartCondition
 #define bootLoaderStartCondition() \
-	bit_is_set( PORT_PIN(START_JUMPER_PORT), START_JUMPER_PIN)
+	bit_is_clear( PORT_PIN(START_JUMPER_PORT), START_JUMPER_PIN)
 
 #undef  bootLoaderCondition
 #define bootLoaderCondition() 1
