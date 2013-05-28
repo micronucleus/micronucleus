@@ -47,7 +47,9 @@ extern ssize_t mnflash_usb_custom_write(
 
 extern void mnflash_usb_show(mnflash_usb_t * dev);
 
-extern mnflash_usb_t * mnflash_usb_connect(int loader_only);
+typedef usb_dev_handle * (*mnflash_usb_filter)(struct usb_device * dev, void * arg);
+
+extern mnflash_usb_t * mnflash_usb_connect(mnflash_usb_filter filter, void * arg);
 
 extern void mnflash_usb_destroy(mnflash_usb_t * dev);
 

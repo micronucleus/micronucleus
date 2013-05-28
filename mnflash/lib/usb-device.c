@@ -154,9 +154,12 @@ void mnflash_usb_show(mnflash_usb_t * dev)
 			dev->minor_version );
 }
 
-mnflash_usb_t * mnflash_usb_connect(int loader_only)
+mnflash_usb_t * mnflash_usb_connect(mnflash_usb_filter filter, void * arg)
 {
 	mnflash_usb_t *	result = NULL;
+	mnflash_usb_mode_t mode = 0;
+
+	usb_dev_handle * handle = NULL;
 
 	struct usb_bus *bus;
 	struct usb_device *dev;
@@ -171,7 +174,12 @@ mnflash_usb_t * mnflash_usb_connect(int loader_only)
 	for ( bus = usb_get_busses(); bus; bus = bus->next ) {
 		for (dev = bus->devices; dev; dev = dev->next) {
 
-			usb_dev_handle * handle = NULL;
+			if ( filter ) {
+				if ( (handle = filter(dev, arg)) != NULL ) {
+					mode = DEV_MODE_NORMAL;
+					goto out;
+				}
+			}
 
 			if ( dev->descriptor.idVendor == MICRONUCLEUS_VENDOR_ID &&
 			     dev->descriptor.idProduct == MICRONUCLEUS_PRODUCT_ID)
@@ -179,23 +187,33 @@ mnflash_usb_t * mnflash_usb_connect(int loader_only)
 				/* device in programming mode */
 				if ( !(handle = usb_open(dev)) ) {
 					fprintf(stderr, "cannot open USB device: %s\n", usb_strerror());
-					continue;
+					goto errout;
 				}
 
-				if ( !( result = mnflash_usb_new() ) )
-					continue;
-
-				result->handle = handle;
-				result->mode = DEV_MODE_PROGRAMMING;
-				result->major_version = (dev->descriptor.bcdDevice >> 8) & 0xFF;
-				result->minor_version = dev->descriptor.bcdDevice & 0xFF;
-
-				return result;
+				mode = DEV_MODE_PROGRAMMING;
+				goto out;
 			}
 		}
 	}
 
+errout:
+	if ( handle )
+		usb_close(handle);
+
 	return NULL;
+
+out:
+	if ( !( result = mnflash_usb_new() ) )
+		goto errout;
+
+	result->handle        = handle;
+	result->mode          = mode;
+	result->major_version = (dev->descriptor.bcdDevice >> 8) & 0xFF;
+	result->minor_version = dev->descriptor.bcdDevice & 0xFF;
+
+	return result;
+
+
 }
 
 
