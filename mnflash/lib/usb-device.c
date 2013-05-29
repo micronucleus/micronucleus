@@ -30,12 +30,13 @@
 
 #include <libmnflash/hexdump.h>
 #include <libmnflash/usb-device.h>
+#include <libmnflash/log.h>
 
 static mnflash_usb_t * mnflash_usb_new() {
 	mnflash_usb_t * result = NULL;
 
 	if ( ! (result = malloc(sizeof(mnflash_usb_t))) ) {
-		fprintf(stderr, "cannot allocate memory\n");
+		mnflash_error( "cannot allocate memory\n");
 		return NULL;
 	}
 
@@ -168,7 +169,7 @@ static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
 
 void mnflash_usb_show(mnflash_usb_t * dev)
 {
-	fprintf(stdout, "Device in %s, hardware version %d.%d\n",
+	mnflash_msg( "Device in %s, hardware version %d.%d\n",
 			mnflash_usb_mode_string(dev),
 			dev->major_version,
 			dev->minor_version );
@@ -206,7 +207,7 @@ mnflash_usb_t * mnflash_usb_connect(mnflash_usb_filter filter, void * arg)
 			{
 				/* device in programming mode */
 				if ( !(handle = usb_open(dev)) ) {
-					fprintf(stderr, "cannot open USB device: %s\n", usb_strerror());
+					mnflash_error( "cannot open USB device: %s\n", usb_strerror());
 					goto errout;
 				}
 

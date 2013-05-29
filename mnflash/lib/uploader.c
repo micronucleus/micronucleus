@@ -27,6 +27,7 @@
 #include <libmnflash/uploader.h>
 #include <libmnflash/firmware.h>
 #include <libmnflash/hexdump.h>
+#include <libmnflash/log.h>
 
 #define DEV_BUF_LEN	8
 
@@ -56,22 +57,22 @@ mnflash_device_info_t * mnflash_get_device_info(mnflash_usb_t * dev)
 	mnflash_device_info_t * result = NULL;
 
 	if ( dev->mode != DEV_MODE_PROGRAMMING ) {
-		fprintf(stderr, "device not in bootloader\n");
+		mnflash_error( "device not in bootloader\n");
 		return NULL;
 	}
 
 	readlen = mnflash_usb_custom_read(dev, BOOTLOADER_INFO, 0, 0, buffer, DEV_BUF_LEN);
 
 	if ( readlen < 4 ) {
-		fprintf(stderr, "cannot read bootloader info from device\n");
+		mnflash_error( "cannot read bootloader info from device\n");
 		if ( readlen < 0 ) {
-			fprintf(stderr, "  %s\n", usb_strerror());
+			mnflash_error( "  %s\n", usb_strerror());
 		}
 		return NULL;
 	}
 
 	if ((result = mnflash_device_info_new(dev)) == NULL) {
-		fprintf(stderr, "cannot initialize uploader struct\n");
+		mnflash_error( "cannot initialize uploader struct\n");
 		return NULL;
 	}
 
@@ -92,23 +93,23 @@ mnflash_device_info_t * mnflash_get_device_info(mnflash_usb_t * dev)
 
 void mnflash_info(mnflash_device_info_t * info)
 {
-	fprintf(stdout, "           device info: %d/%d (%s)\n",
+	mnflash_msg( "           device info: %d/%d (%s)\n",
 			info->device, info->wiring, mnflash_firmware_get_target_name(info));
-	fprintf(stdout, "available program size: %d bytes\n", info->progmem_size);
-	fprintf(stdout, "      device page size: %d bytes\n", info->page_size);
-	fprintf(stdout, "           write delay: %d ms\n",    info->write_sleep);
+	mnflash_msg( "available program size: %d bytes\n", info->progmem_size);
+	mnflash_msg( "      device page size: %d bytes\n", info->page_size);
+	mnflash_msg( "           write delay: %d ms\n",    info->write_sleep);
 }
 
 static int mnflash_erase(mnflash_device_info_t * info)
 {
-	fprintf(stdout,"erasing device ...\n");
+	mnflash_msg("erasing device ...\n");
 	usleep( 2000 * info->write_sleep );
 	if (mnflash_usb_custom_write_once(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
-		fprintf(stderr,"cannot erase device%s\n", usb_strerror());
+		mnflash_error("cannot erase device%s\n", usb_strerror());
 		return 0;
 	}
 
-	fprintf(stderr, "sleeping for %dµs\n", (info->write_sleep * ((info->progmem_size/info->page_size) + 1) * 1000));
+	mnflash_error( "sleeping for %dµs\n", (info->write_sleep * ((info->progmem_size/info->page_size) + 1) * 1000));
 	usleep(info->write_sleep * ((info->progmem_size/info->page_size) + 1) * 1000);
 
 	return 1;
@@ -118,10 +119,10 @@ static int mnflash_execute(mnflash_device_info_t * info)
 {
 	ssize_t written = 0;
 
-	fprintf(stdout,"run application ...\n");
+	mnflash_msg("run application ...\n");
 	usleep( 2000 * info->write_sleep );
 	if ((written = mnflash_usb_custom_write_once(info->dev, BOOTLOADER_EXECUTE, 0, 0, NULL, 0)) < 0) {
-		fprintf(stderr,"cannot execute application: %zd\n", written);
+		mnflash_error("cannot execute application: %zd\n", written);
 		return 0;
 	}
 	return 1;
@@ -140,22 +141,22 @@ int mnflash_upload(mnflash_device_info_t * info, mnflash_firmware_t  * firmware)
 	 * Not much of a problem since usually the firmware starts at 0
 	 */
 	if ( (firmware->start % info->page_size) != 0 ) {
-		fprintf(stderr, "Firmware does not start at a page boundry (page size is %d)\n", info->page_size);
+		mnflash_error( "Firmware does not start at a page boundry (page size is %d)\n", info->page_size);
 		return 0;
 	}
 
 	if ( firmware->end >= info->progmem_size ) {
-		fprintf(stderr, "Firmware image is too big\n");
+		mnflash_error( "Firmware image is too big\n");
 		return 0;
 	}
 
 	if ( (page_buffer = malloc(info->page_size)) == NULL ) {
-		fprintf(stderr, "Cannot allocate page buffer\n");
+		mnflash_error( "Cannot allocate page buffer\n");
 		return 0;
 	}
 
 	if ( ! mnflash_erase(info) ) {
-		fprintf(stderr, "Failed to erase device flash memory\n");
+		mnflash_error( "Failed to erase device flash memory\n");
 		return 0;
 	}
 
@@ -189,11 +190,11 @@ int mnflash_upload(mnflash_device_info_t * info, mnflash_firmware_t  * firmware)
 			/*
 			 * Our last write was not successfull, so what now ?
 			 */
-			fprintf(stderr, "bad write: addr=0x%x, wanted to write %zd bytes but wrote %zd\n",
+			mnflash_error( "bad write: addr=0x%x, wanted to write %zd bytes but wrote %zd\n",
 					page_now, page_bytes, writelen);
 
 			if ( writelen < 0 ) {
-				fprintf(stderr, "  usb error: %s\n", usb_strerror() );
+				mnflash_error( "  usb error: %s\n", usb_strerror() );
 			}
 		}
 	}
@@ -203,7 +204,7 @@ int mnflash_upload(mnflash_device_info_t * info, mnflash_firmware_t  * firmware)
 		ssize_t writelen = 0;
 
 		page_now = (info->progmem_size / info->page_size) * info->page_size;
-		fprintf(stdout,"writing extra page at 0x%x\n", page_now);
+		mnflash_msg("writing extra page at 0x%x\n", page_now);
 
 		memset(page_buffer, 0xFF, info->page_size);
 
@@ -218,10 +219,10 @@ int mnflash_upload(mnflash_device_info_t * info, mnflash_firmware_t  * firmware)
 				info->page_size);
 
 		if ( writelen != info->page_size ) {
-			fprintf(stderr, "could not write tiny table page, expected %d but wrote %zd\n",
+			mnflash_error( "could not write tiny table page, expected %d but wrote %zd\n",
 					info->page_size, writelen);
 			if ( writelen < 0 ) {
-				fprintf(stderr, "  usb error: %s\n", usb_strerror() );
+				mnflash_error( "  usb error: %s\n", usb_strerror() );
 			}
 			return 0;
 		}

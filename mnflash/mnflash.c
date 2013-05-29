@@ -32,6 +32,7 @@
 #include <libmnflash/usb-device.h>
 #include <libmnflash/firmware.h>
 #include <libmnflash/uploader.h>
+#include <libmnflash/log.h>
 
 int main(int argc, char ** argv)
 {
@@ -69,7 +70,7 @@ int main(int argc, char ** argv)
 				break;
 
 			default:
-				printf("?? getopt returned character code 0%o ??\n", c);
+				mnflash_error("?? getopt returned character code 0%o ??\n", c);
 		}
 	}
 
@@ -82,7 +83,7 @@ int main(int argc, char ** argv)
 	} while ( retry > 0 && dev == NULL );
 
 	if ( ! dev ) {
-		fprintf(stderr, "device did not enter bootloader\n");
+		mnflash_error("device did not enter bootloader\n");
 		exit(1);
 	}
 
@@ -95,15 +96,13 @@ int main(int argc, char ** argv)
 
 	if ( firmware_file ) {
 		firmware = mnflash_firmware_locate(firmware_file,application,linfo);
-//		if (firmware)
-//			firmware_dump(firmware);
-	} else {
-		/* auto-locate file */
+		if (firmware)
+			mnflash_firmware_dump(firmware);
 	}
 
 
-	if (firmware)
-		mnflash_upload(linfo, firmware);
+	//if (firmware)
+	//	mnflash_upload(linfo, firmware);
 
 
 	mnflash_device_info_destroy(linfo);

@@ -32,6 +32,7 @@
 #include <libmnflash/usb-device.h>
 #include <libmnflash/firmware.h>
 #include <libmnflash/uploader.h>
+#include <libmnflash/log.h>
 
 #include <usb.h>
 
@@ -63,7 +64,7 @@ usb_dev_handle * my_filter(struct usb_device * dev, void * arg)
 	memset(string,0,sizeof(string));
 
 	if ( !(handle = usb_open(dev)) ) {
-		fprintf(stderr, "cannot open USB device: %s\n", usb_strerror());
+		mnflash_error("cannot open USB device: %s\n", usb_strerror());
 		return NULL;
 	}
 
@@ -79,7 +80,7 @@ usb_dev_handle * my_filter(struct usb_device * dev, void * arg)
 			      string, sizeof(string)
 	      )) < 0)
 	{
-		fprintf(stderr, "cannot retrive manufacturer: %s\n", usb_strerror());
+		mnflash_error("cannot retrive manufacturer: %s\n", usb_strerror());
 		goto errout;
 	}
 
@@ -92,7 +93,7 @@ usb_dev_handle * my_filter(struct usb_device * dev, void * arg)
 			      string, sizeof(string)
 	      )) < 0)
 	{
-		fprintf(stderr, "cannot retrive product: %s\n", usb_strerror());
+		mnflash_error("cannot retrive product: %s\n", usb_strerror());
 		goto errout;
 	}
 
@@ -162,7 +163,7 @@ int main(int argc, char ** argv)
 		}
 	}
 
-	fprintf(stdout, "Searching for USB device ...\n");
+	mnflash_error("Searching for USB device ...\n");
 
 	retry = 50;
 	do {
@@ -173,14 +174,14 @@ int main(int argc, char ** argv)
 	} while ( retry > 0 && dev == NULL );
 
 	if ( ! dev ) {
-		fprintf(stderr, "No devices found\n");
+		mnflash_error("No devices found\n");
 		exit(1);
 	}
 
 	if ( dev->mode != DEV_MODE_PROGRAMMING ) {
 		// send device into the bootloader and wait for it to show up again
 
-		fprintf(stdout, "Switch device to bootloader ...\n");
+		mnflash_error("Switch device to bootloader ...\n");
 
 		device_enter_bootloader(dev);
 
@@ -195,7 +196,7 @@ int main(int argc, char ** argv)
 		} while ( retry > 0 && dev == NULL );
 
 		if ( ! dev ) {
-			fprintf(stderr, "Device did not enter the bootloader\n");
+			mnflash_error("Device did not enter the bootloader\n");
 			exit(1);
 		}
 	}

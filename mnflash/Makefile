@@ -1,9 +1,9 @@
 
-ENABLE_SHARED=
+ENABLE_SHARED=1
 
 DESTDIR=
 
-prefix=/usr/local
+prefix=/usr
 bindir=$(prefix)/bin
 libdir=$(prefix)/lib
 includedir=$(prefix)/include
@@ -31,7 +31,8 @@ LIBSOURCE= \
 	lib/load-ihex.c \
 	lib/load-raw.c \
 	lib/hexdump.c \
-	lib/uploader.c
+	lib/uploader.c \
+	lib/log.c
 
 OBJS=$(SOURCE:%.c=%.o)
 
@@ -87,8 +88,8 @@ $(LIBNAME):	$(LIBOBJS)
 $(SHLIBNAME):	$(SHLIBOBJS)
 	@echo "LD  $@ (shared) ..."
 	$(Q)$(CC) $(LDSHAREDFLAGS) -o $@ $(SHLIBOBJS)
-	$(Q)ln -s $@ $(SONAME)
-	$(Q)ln -s $(SONAME) $(LNNAME)
+	$(Q)test -L $(SONAME) || ln -s $@ $(SONAME)
+	$(Q)test -L $(LNNAME) || ln -s $(SONAME) $(LNNAME)
 
 mnflash:	$(OBJS) libmnflash.a
 	@echo "LD  $@ ..."

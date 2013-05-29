@@ -35,6 +35,7 @@
 #include <libmnflash/load-elf.h>
 #include <libmnflash/load-ihex.h>
 #include <libmnflash/load-raw.h>
+#include <libmnflash/log.h>
 
 struct target_name {
 	uint8_t	device;
@@ -84,7 +85,7 @@ mnflash_firmware_t * mnflash_firmware_load_file_autofmt(const char * path)
 	if ( (firmware = mnflash_elf_load(path)) == NULL) {
 		if ( (firmware = mnflash_ihex_load(path)) == NULL) {
 			if ( (firmware = mnflash_raw_load(path)) == NULL) {
-				fprintf(stderr, "cannot load firmware.\n");
+				mnflash_error( "cannot load firmware.\n");
 				return NULL;
 			}
 		}
@@ -135,7 +136,7 @@ mnflash_firmware_t * mnflash_load_firmware_from_dir(const char * path, const cha
 			} else {
 				snprintf(name, len, "%s/%s%s%s", path, prefixes[j], stem, extensions[i]);
 			}
-			fprintf(stderr,"trying %s ...\n", name);
+			mnflash_error("trying %s ...\n", name);
 			if (stat(name, &statbuf) == 0) {
 
 				if ((statbuf.st_mode & S_IFMT) == S_IFREG) {

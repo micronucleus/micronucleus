@@ -29,6 +29,7 @@
 
 #include <libmnflash/firmware.h>
 #include <libmnflash/load-ihex.h>
+#include <libmnflash/log.h>
 
 
 static int8_t char2nibble(char nibble)
@@ -76,7 +77,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 	char  linebuf[256];
 
 	if ( (in = fopen( filename, "r")) == NULL ) {
-		fprintf(stderr, "cannot open %s: %s\n", filename, strerror(errno));
+		mnflash_error( "cannot open %s: %s\n", filename, strerror(errno));
 		return NULL;
 	}
 
@@ -103,26 +104,26 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 		}
 
 		if ( slen < 9 ) {
-			fprintf(stderr, "firmware record too short.\n");
+			mnflash_error( "firmware record too short.\n");
 			goto errout;
 		}
 
 		if ( *linebuf != ':' ) {
-			fprintf(stderr, "Invalid record start marker.\n");
+			mnflash_error( "Invalid record start marker.\n");
 			goto errout;
 		}
 
 		if ( hex2byte(linebuf + 1, &rec_len) <= 0 ) {
-			fprintf(stderr, "cannot parse record data len.\n");
+			mnflash_error( "cannot parse record data len.\n");
 			goto errout;
 		}
 
 		if ( slen < 9 + rec_len ) {
-			fprintf(stderr, "record seems to be corrupted.\n");
+			mnflash_error( "record seems to be corrupted.\n");
 			goto errout;
 		}
 
-		//fprintf(stderr, "slen=%zd rec_len=%d\n", slen, rec_len);
+		//mnflash_error( "slen=%zd rec_len=%d\n", slen, rec_len);
 		if ( slen == 11 + rec_len * 2 ) {
 			int    i = 0;
 			int    sum = 0;
@@ -131,7 +132,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 			for ( i = 1; i < (rec_len * 2 + 10); i += 2 ) {
 				uint8_t byte;
 				if ( hex2byte(linebuf + i, &byte) <= 0 ) {
-					fprintf(stderr, "cannot parse bytes in line\n");
+					mnflash_error( "cannot parse bytes in line\n");
 					goto errout;
 				}
 				sum += byte;
@@ -141,20 +142,20 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 			sum_lsb ^= 0xFF;
 			sum_lsb += 1;
 
-			// fprintf(stderr, "checksum is %2.2x\n", sum_lsb);
+			// mnflash_error( "checksum is %2.2x\n", sum_lsb);
 			if ( sum_lsb != 0 ) {
-				fprintf(stderr, "checksum error\n");
+				mnflash_error( "checksum error\n");
 				goto errout;
 			}
 		}
 
 		if ( hex2word(linebuf + 3, &rec_address) <= 0 ) {
-			fprintf(stderr, "cannot parse record address.\n");
+			mnflash_error( "cannot parse record address.\n");
 			goto errout;
 		}
 
 		if ( hex2byte(linebuf + 7, &rec_type) <= 0 ) {
-			fprintf(stderr, "cannot parse record data len.\n");
+			mnflash_error( "cannot parse record data len.\n");
 			goto errout;
 		}
 
@@ -170,7 +171,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 				mnflash_firmware_resize(blob, addr + rec_len);
 
 				if ( blob->data == NULL ) {
-					fprintf(stderr, "blob resize failed\n");
+					mnflash_error( "blob resize failed\n");
 					goto errout;
 				}
 
@@ -193,7 +194,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 				if ( hex2word(linebuf + 9, &segment) > 0) {
 					addr_offset = segment * 16;
 				} else {
-					fprintf(stderr, "error parsing extended segment address record (2)\n");
+					mnflash_error( "error parsing extended segment address record (2)\n");
 					goto errout;
 				}
 				break;
@@ -205,7 +206,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 				if ( (hex2word(linebuf + 9, &segment) > 0) && (hex2word(linebuf + 13, &offset) > 0)) {
 					blob->entry = segment * 16 + offset;
 				} else {
-					fprintf(stderr, "error parsing start segment address record (3)\n");
+					mnflash_error( "error parsing start segment address record (3)\n");
 					goto errout;
 				}
 				break;
@@ -216,7 +217,7 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 				if ( hex2word(linebuf + 9, &segment) > 0) {
 					addr_offset = segment << 16;
 				} else {
-					fprintf(stderr, "error parsing extended linear address record (4)\n");
+					mnflash_error( "error parsing extended linear address record (4)\n");
 					goto errout;
 				}
 				break;
@@ -228,19 +229,19 @@ mnflash_firmware_t * mnflash_ihex_load(const char * filename)
 				if ( (hex2word(linebuf + 9, &segment) > 0) && (hex2word(linebuf + 13, &offset) > 0)) {
 					blob->entry = (segment << 16) + offset;
 				} else {
-					fprintf(stderr, "error parsing start linear address record (5)\n");
+					mnflash_error( "error parsing start linear address record (5)\n");
 					goto errout;
 				}
 				break;
 			}
 			default:
-				fprintf(stderr, "Invalid record type '%d'\n", rec_type);
+				mnflash_error( "Invalid record type '%d'\n", rec_type);
 				goto errout;
 
 		}
 
-		// fprintf(stderr, "%s\n", linebuf);
-		// fprintf(stderr, "len = %d, addr = %x, type = %d\n", rec_len, rec_address, rec_type);
+		// mnflash_error( "%s\n", linebuf);
+		// mnflash_error( "len = %d, addr = %x, type = %d\n", rec_len, rec_address, rec_type);
 	}
 
 	fclose(in);

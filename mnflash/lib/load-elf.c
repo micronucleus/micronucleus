@@ -32,6 +32,7 @@
 
 #include <libmnflash/hexdump.h>
 #include <libmnflash/firmware.h>
+#include <libmnflash/log.h>
 
 
 static int elf_add_section_to_blob(mnflash_firmware_t * blob, Elf_Scn * section, ssize_t start)
@@ -55,7 +56,7 @@ static int elf_add_section_to_blob(mnflash_firmware_t * blob, Elf_Scn * section,
 	return 0;
 }
 
-#define erret(msg ...) { fprintf(stderr, msg); goto errout; }
+#define erret(msg ...) { mnflash_error(msg); goto errout; }
 
 const char * sections[] = {
 	".text",
@@ -122,7 +123,7 @@ mnflash_firmware_t * mnflash_elf_load(const char *filename)
 	 *
 	 */
 	for (wanted = sections; *wanted; wanted ++) {
-		// fprintf(stderr,"looking for section %s\n", *wanted);
+		// mnflash_error("looking for section %s\n", *wanted);
 		scn = NULL;
 		while ((scn = elf_nextscn(e, scn)) != NULL) {
 			char *name = NULL;

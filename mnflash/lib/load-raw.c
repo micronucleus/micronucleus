@@ -34,6 +34,7 @@
 
 #include <libmnflash/firmware.h>
 #include <libmnflash/load-raw.h>
+#include <libmnflash/log.h>
 
 #define CHECKINTS 15
 #define BUFSIZE 4096
@@ -47,7 +48,7 @@ mnflash_firmware_t * mnflash_raw_load(const char * filename)
 	ssize_t bytesread = 0;
 
 	if ( (in = open(filename, O_RDONLY)) < 0) {
-		fprintf(stderr, "cannot open %s: %s\n", filename, strerror(errno));
+		mnflash_error( "cannot open %s: %s\n", filename, strerror(errno));
 		return NULL;
 	}
 
@@ -59,14 +60,14 @@ mnflash_firmware_t * mnflash_raw_load(const char * filename)
 		mnflash_firmware_resize(blob, now + bytesread);
 
 		if ( blob->data == NULL ) {
-			fprintf(stderr, "blob resize failed\n");
+			mnflash_error( "blob resize failed\n");
 			goto errout;
 		}
 
 		if (now == 0) {
 			int i = 0;
 			if ( bytesread < (2 * CHECKINTS) ) {
-				fprintf(stderr, "raw file too short\n");
+				mnflash_error( "raw file too short\n");
 				goto errout;
 			}
 
@@ -74,14 +75,14 @@ mnflash_firmware_t * mnflash_raw_load(const char * filename)
 				// rjmp every 4 bytes ?
 				for ( i = 1; i < (2 * CHECKINTS); i += 2 ) {
 					if ( ((buffer[i] & 0xF0) != 0xC0 ) ) {
-						fprintf(stderr, "raw file does not seem to contain an interrupt table\n");
+						mnflash_error( "raw file does not seem to contain an interrupt table\n");
 						goto errout;
 					}
 				}
 			} else {
 				/* raw-file for 16k devices? */
 				if ( bytesread < (4 * CHECKINTS) ) {
-					fprintf(stderr, "raw file too short\n");
+					mnflash_error( "raw file too short\n");
 					goto errout;
 				}
 				for ( i = 0; i < (4 * CHECKINTS); i += 4 ) {
@@ -89,7 +90,7 @@ mnflash_firmware_t * mnflash_raw_load(const char * filename)
 					if ( ((buffer[i+1] & 0xF0) != 0xC0 ) ||
 					     !(buffer[i] == 0x0c && buffer[i+1] == 0x94))
 					{
-						fprintf(stderr, "raw file does not seem to contain an interrupt table\n");
+						mnflash_error( "raw file does not seem to contain an interrupt table\n");
 						goto errout;
 					}
 				}

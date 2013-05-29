@@ -26,11 +26,12 @@
 #include <stdio.h>
 #include <ctype.h>
 #include <libmnflash/hexdump.h>
+#include <libmnflash/log.h>
 
 void mnflash_hexdump_header()
 {
-	fprintf(stdout, "Addr  +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F       ASCII\n");
-	fprintf(stdout, "-------------------------------------------------------------------------\n");
+	mnflash_msg( "Addr  +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F       ASCII\n");
+	mnflash_msg( "-------------------------------------------------------------------------\n");
 }
 
 void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
@@ -45,11 +46,11 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 	if ( (start % 16) != 0 ) {
 		addr = ((start / 16) * 16);
 
-		fprintf(stdout, "%4.4x ", addr);
+		mnflash_msg( "%4.4x ", addr);
 		while ( addr < start ) {
 			if (( addr % 8) == 0 )
-				fprintf(stdout," ");
-			fprintf(stdout, ".. ");
+				mnflash_msg(" ");
+			mnflash_msg( ".. ");
 			addr ++;
 		}
 	}
@@ -59,17 +60,17 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 
 		if ( (addr % 16) == 0 ) {
 			if ( first ) {
-				fprintf(stdout,"%4.4x  ", addr);
+				mnflash_msg("%4.4x  ", addr);
 			} else {
-				fprintf(stdout, "  %s\n%4.4x  ", ascii, addr);
+				mnflash_msg( "  %s\n%4.4x  ", ascii, addr);
 			}
 			memset(ascii,' ',sizeof(ascii) - 1);
 		}
 		else if ( (addr % 8) == 0 ) {
-			fprintf(stdout," ");
+			mnflash_msg(" ");
 		}
 
-		fprintf(stdout, "%2.2x ", c );
+		mnflash_msg( "%2.2x ", c );
 		if ( isprint(c) ) {
 			ascii[addr % 16] = c;
 		} else {
@@ -80,10 +81,10 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 	}
 
 	while ( (addr % 16) != 0 ) {
-		fprintf(stdout, "   ");
+		mnflash_msg( "   ");
 		addr ++;
 	}
 
-	fprintf(stdout, "   %s\n", ascii);
+	mnflash_msg( "   %s\n", ascii);
 }
 
