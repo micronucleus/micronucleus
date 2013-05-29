@@ -132,6 +132,26 @@ ssize_t mnflash_usb_custom_write( mnflash_usb_t * dev, uint16_t request, uint16_
 
 	return bytesWritten;
 }
+
+/*
+ * Custom write request without retry.
+ */
+ssize_t mnflash_usb_custom_write_once( mnflash_usb_t * dev, uint16_t request, uint16_t index, uint16_t value, void * buffer, size_t buflen )
+{
+	ssize_t bytesWritten = 0;
+
+	bytesWritten = usb_control_msg(
+			dev->handle,
+			USB_TYPE_VENDOR | USB_RECIP_DEVICE | USB_ENDPOINT_OUT,
+			request,
+			value,
+			index,
+			buffer,
+			buflen,
+			50);
+
+	return bytesWritten;
+}
 static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
 {
 	switch( dev->mode ) {

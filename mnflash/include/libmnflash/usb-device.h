@@ -45,6 +45,15 @@ extern ssize_t mnflash_usb_custom_write(
 	size_t buflen
 );
 
+extern ssize_t mnflash_usb_custom_write_once(
+	mnflash_usb_t * dev,
+	uint16_t request,
+	uint16_t index,
+	uint16_t value,
+	void * buffer,
+	size_t buflen
+);
+
 extern void mnflash_usb_show(mnflash_usb_t * dev);
 
 typedef usb_dev_handle * (*mnflash_usb_filter)(struct usb_device * dev, void * arg);

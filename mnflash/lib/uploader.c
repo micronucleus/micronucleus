@@ -102,7 +102,8 @@ void mnflash_info(mnflash_device_info_t * info)
 static int mnflash_erase(mnflash_device_info_t * info)
 {
 	fprintf(stdout,"erasing device ...\n");
-	if (mnflash_usb_custom_write(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
+	usleep( 2000 * info->write_sleep );
+	if (mnflash_usb_custom_write_once(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
 		fprintf(stderr,"cannot erase device%s\n", usb_strerror());
 		return 0;
 	}
@@ -118,7 +119,8 @@ static int mnflash_execute(mnflash_device_info_t * info)
 	ssize_t written = 0;
 
 	fprintf(stdout,"run application ...\n");
-	if ((written = mnflash_usb_custom_write(info->dev, BOOTLOADER_EXECUTE, 0, 0, NULL, 0)) < 0) {
+	usleep( 2000 * info->write_sleep );
+	if ((written = mnflash_usb_custom_write_once(info->dev, BOOTLOADER_EXECUTE, 0, 0, NULL, 0)) < 0) {
 		fprintf(stderr,"cannot execute application: %zd\n", written);
 		return 0;
 	}
