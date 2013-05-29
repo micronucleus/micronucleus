@@ -118,7 +118,7 @@ void device_enter_bootloader(mnflash_usb_t * dev)
 	 * check the result: The device may not go into usbPoll() again, so we
 	 * will not get an ACK.
 	 */
-	mnflash_usb_custom_write(dev, 7, 0, 0, NULL, 0);
+	mnflash_usb_custom_write_once(dev, 7, 0, 0, NULL, 0);
 }
 
 
