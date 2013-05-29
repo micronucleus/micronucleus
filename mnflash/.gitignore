@@ -9,6 +9,5 @@ Makefile.dep
 config.h
 config.log
 config.status
-configure
 autom4te.cache/
 Makefile
