@@ -1,16 +1,12 @@
 
 
-LIBS=\
-	../libmnflash.a \
-	-lusb \
-	-lelf \
-	-lm
+LIBS := $(shell pkg-config --libs mnflash)
 
-CFLAGS=\
+CFLAGS := \
 	-Wall \
 	-g \
-	-I ../include \
-	-O2
+	-O2 \
+	$(shell pkg-config --cflags mnflash)
 
 all:	mnflash-switch
 

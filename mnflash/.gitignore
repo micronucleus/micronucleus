@@ -1,4 +1,7 @@
 *.o
+*.po
 *.a
 *.so
+*.so.*
+mnflash
 Makefile.dep

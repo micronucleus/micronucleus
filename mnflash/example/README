@@ -1,0 +1,91 @@
+
+Compiling the example
+---------------------
+
+* install libmnflash
+* run "make"
+
+
+The uploader example
+--------------------
+
+This example shows how to build an update utility for your own device.
+
+It consists basically of the code from mnflash.c, extended by a filter function
+to identify a device to flash in normal operation, and a function that sends a
+custom "RESET" request to the device.
+
+The example device normally uses the vUSB shared USB IDs for HID devices. To
+further distinguish the device from others that also use that ID pair (it is
+shared after all) we inspect the "iManufacturer" and "iProduct" strings from
+the device (as also required by the license).
+
+The "main()" then first looks for a device using the filter function. If it
+finds a device which is not already in the bootloader, it will send the reset
+request and searches devices again, this time without the filter.
+
+
+How to reset the device
+-----------------------
+
+Simply jumping to the reset vector is not the same as a hardware reset. A true
+hardware reset will put all special function registers into the default state,
+while jumping to the reset vector does not.
+
+However, the ATTiny devices do not offer a simple method to reset the device
+through software. But you can get the same effect indirectly:
+
+
+Hard reset
+..........
+
+If you really want a true and complete reset, you could either
+
+ * wire another pin to the reset pin and pull it low.
+
+ * let the watchdog timer expire to reset the device.
+
+
+Soft reset
+..........
+
+You may just want to bring the device into a save state before the jump to the
+reset vector. You may even prefer this method because it gives  you some
+control over the devices behavior during the upgrade.
+
+Save state means
+
+ * disable all interrupt /sources/.
+
+   The bootloader will run with interrupts enabled, but will only re-initialize
+   the vUSB interrupt. If you enabled any other interrupt source then the vUSB
+   interrupt, you need to disable that specifically. Otherwise, if that
+   interrupt fires during the update, the results are unpredictable.
+
+ * bring all pins into a save state.
+
+   The default after reset is normally all pins input, pull-up resistors
+   disabled, which translates to DDRx = 0 and PORTx = 0 for all ports "x".
+
+   The bootloader will not do a true hardware reset before it jumps back to
+   the new application either, thus the pins will be left in the state they
+   were before entering the bootloader.
+
+
+
+USB discconnect
+...............
+
+If your firmware normally uses vUSB, you want the host to know that your
+firmware left normal operation.
+
+Just calling "usbDeviceDisconnect()" does not seem to be enough though.
+
+It seems to be necessary to give the vUSB some time to finish processing the
+USB transaction that led to the reset. Waiting a few poll intervals and maybe
+calling usbPoll() again seems to do this.
+
+If you do not, other USB components may get severely confused to a point where
+they need a power cycle. That other component may even be the USB host bridge
+in your PC.
+

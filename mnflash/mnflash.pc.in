@@ -1,0 +1,11 @@
+prefix=@@prefix@@
+libdir=@@libdir@@
+includedir=@@includedir@@
+
+Name: MNflash
+Description: Library to upload device firmware through the Micronucleus bootloader
+Version: 0.1
+Libs: -L${libdir} -lmnflash -lusb -lelf
+Libs.private: -lm
+Cflags: -I${includedir}
+
