@@ -1,20 +1,21 @@
 
-ENABLE_SHARED=1
+ENABLE_SHARED=@ENABLE_SHARED@
 
 DESTDIR=
 
-prefix=/usr
-bindir=$(prefix)/bin
-libdir=$(prefix)/lib
-includedir=$(prefix)/include
-man1dir=$(prefix)/share/man/man1
+prefix=@prefix@
+bindir=@bindir@
+libdir=@libdir@
+includedir=@includedir@
+datarootdir = @datarootdir@
+man1dir=@mandir@/man1
 
-LIBS=\
-	-lusb \
-	-lelf \
-	-lm
+CC=@CC@
+LN_S=@LN_S@
 
-CFLAGS=\
+LIBS=@LIBS@
+
+CFLAGS= @CFLAGS@ \
 	-Wall \
 	-g \
 	-I include \
@@ -88,18 +89,12 @@ $(LIBNAME):	$(LIBOBJS)
 $(SHLIBNAME):	$(SHLIBOBJS)
 	@echo "LD  $@ (shared) ..."
 	$(Q)$(CC) $(LDSHAREDFLAGS) -o $@ $(SHLIBOBJS)
-	$(Q)test -L $(SONAME) || ln -s $@ $(SONAME)
-	$(Q)test -L $(LNNAME) || ln -s $(SONAME) $(LNNAME)
+	$(Q)test -L $(SONAME) || $(LN_S) $@ $(SONAME)
+	$(Q)test -L $(LNNAME) || $(LN_S) $(SONAME) $(LNNAME)
 
 mnflash:	$(OBJS) libmnflash.a
 	@echo "LD  $@ ..."
 	$(CC) $(CFLAGS) $(OBJS) $(LIBMNFLASH) $(LIBS) -o $@
-
-mnflash.pc:	mnflash.pc.in
-	sed -e 's#@@prefix@@#$(prefix)#g' \
-	    -e 's#@@libdir@@#$(libdir)#g' \
-	    -e 's#@@includedir@@#$(includedir)#g' \
-	    <$< >$@
 
 #----- install stuff ------
 destdirs= \
@@ -119,8 +114,8 @@ install-libs: $(BUILDLIBS) destdirs mnflash.pc
 ifdef ENABLE_SHARED
 	install -m755 $(SHLIBNAME) $(DESTDIR)$(libdir)
 	(cd $(DESTDIR)$(libdir) && \
-	 rm -f $(SONAME) && ln -s $(SHLIBNAME) $(SONAME) && \
-	 rm -f $(LNNAME) && ln -s $(SONAME) $(LNNAME))
+	 rm -f $(SONAME) && $(LN_S) $(SHLIBNAME) $(SONAME) && \
+	 rm -f $(LNNAME) && $(LN_S) $(SONAME) $(LNNAME))
 ifndef DESTDIR
 	test -x /sbin/ldconfig && /sbin/ldconfig
 endif
@@ -131,6 +126,10 @@ install-bin: mnflash destdirs
 
 install: all destdirs install-libs install-bin
 
+#----- auto stuff -----
+
+configure: configure.ac
+	autoconf
 
 clean:
 	$(MAKE) -C example clean
@@ -140,5 +139,13 @@ clean:
 	rm -f $(SHLIBNAME) $(SONAME) $(LNNAME)
 	rm -f mnflash.pc
 	rm -f mnflash
+
+realclean: clean
+	rm -f config.log config.status
+	rm -rf autom4te.cache
+	rm -f configure
+	rm -f Makefile
+
+
 
 .PHONY:	all clean destdirs intall install-libs

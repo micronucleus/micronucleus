@@ -1,6 +1,7 @@
-prefix=@@prefix@@
-libdir=@@libdir@@
-includedir=@@includedir@@
+prefix=@prefix@
+exec_prefix=@exec_prefix@
+libdir=@libdir@
+includedir=@includedir@
 
 Name: MNflash
 Description: Library to upload device firmware through the Micronucleus bootloader
