@@ -5,6 +5,7 @@
 *.so.*
 mnflash
 mnflash.pc
+mnflash.1
 Makefile.dep
 config.h
 config.log

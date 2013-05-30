@@ -1,0 +1,36 @@
+
+
+=head1 NAME
+
+mnflash - upload firmware to the Micronucleus bootloader
+
+=head1 SYNOPSIS
+
+  mnflash --info
+  mnflash --firmware F<file>
+  mnflash --firmware F<directory> --application I<name>
+
+=head1 OPTIONS
+
+=over 8
+
+=item B<--info>
+
+Connects the bootloader, retrieves the device information and prints
+it to stdout.
+
+=item B<--firmware> F<file>
+
+Uploads the firmware from F<file> to the device, then runs it.
+
+=item B<--firmware> F<directory> --application I<name>
+
+Uses the device information from the bootloader to locate an apropriate version
+of the application I<name> in F<directory>. Then uploads and run that firmware.
+
+=back
+
+=head1 NOTES
+
+You may need to be I<root> for this utility to work.
+

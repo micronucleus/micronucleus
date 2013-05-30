@@ -10,6 +10,7 @@ includedir=@includedir@
 datarootdir = @datarootdir@
 man1dir=@mandir@/man1
 
+POD2MAN=@POD2MAN@
 CC=@CC@
 LN_S=@LN_S@
 
@@ -34,6 +35,9 @@ LIBSOURCE= \
 	lib/hexdump.c \
 	lib/uploader.c \
 	lib/log.c
+
+SOURCE_ARCHIVE_PREFIX=@PACKAGE_TARNAME@-@PACKAGE_VERSION@
+SOURCE_ARCHIVE_TGZ=$(SOURCE_ARCHIVE_PREFIX).tar.gz
 
 OBJS=$(SOURCE:%.c=%.o)
 
@@ -82,6 +86,10 @@ include Makefile.dep
 	@echo "CC  $@ ... (pic)"
 	$(Q)$(CC) $(CFLAGS) -fpic -c $< -o $@
 
+%.1: %.pod
+	@echo "GEN  $@ ..."
+	$(Q)$(POD2MAN) --center "Micronucleus tools" --release "@PACKAGE_STRING@" $< > $@
+
 $(LIBNAME):	$(LIBOBJS)
 	@echo "AR  $@ ..."
 	$(Q)$(AR) rcs $@ $(LIBOBJS)
@@ -107,6 +115,9 @@ destdirs= \
 destdirs:
 	for x in $(destdirs); do mkdir -p $$x; done
 
+install-man: destdirs mnflash.1
+	install -m644 mnflash.1 $(DESTDIR)$(man1dir)
+
 install-libs: $(BUILDLIBS) destdirs mnflash.pc
 	install -m644 $(LIBNAME) $(DESTDIR)$(libdir)
 	install -m644 include/libmnflash/*.h $(DESTDIR)$(includedir)/libmnflash
@@ -124,12 +135,26 @@ endif
 install-bin: mnflash destdirs
 	install -m755 mnflash $(DESTDIR)$(bindir)
 
-install: all destdirs install-libs install-bin
+
+ALLINSTALL := install-libs install-bin install-man
+ifdef POD2MAN
+ALLINSTALL += install-man
+endif
+
+install: all destdirs install-libs install-bin install-man
 
 #----- auto stuff -----
 
+Makefile: configure Makefile.in
+	./config.status
+
 configure: configure.ac
 	autoconf
+
+$(SOURCE_ARCHIVE_TGZ):	configure
+	git archive --prefix=$(SOURCE_ARCHIVE_PREFIX)/ --format=tar.gz HEAD . > $(SOURCE_ARCHIVE_TGZ)
+
+tar: $(SOURCE_ARCHIVE_TGZ)
 
 clean:
 	$(MAKE) -C example clean
@@ -137,14 +162,16 @@ clean:
 	rm -f *.o lib/*.o lib/*.po
 	rm -f libmnflash.a
 	rm -f $(SHLIBNAME) $(SONAME) $(LNNAME)
-	rm -f mnflash.pc
 	rm -f mnflash
+	rm -f mnflash.1
 
 realclean: clean
 	rm -f config.log config.status
 	rm -rf autom4te.cache
 	rm -f Makefile
+	rm -f mnflash.pc
+	rm -f $(SOURCE_ARCHIVE_TGZ)
 
 
 
-.PHONY:	all clean destdirs intall install-libs
+.PHONY:	all clean realclean destdirs intall install-libs install-bin dist tar

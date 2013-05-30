@@ -17,6 +17,7 @@ AC_SUBST(ENABLE_SHARED)
 AC_PROG_CC
 # AC_PROG_INSTALL
 AC_PROG_LN_S
+AC_CHECK_PROG(POD2MAN, pod2man, [pod2man])
 
 # Checks for libraries.
 AC_CHECK_LIB([elf], [elf_begin],      [], AC_MSG_ERROR(cannot find libelf))
