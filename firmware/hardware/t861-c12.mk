@@ -3,8 +3,8 @@
 #
 
 F_CPU = 12000000
-DEVICE=attiny167
-LDSCRIPT_SUFFIX=-avr35.x
+DEVICE=attiny861
+LDSCRIPT_SUFFIX=-avr25.x
 
 # Where to put the bootloader:
 #
@@ -15,8 +15,8 @@ LDSCRIPT_SUFFIX=-avr35.x
 # The tiny861 has a flash page size of 64 bytes and with 2-byte interrupt
 # vectors, the tiny tables has 8 bytes.
 #
-BOOTLOADER_ADDRESS = 37f6
-PMEM_WRAP=16k
+BOOTLOADER_ADDRESS = 17FA
+PMEM_WRAP=8k
 
 #
 # fuse low byte (lfuse)
@@ -40,6 +40,6 @@ PMEM_WRAP=16k
 #
 FUSEOPT= -U lfuse:w:0xff:m -U hfuse:w:0xd7:m -U efuse:w:0xfe:m
 
-HW_INCLUDE_DIR=$(SRCDIR)/hardware/tiny-167-c12
+HW_INCLUDE_DIR=$(SRCDIR)/hardware/t861-c12
 
 

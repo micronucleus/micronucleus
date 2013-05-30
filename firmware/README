@@ -30,14 +30,14 @@ Currently these targets are defined:
 
   Hardware              Size
   ----------------------------------------------------------------------------
-  tiny-167-c12          1928	16k device with 12MHz crystal (WITH_CRYSTAL)
-  tiny-85-1             2088	16.5MHz RC, alternative wiring
-  tiny-85-2             2088	16.5MHz RC, standard config
-  tiny-85-jumper        2070	  std. but with BUILD_JUMPER_MODE
-  tiny-85-jumper-ko     2014	     jumper + KEEP_OSCCAL
-  tiny-85-keep-osccal   2032	  std. but with KEEP_OSCCAL
-  tiny-85-lowpower      2084	  std. but with LOW_POWER_MODE + RESTORE_OSCCAL
-  tiny-861-c12          1804	8k device with 12MHz crystal (WITH_CRYSTAL)
+  t167-c12              1928	16k device with 12MHz crystal (WITH_CRYSTAL)
+  t85-1                 2088	16.5MHz RC, alternative wiring
+  t85-2                 2088	16.5MHz RC, standard config
+  t85-jumper            2070	  std. but with BUILD_JUMPER_MODE
+  t85-jumper-ko         2014	     jumper + KEEP_OSCCAL
+  t85-keep-osccal       2032	  std. but with KEEP_OSCCAL
+  t85-lowpower          2084	  std. but with LOW_POWER_MODE + RESTORE_OSCCAL
+  t861-c12              1804	8k device with 12MHz crystal (WITH_CRYSTAL)
 
 (all sizes with GCC 4.7.2, avr-libc 1.8)
 
