@@ -12,6 +12,8 @@ MAKETARGET = $(MAKE) --no-print-directory -C $@ HARDWARE=$(patsubst target-%,%,$
 all-targets: $(OBJDIRS)
 	./sizes.sh
 
+install: $(OBJDIRS)
+
 .PHONY: $(OBJDIRS)
 
 $(OBJDIRS):

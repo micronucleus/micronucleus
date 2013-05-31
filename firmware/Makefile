@@ -13,6 +13,11 @@
 #     make flash   			# to load the boot loader into flash
 #     make disablereset		# for ATtiny85 target - to use external reset line for IO (CAUTION: this is not easy to enable again, see README)
 
+
+prefix=/usr/local
+datarootdir=${prefix}/share
+firmwaredir=${datarootdir}/micronucleus
+
 ALL_HARDWARE=$(basename $(notdir $(wildcard hardware/*.mk)))
 
 ifeq (,$(filter target-%,$(notdir $(CURDIR))))
@@ -177,6 +182,15 @@ flash-upgrade:	upgrade.hex
 	$(AVRDUDE) -U flash:w:upgrade.hex:i
 
 #--------- other targets -------
+
+hwinstalldir=$(DESTDIR)$(firmwaredir)/$(HARDWARE)
+
+install: bootloader.hex bootloader.elf upgrade.hex upgrade.elf
+	mkdir -p  $(hwinstalldir)
+	install -m 644 bootloader.elf $(hwinstalldir)
+	install -m 644 bootloader.hex $(hwinstalldir)
+	install -m 644 upgrade.elf $(hwinstalldir)
+	install -m 644 upgrade.hex $(hwinstalldir)
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i
