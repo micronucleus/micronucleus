@@ -3,8 +3,6 @@
 #ifndef DEVICE_HARDWARE
 #define DEVICE_HARDWARE 1
 
-#define MICRONUCLEUS_WIRING	1
-
 #ifndef PCINT_vect_num
 #  define PCINT1_vect_num	4
 #endif

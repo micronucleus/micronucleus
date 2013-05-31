@@ -2,8 +2,6 @@
 #ifndef DEVICE_HARDWARE
 #define DEVICE_HARDWARE 1
 
-#define MICRONUCLEUS_WIRING	1
-
 #define USB_CFG_IOPORTNAME      B
 /* This is the port where the USB bus is connected. When you configure it to
  * "B", the registers PORTB, PINB and DDRB will be used.

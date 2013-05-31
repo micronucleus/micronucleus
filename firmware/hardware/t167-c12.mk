@@ -42,4 +42,6 @@ FUSEOPT= -U lfuse:w:0xff:m -U hfuse:w:0xd7:m -U efuse:w:0xfe:m
 
 HW_INCLUDE_DIR=$(SRCDIR)/hardware/t167-c12
 
+MICRONUCLEUS_WIRING = 1
+
 
