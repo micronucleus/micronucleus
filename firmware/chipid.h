@@ -34,7 +34,7 @@
 #    define VECTOR_SIZE 4
 #  endif
 #elif defined(__AVR_ATtiny1634__)
-#  define MICRONUCLEUS_CHIP_ID	14
+#  define MICRONUCLEUS_CHIP_ID	15
 #  ifndef VECTOR_SIZE
 #    define VECTOR_SIZE 4
 #  endif
