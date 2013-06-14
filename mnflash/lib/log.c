@@ -41,10 +41,12 @@ static void log_stderr(const char * msg)
 static struct {
 	mnflash_logfunc_t	logout;
 	mnflash_logfunc_t	errout;
+	mnflash_logfunc_t	dbgout;
 	void *			progress;
 } mnflash_output = {
 	.logout = log_stdout,
-	.errout = log_stderr
+	.errout = log_stderr,
+	.dbgout = NULL
 };
 
 void mnflash_set_error_log(mnflash_logfunc_t newlog)
@@ -55,6 +57,41 @@ void mnflash_set_error_log(mnflash_logfunc_t newlog)
 void mnflash_set_message_log(mnflash_logfunc_t newlog)
 {
 	mnflash_output.logout = newlog;
+}
+
+void mnflash_set_debug_log(mnflash_logfunc_t newlog)
+{
+	mnflash_output.dbgout = newlog;
+}
+
+void mnflash_enable_debug(int flag)
+{
+	if ( flag ) {
+		mnflash_set_debug_log(mnflash_output.dbgout);
+	} else {
+		mnflash_set_debug_log(NULL);
+	}
+}
+
+int mnflash_debug(char *fmt, ...)
+{
+	char * msg = NULL;
+	int mlen = 0;
+
+	if ( ! mnflash_output.dbgout )
+		return 0;
+
+	va_list argptr;
+	va_start(argptr,fmt);
+	mlen = vasprintf(&msg,fmt,argptr);
+	va_end(argptr);
+
+	if ( msg && mnflash_output.dbgout) {
+		mnflash_output.dbgout(msg);
+		free(msg);
+	}
+
+	return mlen;
 }
 
 int mnflash_msg(char *fmt, ...)
