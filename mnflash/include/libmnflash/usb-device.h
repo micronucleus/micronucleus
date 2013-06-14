@@ -17,7 +17,7 @@ typedef enum {
 typedef struct {
 	usb_dev_handle*		handle;
 	mnflash_usb_mode_t	mode;
-	uint8_t			i2c_addr;
+	void *			app_data;
 	union {
 		uint16_t	intversion;
 		uint8_t		minormajor[2];
