@@ -101,8 +101,8 @@ int main(int argc, char ** argv)
 	}
 
 
-	//if (firmware)
-	//	mnflash_upload(linfo, firmware);
+	if (firmware)
+		mnflash_upload(linfo, firmware);
 
 
 	mnflash_device_info_destroy(linfo);
