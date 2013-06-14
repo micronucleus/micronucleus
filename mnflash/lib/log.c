@@ -62,6 +62,9 @@ int mnflash_msg(char *fmt, ...)
 	char * msg = NULL;
 	int mlen = 0;
 
+	if ( ! mnflash_output.logout )
+		return 0;
+
 	va_list argptr;
 	va_start(argptr,fmt);
 	mlen = vasprintf(&msg,fmt,argptr);
@@ -79,6 +82,9 @@ int mnflash_error(char *fmt, ...)
 {
 	char * msg = NULL;
 	int mlen = 0;
+
+	if ( ! mnflash_output.errout )
+		return 0;
 
 	va_list argptr;
 	va_start(argptr,fmt);
