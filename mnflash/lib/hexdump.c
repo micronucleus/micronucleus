@@ -30,8 +30,8 @@
 
 void mnflash_hexdump_header()
 {
-	mnflash_msg( "Addr  +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F       ASCII\n");
-	mnflash_msg( "-------------------------------------------------------------------------\n");
+	mnflash_msg( "Addr  +0 +1 +2 +3 +4 +5 +6 +7  +8 +9 +A +B +C +D +E +F       ASCII");
+	mnflash_msg( "-------------------------------------------------------------------------");
 }
 
 void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
@@ -62,7 +62,7 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 			if ( first ) {
 				mnflash_msg("%4.4x  ", addr);
 			} else {
-				mnflash_msg( "  %s\n%4.4x  ", ascii, addr);
+				mnflash_msg( "  %s%4.4x  ", ascii, addr);
 			}
 			memset(ascii,' ',sizeof(ascii) - 1);
 		}
@@ -85,6 +85,6 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 		addr ++;
 	}
 
-	mnflash_msg( "   %s\n", ascii);
+	mnflash_msg( "   %s", ascii);
 }
 

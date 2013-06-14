@@ -30,12 +30,12 @@
 
 static void log_stdout(const char * msg)
 {
-	fprintf(stdout, "%s", msg);
+	fprintf(stdout, "%s\n", msg);
 }
 
 static void log_stderr(const char * msg)
 {
-	fprintf(stderr, "%s", msg);
+	fprintf(stderr, "%s\n", msg);
 }
 
 static struct {

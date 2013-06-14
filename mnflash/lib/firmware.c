@@ -85,7 +85,7 @@ mnflash_firmware_t * mnflash_firmware_load_file_autofmt(const char * path)
 	if ( (firmware = mnflash_elf_load(path)) == NULL) {
 		if ( (firmware = mnflash_ihex_load(path)) == NULL) {
 			if ( (firmware = mnflash_raw_load(path)) == NULL) {
-				mnflash_error( "cannot load firmware.\n");
+				mnflash_error( "cannot load firmware.");
 				return NULL;
 			}
 		}
@@ -136,7 +136,7 @@ mnflash_firmware_t * mnflash_load_firmware_from_dir(const char * path, const cha
 			} else {
 				snprintf(name, len, "%s/%s%s%s", path, prefixes[j], stem, extensions[i]);
 			}
-			mnflash_error("trying %s ...\n", name);
+			mnflash_error("trying %s ...", name);
 			if (stat(name, &statbuf) == 0) {
 
 				if ((statbuf.st_mode & S_IFMT) == S_IFREG) {

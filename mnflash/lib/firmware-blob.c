@@ -60,13 +60,13 @@ void mnflash_firmware_resize(mnflash_firmware_t * blob, size_t address) {
 		size_t new_alloc = ((address / FIRMWARE_ALLOC_SIZE) + 1) * FIRMWARE_ALLOC_SIZE;
 
 		if ( new_alloc > FIRMWARE_MAX_DATA_SIZE ) {
-			mnflash_error("firmware image size exceeds %d bytes\n", FIRMWARE_MAX_DATA_SIZE);
+			mnflash_error("firmware image size exceeds %d bytes", FIRMWARE_MAX_DATA_SIZE);
 			free(blob->data);
 			blob->data = NULL;
 			return;
 		}
 
-		// mnflash_error( "Re-alloc firmware blob to %zu bytes\n", new_alloc);
+		// mnflash_error( "Re-alloc firmware blob to %zu bytes", new_alloc);
 		blob->data = realloc(blob->data, new_alloc);
 
 		/* fill new area with 0xFF = unitialized flash */
@@ -78,12 +78,12 @@ void mnflash_firmware_resize(mnflash_firmware_t * blob, size_t address) {
 
 void mnflash_firmware_info(const mnflash_firmware_t * blob)
 {
-	mnflash_msg( "       File name: %s\n", blob->filename);
-	mnflash_msg( "Target Signature: 0x%2.2x 0x%2.2x 0x%2.2x\n",
+	mnflash_msg( "       File name: %s", blob->filename);
+	mnflash_msg( "Target Signature: 0x%2.2x 0x%2.2x 0x%2.2x",
 			blob->signature[2], blob->signature[1], blob->signature[0]);
-	mnflash_msg( "            Size: %zd bytes\n", blob->end - blob->start);
-	mnflash_msg( " Load to address: 0x%zx\n", blob->start);
-	mnflash_msg( "   Start address: 0x%zx\n", blob->entry);
+	mnflash_msg( "            Size: %zd bytes", blob->end - blob->start);
+	mnflash_msg( " Load to address: 0x%zx", blob->start);
+	mnflash_msg( "   Start address: 0x%zx", blob->entry);
 }
 
 void mnflash_firmware_dump(const mnflash_firmware_t * blob)

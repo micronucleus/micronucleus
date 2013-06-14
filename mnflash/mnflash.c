@@ -70,11 +70,12 @@ int main(int argc, char ** argv)
 				break;
 
 			default:
-				mnflash_error("?? getopt returned character code 0%o ??\n", c);
+				mnflash_error("?? getopt returned character code 0%o ??", c);
 		}
 	}
 
 	retry = 50;
+	mnflash_msg("looking for a device to flash ...");
 	do {
 		if ((dev = mnflash_usb_connect(NULL, NULL)) == NULL) {
 			usleep(100000);
@@ -83,7 +84,7 @@ int main(int argc, char ** argv)
 	} while ( retry > 0 && dev == NULL );
 
 	if ( ! dev ) {
-		mnflash_error("device did not enter bootloader\n");
+		mnflash_error("device did not enter bootloader");
 		exit(1);
 	}
 
