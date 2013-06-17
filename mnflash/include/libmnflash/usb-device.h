@@ -12,6 +12,7 @@ typedef enum {
 	DEV_MODE_NONE,
 	DEV_MODE_NORMAL,
 	DEV_MODE_PROGRAMMING,
+	DEV_MODE_DISCONNECTED,
 } mnflash_usb_mode_t;
 
 typedef struct {

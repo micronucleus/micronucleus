@@ -87,6 +87,8 @@ ssize_t mnflash_usb_custom_read( mnflash_usb_t * dev, uint16_t request, uint16_t
 			} else {
 				/* more serious error, do not retry */
 				retry = 0;
+				if ( errno == ENODEV )
+					dev->mode = DEV_MODE_DISCONNECTED;
 			}
 		}
 
@@ -126,6 +128,8 @@ ssize_t mnflash_usb_custom_write( mnflash_usb_t * dev, uint16_t request, uint16_
 			} else {
 				/* more serious error, do not retry */
 				retry = 0;
+				if ( errno == ENODEV )
+					dev->mode = DEV_MODE_DISCONNECTED;
 			}
 		}
 
@@ -151,6 +155,11 @@ ssize_t mnflash_usb_custom_write_once( mnflash_usb_t * dev, uint16_t request, ui
 			buflen,
 			50);
 
+	if ( bytesWritten < 0 ) {
+		if ( errno == ENODEV )
+			dev->mode = DEV_MODE_DISCONNECTED;
+	}
+
 	return bytesWritten;
 }
 static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
@@ -162,6 +171,8 @@ static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
 			return "normal operation";
 		case DEV_MODE_PROGRAMMING:
 			return "bootloader";
+		case DEV_MODE_DISCONNECTED:
+			return "gone";
 	}
 
 	return "invalid";
@@ -169,7 +180,7 @@ static const char * mnflash_usb_mode_string(mnflash_usb_t * dev)
 
 void mnflash_usb_show(mnflash_usb_t * dev)
 {
-	mnflash_msg( "Device in %s, hardware version %d.%d\n",
+	mnflash_msg( "Device in %s, hardware version %d.%d",
 			mnflash_usb_mode_string(dev),
 			dev->major_version,
 			dev->minor_version );
