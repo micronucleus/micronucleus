@@ -1,6 +1,6 @@
 
 #ifndef LIBMNFLASH_USB_H
-#define LIBMNFLASH_USB_H
+#define LIBMNFLASH_USB_H 1
 
 #include <stdint.h>
 #include <usb.h>
