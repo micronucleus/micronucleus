@@ -105,8 +105,8 @@ static int mnflash_erase(mnflash_device_info_t * info)
 	mnflash_msg("erasing device ...");
 	usleep( 2000 * info->write_sleep );
 	if (mnflash_usb_custom_write_once(info->dev, BOOTLOADER_ERASE, 0, 0, NULL, 0) < 0) {
-		mnflash_error("cannot erase device%s", usb_strerror());
-		return 0;
+		// mnflash_error("cannot erase device%s", usb_strerror());
+		// return 0;
 	}
 
 	mnflash_error( "sleeping for %dµs", (info->write_sleep * ((info->progmem_size/info->page_size) + 1) * 1000));
