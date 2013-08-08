@@ -70,7 +70,7 @@ static void leaveBootloader() __attribute__((__noreturn__));
 //////// Stuff Bluebie Added
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
 // and used to in USBaspLoader-tiny85 store the checksum iirc
-#define POSTSCRIPT_SIZE 4
+#define POSTSCRIPT_SIZE 6
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 // verify the bootloader address aligns with page size
