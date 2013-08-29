@@ -1,3 +1,4 @@
+
 /*
   Created: September 2012
   by ihsan Kehribar <ihsan@kehribar.me>
@@ -148,8 +149,8 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
 
     // give microcontroller enough time to write this page and come back online
     delay(deviceHandle->write_sleep);
-
-    if (res != 64) return -1;
+    
+    if (res != page_length) return -1;
   }
 
   // call progress update callback with completion status
