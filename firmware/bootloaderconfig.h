@@ -237,7 +237,7 @@ these macros are defined, the boot loader uses them.
 #else
   #define bootLoaderInit()
   #define bootLoaderExit()
-  #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+  #define bootLoaderCondition()   (++idlePolls < (AUTO_EXIT_MS * 10UL))
   #if LOW_POWER_MODE
     // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
     // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
