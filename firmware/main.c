@@ -369,8 +369,8 @@ static inline void leaveBootloader(void) {
     USB_INTR_CFG = 0;       /* also reset config bits */
 
     // clear magic word from bottom of stack before jumping to the app
-    *(uint8_t*)(RAMEND) = 0x00;
-    *(uint8_t*)(RAMEND-1) = 0x00;
+    *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
+  //  *(uint8_t*)(RAMEND-1) = 0x00; 
     
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
