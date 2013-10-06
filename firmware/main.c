@@ -15,6 +15,9 @@
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
 
+// Use the old delay routines without NOP padding. This saves memory.
+#define __DELAY_BACKWARD_COMPATIBLE__     
+
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
