@@ -134,7 +134,7 @@ static inline void eraseApplication(void) {
     // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
     // during upload
 	addr_t ptr = BOOTLOADER_ADDRESS;
-//    currentAddress = BOOTLOADER_ADDRESS;
+
     cli();
     while (ptr) {
         ptr -= SPM_PAGESIZE;
@@ -223,9 +223,18 @@ static void fillFlashWithVectors(void) {
     //}
     
     // TODO: Or more simply: 
+
+
+#if SPM_PAGESIZE<256
     do {
-        writeWordToPageBuffer(0xFFFF);
+	    writeWordToPageBuffer(0xFFFF);
+    } while ((uchar)currentAddress % SPM_PAGESIZE);
+#else
+    do {
+	    writeWordToPageBuffer(0xFFFF);
     } while (currentAddress % SPM_PAGESIZE);
+#endif
+
 
     writeFlashPage();
 }
@@ -294,7 +303,14 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     // if we have now reached another page boundary, we're done
     //uchar isLast = (writeLength == 0);
+	
+#if SPM_PAGESIZE<256
+	// Hack to reduce code size
+    uchar isLast = ((((uchar)currentAddress) % SPM_PAGESIZE) == 0);
+#else
     uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
+#endif
+
     // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
     if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
     
@@ -343,7 +359,15 @@ static inline void tiny85FlashWrites(void) {
     // write page to flash, interrupts will be disabled for > 4.5ms including erase
     
     // TODO: Do we need this? Wouldn't the programmer always send full sized pages?
-    if (currentAddress % SPM_PAGESIZE) { // when we aren't perfectly aligned to a flash page boundary
+
+#if SPM_PAGESIZE<256
+	// Hack to reduce code size
+    if ((uchar)currentAddress % SPM_PAGESIZE)
+#else
+    if (currentAddress % SPM_PAGESIZE) 
+#endif
+	{
+    // when we aren't perfectly aligned to a flash page boundary
         fillFlashWithVectors(); // fill up the rest of the page with 0xFFFF (unprogrammed) bits
     } else {
         writeFlashPage(); // otherwise just write it
@@ -382,6 +406,7 @@ static inline void leaveBootloader(void) {
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
         //OSCCAL = stored_osc_calibration; // this should really be a gradual change, but maybe it's alright anyway?
         // do the gradual change - failed to score extra free bytes anyway in 1.06
+		
         while (OSCCAL > stored_osc_calibration) OSCCAL--;
         while (OSCCAL < stored_osc_calibration) OSCCAL++;
     }
