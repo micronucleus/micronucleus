@@ -96,7 +96,7 @@ static uchar events = 0; // bitmap of events to run
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
-// length of bytes to write in to flash memory in upcomming usbFunctionWrite calls
+// length of bytes to write in to flash memory in upcoming usbFunctionWrite calls
 //static unsigned char writeLength;
 
 // becomes 1 when some programming happened
@@ -105,11 +105,8 @@ static uchar didWriteSomething = 0;
 
 uint16_t idlePolls = 0; // how long have we been idle?
 
-
-
 static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 static addr_t currentAddress; // current progmem address, used for erasing and writing
-
 
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
@@ -127,21 +124,23 @@ static inline void leaveBootloader(void);
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
 //  - Because flash can be erased once and programmed several times, we can write the bootloader
 //  - vectors in now, and write in the application stuff around them later.
-//  - if vectors weren't written back in immidately, usb would fail.
+//  - if vectors weren't written back in immediately, usb would fail.
 static inline void eraseApplication(void) {
     // erase all pages until bootloader, in reverse order (so our vectors stay in place for as long as possible)
     // while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
     // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
     // during upload
-    currentAddress = BOOTLOADER_ADDRESS;
+	addr_t ptr = BOOTLOADER_ADDRESS;
+//    currentAddress = BOOTLOADER_ADDRESS;
     cli();
-    while (currentAddress) {
-        currentAddress -= SPM_PAGESIZE;
+    while (ptr) {
+        ptr -= SPM_PAGESIZE;
         
-        boot_page_erase(currentAddress);
+        boot_page_erase(ptr);
         boot_spm_busy_wait();
     }
     
+	currentAddress = 0;
     fillFlashWithVectors();
     sei();
 }
