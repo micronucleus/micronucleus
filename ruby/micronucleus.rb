@@ -56,9 +56,10 @@ class Micronucleus
     info = self.info
     raise "Program too long!" if bytestring.bytesize > info[:flash_length]
     bytes = bytestring.bytes.to_a
-
+    bytes.push(0xFF) while bytes.length < info[:flash_length]
+    
     erase!
-
+    
     address = 0
     bytes.each_slice(info[:page_size]) do |slice|
       slice.push(0xFF) while slice.length < info[:page_size] # ensure every slice is one page_size long - pad out if needed
