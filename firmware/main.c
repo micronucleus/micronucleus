@@ -111,6 +111,11 @@ uint16_t idlePolls = 0; // how long have we been idle?
 static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 static addr_t currentAddress; // current progmem address, used for erasing and writing
 
+#ifdef RESTORE_OSCCAL
+ static uint8_t osccal_default;	// due to compiler insanity, having this as global actually saves memory
+#endif
+
+
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
 static void writeFlashPage(void);
@@ -174,12 +179,21 @@ static void writeFlashPage(void) {
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
     uint8_t previous_sreg;
-    
-    // first two interrupt vectors get replaced with a jump to the bootloader's vector table
-    if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
-        data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
-    }
-    
+       // make sure we don't write over the bootloader!
+       if (currentAddress >= BOOTLOADER_ADDRESS) return;
+
+       // remember first two interrupt vectors for the tinyvector table
+       // and replace them with a jump to the bootloader's vector table
+        if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+	        vectorTemp[0] = *(short *)data;
+	        data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+        }
+               
+        if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
+	        vectorTemp[1] = *(short *)data;
+	        data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+        }
+                
     // at end of page just before bootloader, write in tinyVector table
     // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
     // for info on how the tiny vector table works
@@ -187,8 +201,10 @@ static void writeWordToPageBuffer(uint16_t data) {
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
+#ifndef RESTORE_OSCCAL			
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
         data = OSCCAL;
+#endif
     }
     
     
@@ -281,21 +297,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     //writeLength -= length;
     
     do {
-        // remember vectors or the tinyvector table 
-        if (currentAddress == RESET_VECTOR_OFFSET * 2) {
-            vectorTemp[0] = *(short *)data;
-        }
-        
-        if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
-            vectorTemp[1] = *(short *)data;
-        }
-        
-        // make sure we don't write over the bootloader!
-        if (currentAddress >= BOOTLOADER_ADDRESS) {
-            //__boot_page_fill_clear();
-            break;
-        }
-        
         writeWordToPageBuffer(*(uint16_t *) data);
         data += 2; // advance data pointer
         length -= 2;
@@ -399,6 +400,7 @@ static inline void leaveBootloader(void) {
     *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
   //  *(uint8_t*)(RAMEND-1) = 0x00; 
     
+#ifndef RESTORE_OSCCAL	
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
     // TODO: Test this and find out, do we need the +1 offset?
@@ -410,6 +412,7 @@ static inline void leaveBootloader(void) {
         while (OSCCAL > stored_osc_calibration) OSCCAL--;
         while (OSCCAL < stored_osc_calibration) OSCCAL++;
     }
+#endif
 
     // jump to application reset vector at end of flash
     asm volatile ("rjmp __vectors - 4");
@@ -418,7 +421,7 @@ static inline void leaveBootloader(void) {
 int main(void) {
     /* initialize  */
     #ifdef RESTORE_OSCCAL
-        uint8_t osccal_default = OSCCAL;
+        osccal_default = OSCCAL;
     #endif
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
