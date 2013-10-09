@@ -345,12 +345,9 @@ static inline void tiny85FlashInit(void) {
     // check for erased first page (no bootloader interrupt vectors), add vectors if missing
     // this needs to happen for usb communication to work later - essential to first run after bootloader
     // being installed
-    if(pgm_read_word(RESET_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1 ||
-            pgm_read_word(USBPLUS_VECTOR_OFFSET * 2) != 0xC000 + (BOOTLOADER_ADDRESS/2) - 1) {
 
-        fillFlashWithVectors();
-    }
-
+    if(pgm_read_byte(RESET_VECTOR_OFFSET * 2+1) == 0xff) fillFlashWithVectors();   // write vectors if flash is empty
+    
     // TODO: necessary to reset currentAddress?
     currentAddress = 0;
 }
