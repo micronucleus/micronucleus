@@ -395,6 +395,8 @@ static inline void leaveBootloader(void) {
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
+	usbDeviceDisconnect();  /* do this while interrupts are disabled */
+	
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
 
@@ -428,6 +430,7 @@ int main(void) {
         uint8_t prescaler_default = CLKPR;
     #endif
     
+	MCUSR=0;
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
     bootLoaderInit();
