@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2008 by Lukas Schrittwieser and OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm18-crc.inc 740 2009-04-13 18:23:31Z cs $
  */
 
 /* Do not link this file! Link usbdrvasm.S instead, which includes the

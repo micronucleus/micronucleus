@@ -86,8 +86,9 @@ If you use one of the IDs listed below, your device and host-side software
 must conform to these rules:
 
 (1) The USB device MUST provide a textual representation of the serial
-number. The serial number string MUST be available at least in USB language
-0x0409 (English/US).
+number, unless ONLY the operating system's default class driver is used.
+The serial number string MUST be available at least in USB language 0x0409
+(English/US).
 
 (2) The serial number MUST start with either an Internet domain name (e.g.
 "mycompany.com") registered and owned by you, or an e-mail address under your
@@ -108,6 +109,11 @@ driver for Vendor Class devices is needed, this driver must be libusb or
 libusb-win32 (see http://libusb.org/ and
 http://libusb-win32.sourceforge.net/).
 
+(7) If ONLY the operating system's default class driver is used, e.g. for
+mice, keyboards, joysticks, CDC or MIDI devices and no discrimination by an
+application is needed, the serial number may be omitted.
+
+
 Table if IDs for discrimination by serial number string:
 
 PID dec (hex)  | VID dec (hex) | Description of use
@@ -121,11 +127,11 @@ PID dec (hex)  | VID dec (hex) | Description of use
 ---------------+---------------+-------------------------------------------
 10203 (0x27db) | 5824 (0x16c0) | For USB Keyboards
 ---------------+---------------+-------------------------------------------
-10204 (0x27db) | 5824 (0x16c0) | For USB Joysticks
+10204 (0x27dc) | 5824 (0x16c0) | For USB Joysticks
 ---------------+---------------+-------------------------------------------
-10205 (0x27dc) | 5824 (0x16c0) | For CDC-ACM class devices (modems)
+10205 (0x27dd) | 5824 (0x16c0) | For CDC-ACM class devices (modems)
 ---------------+---------------+-------------------------------------------
-10206 (0x27dd) | 5824 (0x16c0) | For MIDI class devices
+10206 (0x27de) | 5824 (0x16c0) | For MIDI class devices
 ---------------+---------------+-------------------------------------------
 
 

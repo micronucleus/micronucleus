@@ -395,7 +395,7 @@ static inline void leaveBootloader(void) {
     //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
-	usbDeviceDisconnect();  /* Disconnect micronucleus */
+	usbDeviceDisconnect();  /* do this while interrupts are disabled */
 	
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
@@ -410,8 +410,11 @@ static inline void leaveBootloader(void) {
     // TODO: Test this and find out, do we need the +1 offset?
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
-		OSCCAL=stored_osc_calibration;
-		asm volatile("nop");
+        //OSCCAL = stored_osc_calibration; // this should really be a gradual change, but maybe it's alright anyway?
+        // do the gradual change - failed to score extra free bytes anyway in 1.06
+		
+        while (OSCCAL > stored_osc_calibration) OSCCAL--;
+        while (OSCCAL < stored_osc_calibration) OSCCAL++;
     }
 #endif
     // jump to application reset vector at end of flash
@@ -426,12 +429,13 @@ int main(void) {
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
-  
-	MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
+    
+	MCUSR=0;
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
     bootLoaderInit();
-      
+    
+    
     if (bootLoaderStartCondition()) {
         #if LOW_POWER_MODE
             // turn off clock prescalling - chip must run at full speed for usb
@@ -440,13 +444,9 @@ int main(void) {
             CLKPR = 0;
         #endif
         
-		#ifdef NANITE
-			PORTB &=~_BV(NANITE_CTRLPIN);
-		#endif 
         initForUsbConnectivity();
         do {
-
-			usbPoll();
+            usbPoll();
             _delay_us(100);
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
@@ -455,11 +455,6 @@ int main(void) {
             if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
-		#ifdef NANITE            
-			DDRB  |= _BV(NANITE_CTRLPIN);
-			if (((unsigned char*)&idlePolls)[1]&0xd)  DDRB  &=~_BV(NANITE_CTRLPIN);
-		#endif
-		
 #           if BOOTLOADER_CAN_EXIT            
                 if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
                     break;
@@ -467,7 +462,7 @@ int main(void) {
 #           endif
             
             clearEvents();
-		
+            
         } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
@@ -481,12 +476,10 @@ int main(void) {
             CLKPR = prescaler_default;
         #endif
     #endif
-
     
+    // slowly bring down OSCCAL to it's original value before launching in to user program
     #ifdef RESTORE_OSCCAL
-
-	OSCCAL=osccal_default;
-	asm volatile("nop");	// NOP to avoid CPU hickup during osccillator stabilization
+        while (OSCCAL > osccal_default) { OSCCAL -= 1; }
     #endif
     leaveBootloader();
 }

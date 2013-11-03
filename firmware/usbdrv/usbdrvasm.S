@@ -5,7 +5,6 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm.S 785 2010-05-30 17:57:07Z cs $
  */
 
 /*
@@ -285,7 +284,7 @@ usbCrc16Append:
 
 #if USB_CFG_HAVE_MEASURE_FRAME_LENGTH
 #ifdef __IAR_SYSTEMS_ASM__
-/* Register assignments for usbMeasureFrameLength on IAR cc */
+/* Register assignments for usbMeasureFrameLengthDecreasing on IAR cc */
 /* Calling conventions on IAR:
  * First parameter passed in r16/r17, second in r18/r19 and so on.
  * Callee must preserve r4-r15, r24-r29 (r28/r29 is frame pointer)
@@ -314,33 +313,28 @@ usbCrc16Append:
 #endif
 #   define cnt16    cnt16L
 
-; extern unsigned usbMeasurePacketLength(void);
-; returns time between two idle strobes in multiples of 7 CPU clocks
-.global usbMeasureFrameLength
-usbMeasureFrameLength:
-    ldi     cntH, 6         ; wait ~ 10 ms for D- == 0
-    clr     cnt16L
-    clr     cnt16H
-usbMFTime16:
-    dec     cntH
-    breq    usbMFTimeout
-usbMFWaitStrobe:            ; first wait for D- == 0 (idle strobe)
-    sbiw    cnt16, 1        ;[0] [6]
-    breq    usbMFTime16     ;[2]
-    sbic    USBIN, USBMINUS ;[3]
-    rjmp    usbMFWaitStrobe ;[4]
-usbMFWaitIdle:              ; then wait until idle again
+; extern int usbMeasurePacketLengthDecreasing(int);
+; input: timer start value
+; return: counts down time between two idle strobes in multiples of 5 CPU clocks
+.global usbMeasureFrameLengthDecreasing
+usbMeasureFrameLengthDecreasing:
+
+#if resL != cnt16L
+    mov     cnt16L, resL
+    mov     cnt16H, resH
+#endif
+
+usbDFWaitStrobe:            ; first wait for D- == 0 (idle strobe)
+    sbic    USBIN, USBMINUS ;
+    rjmp    usbDFWaitStrobe ;
+usbDFWaitIdle:              ; then wait until idle again
     sbis    USBIN, USBMINUS ;1 wait for D- == 1
-    rjmp    usbMFWaitIdle   ;2
-    ldi     cnt16L, 1       ;1 represents cycles so far
-    clr     cnt16H          ;1
-usbMFWaitLoop:
-    in      cntH, USBIN     ;[0] [7]
-    adiw    cnt16, 1        ;[1]
-    breq    usbMFTimeout    ;[3]
-    andi    cntH, USBMASK   ;[4]
-    brne    usbMFWaitLoop   ;[5]
-usbMFTimeout:
+    rjmp    usbDFWaitIdle   ;2
+usbDFWaitLoop:
+	sbiw	cnt16,1			;[0] [5]
+    sbic    USBIN, USBMINUS ;[2] 
+    rjmp    usbDFWaitLoop   ;[3]
+
 #if resL != cnt16L
     mov     resL, cnt16L
     mov     resH, cnt16H

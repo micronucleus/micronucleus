@@ -8,10 +8,11 @@
  */
 
 #include <avr/io.h>
-
 #ifndef uchar
 #define uchar   unsigned char
 #endif
+
+int usbMeasureFrameLengthDecreasing(int);
 
 /* ------------------------------------------------------------------------- */
 /* ------------------------ Oscillator Calibration ------------------------- */
@@ -19,38 +20,93 @@
 
 /* Calibrate the RC oscillator. Our timing reference is the Start Of Frame
  * signal (a single SE0 bit) repeating every millisecond immediately after
- * a USB RESET. We first do a binary search for the OSCCAL value and then
- * optimize this value with a neighboorhod search.
+ * a USB RESET. 
+ *
+ * 
+ * Optimized version by cpldcpu@gmail.com, Nov 3rd 2013.
+ *
+ * Benefits:
+ *	  - Codesize reduced by 54 bytes.
+ *    - Improved robustness due to removing timeout from frame length measurement and 
+ *	    inserted NOP after OSCCAL writes.
+ *
+ * Changes:
+ *    - The new routine performs a combined binary and neighborhood search
+ *      in a single loop.
+ *      Note that the neighborhood search is necessary due to the quasi-monotonic 
+ *      nature of OSCCAL. (See Atmel application note AVR054).
+ *	  - Inserted NOP after writes to OSCCAL to avoid CPU errors during oscillator
+ *      stabilization. 
+ *    - Implemented new routine to measure frame time "usbMeasureFrameLengthDecreasing".
+ *		This routine takes the target time as a parameter and returns the deviation.
+ *	  - usbMeasureFrameLengthDecreasing measures in multiples of 5 cycles and is thus
+ *	    slighly more accurate.
+ *	  - usbMeasureFrameLengthDecreasing does not support time out anymore. The original
+ *	    implementation returned zero in case of time out, which would have caused the old
+ *      calibrateOscillator() implementation to increase OSSCAL to 255, effictively
+ *      overclocking and most likely crashing the CPU. The new implementation will enter
+ *		an infinite loop when no USB activity is encountered. The user program should
+ *      use the watchdog to escape from situations like this.
+  * 
+ * This routine will work both on controllers with and without split OSCCAL range.
+ * The first trial value is 128 which is the lowest value of the upper OSCCAL range
+ * on Attiny85 and will effectively limit the search to the upper range, unless the
+ * RC oscillator frequency is unusually high. Under normal operation, the highest 
+ * tested frequency setting is 192. This corresponds to ~20 Mhz core frequency and 
+ * is still within spec for a 5V device.
  */
+
 void    calibrateOscillator(void)
 {
-uchar       step = 128;
-uchar       trialValue = 0, optimumValue;
-int         x, optimumDev, targetValue = (unsigned)(1499 * (double)F_CPU / 10.5e6 + 0.5);
+	uchar       step, trialValue, optimumValue;
+	int         x, optimumDev, targetValue;
+	uchar		i;
+	
+	targetValue = (unsigned)((double)F_CPU * 999e-6 / 5.0 + 0.5);  /* Time is measured in multiples of 5 cycles. Target is 0.999µs */
+    optimumDev = 0x7f00;   // set to high positive value
+    optimumValue = OSCCAL; 
+	step=64;
+	trialValue = 128;
+	
+	/*
+		Performs seven iterations of a binary search (stepwidth decreasing9
+		with three additional steps of a neighborhood search (step=1, trialvalue will oscillate around target value to find optimum)
+	*/
 
-    /* do a binary search: */
-    do{
-        OSCCAL = trialValue + step;
-        x = usbMeasureFrameLength();    /* proportional to current real frequency */
-        if(x < targetValue)             /* frequency still too low */
-            trialValue += step;
-        step >>= 1;
-    }while(step > 0);
-    /* We have a precision of +/- 1 for optimum OSCCAL here */
-    /* now do a neighborhood search for optimum value */
-    optimumValue = trialValue;
-    optimumDev = x; /* this is certainly far away from optimum */
-    for(OSCCAL = trialValue - 1; OSCCAL <= trialValue + 1; OSCCAL++){
-        x = usbMeasureFrameLength() - targetValue;
-        if(x < 0)
-            x = -x;
-        if(x < optimumDev){
-            optimumDev = x;
-            optimumValue = OSCCAL;
-        }
-    }
-    OSCCAL = optimumValue;
+	for(i=0; i<10; i++){
+		OSCCAL = trialValue;
+		asm volatile(" NOP");
+	
+		x = usbMeasureFrameLengthDecreasing(targetValue);
+
+		if(x < 0)             /* frequency too high */
+		{
+			trialValue -= step;
+			x = -x;
+		}
+		else                  /* frequency too low */
+		{
+			trialValue += step;			
+		}
+		
+		/*
+			Halve stepwidth to perform binary search. Logical oring with 1 to ensure step is never equal to zero. 
+			This results in a neighborhood search with stepwidth 1 after binary search is finished.			
+		*/
+		
+		step >>= 1;
+		step |=1;	
+
+		if(x < optimumDev){
+			optimumDev = x;
+			optimumValue = OSCCAL;
+		}
+	}
+
+	OSCCAL = optimumValue;
+	asm volatile(" NOP");
 }
+
 /*
 Note: This calibration algorithm may try OSCCAL values of up to 192 even if
 the optimum value is far below 192. It may therefore exceed the allowed clock
