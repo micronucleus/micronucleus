@@ -99,13 +99,6 @@ static uchar events = 0; // bitmap of events to run
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
-// length of bytes to write in to flash memory in upcoming usbFunctionWrite calls
-//static unsigned char writeLength;
-
-// becomes 1 when some programming happened
-// lets leaveBootloader know if needs to finish up the programming
-static uchar didWriteSomething = 0;
-
 uint16_t idlePolls = 0; // how long have we been idle?
 
 static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
@@ -155,7 +148,6 @@ static inline void eraseApplication(void) {
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
     uint8_t previous_sreg = SREG; // backup current interrupt setting
-    didWriteSomething = 1;
     cli();
     boot_page_write(currentAddress - 2);
     boot_spm_busy_wait(); // Wait until the memory is written.
@@ -377,17 +369,6 @@ static inline void tiny85FlashWrites(void) {
     }
 }
 
-// finishes up writing to the flash, including adding the tinyVector tables at the end of memory
-// TODO: can this be simplified? EG: currentAddress = PROGMEM_SIZE; fillFlashWithVectors();
-// static inline void tiny85FinishWriting(void) {
-//     // make sure remainder of flash is erased and write checksum and application reset vectors
-//     if (didWriteSomething) {
-//         while (currentAddress < BOOTLOADER_ADDRESS) {
-//             fillFlashWithVectors();
-//         }
-//     }
-// }
-
 // reset system to a normal state and launch user program
 static inline void leaveBootloader(void) {
     _delay_ms(10); // removing delay causes USB errors
@@ -426,6 +407,7 @@ int main(void) {
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
+	
   
 	MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
     wdt_disable();      /* main app may have enabled watchdog */
