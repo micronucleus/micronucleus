@@ -24,7 +24,7 @@ LOCKOPT = -U lock:w:0x2f:m
 # - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
 # - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 1780
+BOOTLOADER_ADDRESS = 1840
 
 PROGRAMMER = -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
@@ -148,13 +148,12 @@ CC = avr-gcc
 # Options:
 DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
 # Remove the -fno-* options when you use gcc 3, it does not understand them
-#
-CFLAGS = -g2 -ffunction-sections -fdata-sections -fpack-struct -Wall -Os -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop  -I. -Ilibs-device -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
+# 
+CFLAGS = -g2 -ffunction-sections -fdata-sections -fpack-struct -Wall -Os  -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop  -I. -Ilibs-device -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
 LDFLAGS = -Wl,--relax,--gc-sections -Wl,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map
 
 OBJECTS =  usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o
-OBJECTS += libs-device/osccal.o 
-
+OBJECTS += libs-device/osccalASM.o
 # symbolic targets:
 all: main.hex
 
@@ -172,7 +171,7 @@ all: main.hex
 	$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i
+	$(AVRDUDE) -U flash:w:main.hex:i -B 10
 
 readflash:
 	$(AVRDUDE) -U flash:r:read.hex:i

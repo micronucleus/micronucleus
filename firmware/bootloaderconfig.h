@@ -222,7 +222,7 @@ these macros are defined, the boot loader uses them.
 // LED will turn on when output=low and act as external pull up otherwise
 // button shorts to GND
 
-// #define NANITE
+//#define NANITE
 #define NANITE_CTRLPIN PB5
 
 
