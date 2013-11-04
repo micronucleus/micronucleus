@@ -22,11 +22,11 @@ calibrateOscillator() from the reset hook in usbconfig.h:
 */
 
 #ifndef __ASSEMBLER__
-extern void calibrateOscillator(void);
-//extern void calibrateOscillatorASM(void);
+//extern void calibrateOscillator(void);
+extern void calibrateOscillatorASM(void);
 #endif
-#define USB_RESET_HOOK(resetStarts)  if(!resetStarts){  calibrateOscillator(); }
-//#define USB_RESET_HOOK(resetStarts)  if(!resetStarts){  calibrateOscillatorASM(); }
+//#define USB_RESET_HOOK(resetStarts)  if(!resetStarts){  calibrateOscillator(); }
+#define USB_RESET_HOOK(resetStarts)  if(!resetStarts){  calibrateOscillatorASM(); }
 
 /*
 This routine is an alternative to the continuous synchronization described
