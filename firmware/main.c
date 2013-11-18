@@ -427,6 +427,8 @@ int main(void) {
 			PORTB &=~_BV(NANITE_CTRLPIN);
 		#endif 
         initForUsbConnectivity();
+		
+		
         do {
 
 			usbPoll();
@@ -443,14 +445,14 @@ int main(void) {
 			if (((unsigned char*)&idlePolls)[1]&0xd)  DDRB  &=~_BV(NANITE_CTRLPIN);
 		#endif
 		
-#           if BOOTLOADER_CAN_EXIT            
-                if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
-                    break;
-                }
-#           endif
+#       if BOOTLOADER_CAN_EXIT            
+            if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
+                break;
+            }
+#       endif
             
             clearEvents();
-		
+					
         } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
