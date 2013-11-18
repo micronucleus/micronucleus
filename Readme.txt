@@ -3,7 +3,12 @@ micronucleus testing branch
 
 This is the current development branch for micronucleus. The focus for this branch is to reduce the size without changing the functionality of the client tool. Please look at individual commits to understand the changes that were made.
 
-* Nov 18,2013 @cpldcpu - 1966 bytes
+This verion is optimized to compile with AVR-GCC 4.7.2, which is the newest release as of now.
+
+@cpldcpu
+
+* micronucleus 1.06    - 2182 bytes
+* Nov 18,2013 testing  - 1966 bytes
 
 micronucleus tiny85
 ===================
