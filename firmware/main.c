@@ -137,7 +137,7 @@ static inline void eraseApplication(void) {
         ptr -= SPM_PAGESIZE;
         
         boot_page_erase(ptr);
-        boot_spm_busy_wait();
+    //    boot_spm_busy_wait(); // CPU is halted anyways
     }
     
 	currentAddress = 0;
@@ -150,7 +150,8 @@ static void writeFlashPage(void) {
     uint8_t previous_sreg = SREG; // backup current interrupt setting
     cli();
     boot_page_write(currentAddress - 2);
-    boot_spm_busy_wait(); // Wait until the memory is written.
+   //  boot_spm_busy_wait(); // Wait until the memory is written.
+   // CPU is halted anyways
     SREG = previous_sreg; // restore interrupts to previous state
 }
 
