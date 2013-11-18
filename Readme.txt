@@ -1,3 +1,10 @@
+micronucleus testing branch
+===========================
+
+This is the current development branch for micronucleus. The focus for this branch is to reduce the size without changing the functionality of the client tool. Please look at individual commits to understand the changes that were made.
+
+* Nov 18,2013 @cpldcpu - 1966 bytes
+
 micronucleus tiny85
 ===================
 Micronucleus is a bootloader designed for AVR tiny 85 chips with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. The project aims to release a 2.0kb usb bootloader, and is nearly there, with recent builds at 2.07kb. By using the tinyvector mechanism designed by Embedded Creations in their USBaspLoader-tiny85 project, combined with the simplicity of Objective Development's bootloadHID and a unique bare bones usb protocol, Micronucleus is the smallest usb bootloader available for tiny85 at the time of writing.
