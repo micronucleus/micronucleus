@@ -18,7 +18,6 @@
 // Use the old delay routines without NOP padding. This saves memory.
 #define __DELAY_BACKWARD_COMPATIBLE__     
 
-
 #include <avr/io.h>
 #include <avr/interrupt.h>
 #include <avr/pgmspace.h>
@@ -53,11 +52,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #endif
 #ifdef BOOTLOADER_CONDITION
 #   define bootLoaderCondition()    BOOTLOADER_CONDITION
-#endif
-
-/* device compatibility: */
-#ifndef GICR    /* ATMega*8 don't have GICR, use MCUCR instead */
-#   define GICR     MCUCR
 #endif
 
 /* ------------------------------------------------------------------------ */
@@ -104,9 +98,10 @@ uint16_t idlePolls = 0; // how long have we been idle?
 static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 static addr_t currentAddress; // current progmem address, used for erasing and writing
 
-#ifdef RESTORE_OSCCAL
+#if OSCCAL_RESTORE
  static uint8_t osccal_default;  // due to compiler insanity, having this as global actually saves memory
 #endif 
+
 
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
@@ -184,13 +179,12 @@ static void writeWordToPageBuffer(uint16_t data) {
         data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
         data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
-#ifndef RESTORE_OSCCAL  		
+#if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
         data = OSCCAL;
 #endif		
     }
-    
-    
+        
     // clear page buffer as a precaution before filling the buffer on the first page
     // in case the bootloader somehow ran after user program and there was something
     // in the page buffer already
@@ -243,7 +237,7 @@ static void fillFlashWithVectors(void) {
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
     idlePolls = 0; // reset idle polls when we get usb traffic
-    
+	
     static uchar replyBuffer[4] = {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint)PROGMEM_SIZE) & 0xff,
@@ -334,7 +328,7 @@ static inline void initForUsbConnectivity(void) {
     usbInit();
     /* enforce USB re-enumerate: */
     usbDeviceDisconnect();  /* do this while interrupts are disabled */
-    _delay_ms(500);
+    _delay_ms(300);        // reduced to 300ms from 500ms to allow faster resetting when no usb connected
     usbDeviceConnect();
     sei();
 }
@@ -374,7 +368,6 @@ static inline void tiny85FlashWrites(void) {
 static inline void leaveBootloader(void) {
     _delay_ms(10); // removing delay causes USB errors
     
-    //DBG1(0x01, 0, 0);
     bootLoaderExit();
     cli();
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
@@ -386,7 +379,7 @@ static inline void leaveBootloader(void) {
     *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
   //  *(uint8_t*)(RAMEND-1) = 0x00; 
     
-#ifndef RESTORE_OSCCAL   
+#if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
     // TODO: Test this and find out, do we need the +1 offset?
@@ -402,19 +395,22 @@ static inline void leaveBootloader(void) {
 
 int main(void) {
     /* initialize  */
-    #ifdef RESTORE_OSCCAL
+    #if OSCCAL_RESTORE
         osccal_default = OSCCAL;
     #endif
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
-	
-  
-	MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
+
+	// MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
     wdt_disable();      /* main app may have enabled watchdog */
     tiny85FlashInit();
     bootLoaderInit();
-      
+	
+#	if AUTO_EXIT_NO_USB_MS	
+	((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
+#	endif	
+
     if (bootLoaderStartCondition()) {
         #if LOW_POWER_MODE
             // turn off clock prescalling - chip must run at full speed for usb
@@ -423,11 +419,11 @@ int main(void) {
             CLKPR = 0;
         #endif
         
-		#ifdef NANITE
-			PORTB &=~_BV(NANITE_CTRLPIN);
-		#endif 
+#       if  LED_PRESENT
+            LED_PORT &=~_BV(LED_PIN);
+#       endif 
+        
         initForUsbConnectivity();
-		
 		
         do {
 
@@ -440,19 +436,18 @@ int main(void) {
             if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
             if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
 
-		#ifdef NANITE            
-			DDRB  |= _BV(NANITE_CTRLPIN);
-			if (((unsigned char*)&idlePolls)[1]&0xd)  DDRB  &=~_BV(NANITE_CTRLPIN);
-		#endif
-		
 #       if BOOTLOADER_CAN_EXIT            
             if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
                 break;
             }
 #       endif
-            
+           
             clearEvents();
-					
+
+#       if  LED_PRESENT
+            LED_MACRO( ((uint8_t*)&idlePolls)[1] )
+#       endif
+	            
         } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
@@ -466,13 +461,16 @@ int main(void) {
             CLKPR = prescaler_default;
         #endif
     #endif
-
     
-    #ifdef RESTORE_OSCCAL
-
+#   if  LED_PRESENT
+        LED_DDR &=~_BV(LED_PIN);
+#   endif
+    
+#   if OSCCAL_RESTORE
 	OSCCAL=osccal_default;
 	asm volatile("nop");	// NOP to avoid CPU hickup during osccillator stabilization
-    #endif
+#   endif
+
     leaveBootloader();
 }
 
