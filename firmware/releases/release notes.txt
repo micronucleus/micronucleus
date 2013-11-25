@@ -10,7 +10,7 @@ Version jump to 1.10 due to major changes in firmware by @cpldcpu.
    to enter the bootloader again by resetting the device using the watchdog timer or the reset input without 
    physically disconnecting from USB.
  o Cleaned up bootloaderconfig.h
- o Introduced a second time-out (AUTO_EXIT_NO_USB_MS) if the no USB activity is detected. This can be used
+ o Introduced a second time-out (AUTO_EXIT_NO_USB_MS) if no USB reset from the host is detected. This can be used
    to quit the bootloader early if the device is not connected to USB. The bootloader will enter the user 
    program after ~0.8s with the default settings instead of 6s when USB is connected.
  o Introduced optional code to flash a LED. See LED_PRESENT in bootloaderconfig.h for details.
