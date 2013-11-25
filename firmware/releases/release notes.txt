@@ -1,3 +1,12 @@
+== 1.10rc2 - 2013-11-25 ==
+
+firmware:
+ o It seems that the USB specification does not define a maximum delay from device power up until
+   the host issues a bus reset. Therefore too short delays AUTO_EXIT_NO_USB_MS can lead to the 
+   bootloader exiting before enumeration on some systems. 
+   Disabled AUTO_EXIT_NO_USB_MS in default configuration. Use the hex file with the "early_exit" postfix
+   if you need this feature. Set AUTO_EXIT_NO_USB_MS to 800ms.
+    
 == 1.10rc1 - 2013-11-25 ==
 
 firmware:

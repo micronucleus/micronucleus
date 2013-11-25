@@ -281,7 +281,7 @@ these macros are defined, the boot loader uses them.
  *  All values are approx. in milliseconds
  */
 
-#define AUTO_EXIT_NO_USB_MS    500
+#define AUTO_EXIT_NO_USB_MS    0
 #define AUTO_EXIT_MS           6000
 
  /*
@@ -327,8 +327,8 @@ these macros are defined, the boot loader uses them.
 #define LED_PORT		PORTB
 #define	LED_PIN			PB1
 
-#define LED_INIT		LED_PORT &=~_BV(LED_PIN);
-#define LED_EXIT		LED_DDR  &=~_BV(LED_PIN);
+#define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
+#define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
 #define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
 
 #endif /* __ASSEMBLER__ */
