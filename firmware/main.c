@@ -325,11 +325,12 @@ void PushMagicWord (void) {
 /* ------------------------------------------------------------------------ */
 
 static inline void initForUsbConnectivity(void) {
-    usbInit();
+ 
     /* enforce USB re-enumerate: */
     usbDeviceDisconnect();  /* do this while interrupts are disabled */
     _delay_ms(300);        // reduced to 300ms from 500ms to allow faster resetting when no usb connected
     usbDeviceConnect();
+    usbInit();    // Initialize INT settings after reconnect
     sei();
 }
 
@@ -371,6 +372,8 @@ static inline void leaveBootloader(void) {
     bootLoaderExit();
     cli();
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
+
+    wdt_disable();      /* Disable watchdog */
 	
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
@@ -403,7 +406,8 @@ int main(void) {
     #endif
 
 	// MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
-    wdt_disable();      /* main app may have enabled watchdog */
+  //  wdt_disable();
+    wdt_enable(WDTO_1S);      /* enable watchdog and set to 500ms. */
     tiny85FlashInit();
     bootLoaderInit();
 	
@@ -424,10 +428,12 @@ int main(void) {
 #       endif 
         
         initForUsbConnectivity();
-		
+        
+ 	
         do {
 
 			usbPoll();
+            wdt_reset();
             _delay_us(100);
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
