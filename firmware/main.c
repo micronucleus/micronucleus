@@ -58,11 +58,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 
 #define addr_t uint
 
-// typedef union longConverter{
-//     addr_t  l;
-//     uint    w[sizeof(addr_t)/2];
-//     uchar   b[sizeof(addr_t)];
-// } longConverter_t;
 
 //////// Stuff Bluebie Added
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
@@ -168,10 +163,23 @@ static void writeWordToPageBuffer(uint16_t data) {
     uint8_t previous_sreg;
     
     // first two interrupt vectors get replaced with a jump to the bootloader's vector table
+    /*
     if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
         data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
-    
+    */
+  
+       // remember vectors or the tinyvector table 
+        if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+            vectorTemp[0] = data;
+            data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+        }
+        
+        if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
+            vectorTemp[1] = data;
+            data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+        }
+        
     // at end of page just before bootloader, write in tinyVector table
     // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
     // for info on how the tiny vector table works
@@ -217,7 +225,6 @@ static void fillFlashWithVectors(void) {
     
     // TODO: Or more simply: 
 
-
 #if SPM_PAGESIZE<256
     do {
 	    writeWordToPageBuffer(0xFFFF);
@@ -227,7 +234,6 @@ static void fillFlashWithVectors(void) {
 	    writeWordToPageBuffer(0xFFFF);
     } while (currentAddress % SPM_PAGESIZE);
 #endif
-
 
     writeFlashPage();
 }
@@ -273,16 +279,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     //if (length > writeLength) length = writeLength; // test for missing final page bug
     //writeLength -= length;
     
-    do {
-        // remember vectors or the tinyvector table 
-        if (currentAddress == RESET_VECTOR_OFFSET * 2) {
-            vectorTemp[0] = *(short *)data;
-        }
-        
-        if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
-            vectorTemp[1] = *(short *)data;
-        }
-        
+    do {     
         // make sure we don't write over the bootloader!
         if (currentAddress >= BOOTLOADER_ADDRESS) {
             //__boot_page_fill_clear();
@@ -345,24 +342,13 @@ static inline void tiny85FlashInit(void) {
     currentAddress = 0;
 }
 
-static inline void tiny85FlashWrites(void) {
-    _delay_us(2000); // TODO: why is this here? - it just adds pointless two level deep loops seems like?
-    // write page to flash, interrupts will be disabled for > 4.5ms including erase
-    
-    // TODO: Do we need this? Wouldn't the programmer always send full sized pages?
 
-#if SPM_PAGESIZE<256
-	// Hack to reduce code size
-    if ((uchar)currentAddress % SPM_PAGESIZE)
-#else
-    if (currentAddress % SPM_PAGESIZE) 
-#endif
-	{
-    // when we aren't perfectly aligned to a flash page boundary
-        fillFlashWithVectors(); // fill up the rest of the page with 0xFFFF (unprogrammed) bits
-    } else {
-        writeFlashPage(); // otherwise just write it
-    }
+// Write page buffer to flash. May only be called for full pages.
+
+static inline void tiny85FlashWrites(void) {
+    _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
+
+    writeFlashPage();  
 }
 
 // reset system to a normal state and launch user program
