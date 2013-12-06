@@ -215,7 +215,7 @@ static void writeWordToPageBuffer(uint16_t data) {
 }
 
 // fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
-static void fillFlashWithVectors(void) {
+static inline void fillFlashWithVectors(void) {
     //int16_t i;
     //
     // fill all or remainder of page with 0xFFFF (as if unprogrammed)
@@ -235,7 +235,7 @@ static void fillFlashWithVectors(void) {
     } while (currentAddress % SPM_PAGESIZE);
 #endif
 
-    writeFlashPage();
+   // writeFlashPage(); // BUG! Page 0 was written twice!
 }
 
 /* ------------------------------------------------------------------------ */
@@ -331,6 +331,7 @@ static inline void initForUsbConnectivity(void) {
     sei();
 }
 
+/*
 static inline void tiny85FlashInit(void) {
     // check for erased first page (no bootloader interrupt vectors), add vectors if missing
     // this needs to happen for usb communication to work later - essential to first run after bootloader
@@ -341,7 +342,7 @@ static inline void tiny85FlashInit(void) {
     // TODO: necessary to reset currentAddress?
     currentAddress = 0;
 }
-
+*/
 
 // Write page buffer to flash. May only be called for full pages.
 
@@ -394,7 +395,7 @@ int main(void) {
 	// MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
   //  wdt_disable();
     wdt_enable(WDTO_1S);      /* enable watchdog and set to 500ms. */
-    tiny85FlashInit();
+  //  tiny85FlashInit();
     bootLoaderInit();
 	
 #	if AUTO_EXIT_NO_USB_MS	
