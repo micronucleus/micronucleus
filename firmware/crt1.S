@@ -35,11 +35,13 @@
 #if (__GNUC__ < 3) || (__GNUC__ == 3 && __GNUC_MINOR__ < 3)
 #error "GCC version >= 3.3 required"
 #endif
+
 /*
 #include IOSYMFILE
-
 #include "macros.inc"
 */
+#include <avr/io.h>
+//#include <avr/pgmspace.h>
 
   #define XJMP rjmp
   #define XCALL rcall
@@ -75,7 +77,7 @@ __vectors:
 __init:
 
 	.weak	__stack
-
+	.set	__stack, RAMEND
 	/* By default, malloc() uses the current value of the stack pointer
 	   minus __malloc_margin as the highest available address.
 
@@ -88,7 +90,10 @@ __init:
 	.section .init2,"ax",@progbits
 	clr		R1
 	out		0x3f,r1
-
+	ldi		r28,lo8(__stack)
+	ldi		r29,hi8(__stack)
+	out		0x3d, r28
+	out		0x3e, r29
 	.section .init9,"ax",@progbits
 	XJMP	main
 ;	.endfunc
