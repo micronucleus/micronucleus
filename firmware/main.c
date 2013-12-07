@@ -19,13 +19,10 @@
 #define __DELAY_BACKWARD_COMPATIBLE__     
 
 #include <avr/io.h>
-#include <avr/interrupt.h>
 #include <avr/pgmspace.h>
 #include <avr/wdt.h>
 #include <avr/boot.h>
-//#include <avr/eeprom.h>
 #include <util/delay.h>
-//#include <string.h>
 
 static void leaveBootloader() __attribute__((__noreturn__));
 
@@ -55,11 +52,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #endif
 
 /* ------------------------------------------------------------------------ */
-
-#define addr_t uint
-
-
-//////// Stuff Bluebie Added
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
 // and used to in USBaspLoader-tiny85 store the checksum iirc
 #define POSTSCRIPT_SIZE 6
@@ -80,35 +72,33 @@ static void leaveBootloader() __attribute__((__noreturn__));
 // events system schedules functions to run in the main loop
 static uchar events = 0; // bitmap of events to run
 #define EVENT_ERASE_APPLICATION 1
-#define EVENT_WRITE_PAGE 2
-#define EVENT_EXECUTE 4
+#define EVENT_WRITE_PAGE        2
+#define EVENT_EXECUTE           4
 
 // controls state of events
 #define fireEvent(event) events |= (event)
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
 
+// Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
+#define sei() __asm__ __volatile__ ("sei")
+#define cli() __asm__ __volatile__ ("cli")
+
 uint16_t idlePolls = 0; // how long have we been idle?
 
 static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
-static addr_t currentAddress; // current progmem address, used for erasing and writing
+static uint16_t currentAddress; // current progmem address, used for erasing and writing
 
 #if OSCCAL_RESTORE
  static uint8_t osccal_default;  // due to compiler insanity, having this as global actually saves memory
 #endif 
 
-
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
 static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
-static void fillFlashWithVectors(void);
 static uchar usbFunctionSetup(uchar data[8]);
 static uchar usbFunctionWrite(uchar *data, uchar length);
-static inline void initForUsbConnectivity(void);
-static inline void tiny85FlashInit(void);
-static inline void tiny85FlashWrites(void);
-//static inline void tiny85FinishWriting(void);
 static inline void leaveBootloader(void);
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
@@ -120,29 +110,25 @@ static inline void eraseApplication(void) {
     // while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
     // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
     // during upload
-	addr_t ptr = BOOTLOADER_ADDRESS;
-
+    
+    uint8_t i;
+	uint16_t ptr = BOOTLOADER_ADDRESS;
     cli();
     while (ptr) {
-        ptr -= SPM_PAGESIZE;
-        
+        ptr -= SPM_PAGESIZE;        
         boot_page_erase(ptr);
-    //    boot_spm_busy_wait(); // CPU is halted anyways
     }
     
 	currentAddress = 0;
-    fillFlashWithVectors();
-    sei();
+    for (i=0; i<16; i++) writeWordToPageBuffer(0xFFFF);  // Write first 16 words to fill in vectors.
+    writeFlashPage();  // enables interrupts
 }
 
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
-    uint8_t previous_sreg = SREG; // backup current interrupt setting
     cli();
-    boot_page_write(currentAddress - 2);
-   //  boot_spm_busy_wait(); // Wait until the memory is written.
-   // CPU is halted anyways
-    SREG = previous_sreg; // restore interrupts to previous state
+    boot_page_write(currentAddress - 2);   // will halt CPU, no waiting required
+    sei();
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
@@ -163,13 +149,7 @@ static void writeWordToPageBuffer(uint16_t data) {
     uint8_t previous_sreg;
     
     // first two interrupt vectors get replaced with a jump to the bootloader's vector table
-    /*
-    if (currentAddress == (RESET_VECTOR_OFFSET * 2) || currentAddress == (USBPLUS_VECTOR_OFFSET * 2)) {
-        data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
-    }
-    */
-  
-       // remember vectors or the tinyvector table 
+    // remember vectors or the tinyvector table 
         if (currentAddress == RESET_VECTOR_OFFSET * 2) {
             vectorTemp[0] = data;
             data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
@@ -192,57 +172,25 @@ static void writeWordToPageBuffer(uint16_t data) {
         data = OSCCAL;
 #endif		
     }
-        
+
+    previous_sreg=SREG;    
+    cli(); // ensure interrupts are disabled
+    
     // clear page buffer as a precaution before filling the buffer on the first page
     // in case the bootloader somehow ran after user program and there was something
     // in the page buffer already
     if (currentAddress == 0x0000) __boot_page_fill_clear();
-    
-    previous_sreg = SREG; // backup previous interrupt settings
-    cli(); // ensure interrupts are disabled
     boot_page_fill(currentAddress, data);
-    SREG = previous_sreg; // restore previous interrupt setting
-    
-    // only need to erase if there is data already in the page that doesn't match what we're programming
-    // TODO: what about this: if (pgm_read_word(currentAddress) & data != data) { ??? should work right?
-    //if (pgm_read_word(currentAddress) != data && pgm_read_word(currentAddress) != 0xFFFF) {
-    //if ((pgm_read_word(currentAddress) & data) != data) {
-    //    fireEvent(EVENT_PAGE_NEEDS_ERASE);
-    //}
     
     // increment progmem address by one word
     currentAddress += 2;
-}
-
-// fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
-static inline void fillFlashWithVectors(void) {
-    //int16_t i;
-    //
-    // fill all or remainder of page with 0xFFFF (as if unprogrammed)
-    //for (i = currentAddress % SPM_PAGESIZE; i < SPM_PAGESIZE; i += 2) {
-    //    writeWordToPageBuffer(0xFFFF); // is where vector tables are sorted out
-    //}
-    
-    // TODO: Or more simply: 
-
-#if SPM_PAGESIZE<256
-    do {
-	    writeWordToPageBuffer(0xFFFF);
-    } while ((uchar)currentAddress % SPM_PAGESIZE);
-#else
-    do {
-	    writeWordToPageBuffer(0xFFFF);
-    } while (currentAddress % SPM_PAGESIZE);
-#endif
-
-   // writeFlashPage(); // BUG! Page 0 was written twice!
+    SREG=previous_sreg;
 }
 
 /* ------------------------------------------------------------------------ */
-
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
-    idlePolls = 0; // reset idle polls when we get usb traffic
+    ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
 	
     static uchar replyBuffer[4] = {
         (((uint)PROGMEM_SIZE) >> 8) & 0xff,
@@ -256,9 +204,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
         return 4;
         
     } else if (rq->bRequest == 1) { // write page
-        //writeLength = rq->wValue.word;
-        currentAddress = rq->wIndex.word;
-        
+        currentAddress = rq->wIndex.word;        
         return USB_NO_MSG; // hands off work to usbFunctionWrite
         
     } else if (rq->bRequest == 2) { // erase application
@@ -273,18 +219,11 @@ static uchar usbFunctionSetup(uchar data[8]) {
     return 0;
 }
 
-
 // read in a page over usb, and write it in to the flash write buffer
 static uchar usbFunctionWrite(uchar *data, uchar length) {
-    //if (length > writeLength) length = writeLength; // test for missing final page bug
-    //writeLength -= length;
-    
     do {     
         // make sure we don't write over the bootloader!
-        if (currentAddress >= BOOTLOADER_ADDRESS) {
-            //__boot_page_fill_clear();
-            break;
-        }
+        if (currentAddress >= BOOTLOADER_ADDRESS) break;
         
         writeWordToPageBuffer(*(uint16_t *) data);
         data += 2; // advance data pointer
@@ -292,8 +231,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     } while(length);
     
     // if we have now reached another page boundary, we're done
-    //uchar isLast = (writeLength == 0);
-	
 #if SPM_PAGESIZE<256
 	// Hack to reduce code size
     uchar isLast = ((((uchar)currentAddress) % SPM_PAGESIZE) == 0);
@@ -308,7 +245,6 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
 }
 
 /* ------------------------------------------------------------------------ */
-
 void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
 
 // put the word "B007" at the bottom of the stack (RAMEND - RAMEND-1)
@@ -320,38 +256,6 @@ void PushMagicWord (void) {
 }
 
 /* ------------------------------------------------------------------------ */
-
-static inline void initForUsbConnectivity(void) {
- 
-    /* enforce USB re-enumerate: */
-    usbDeviceDisconnect();  /* do this while interrupts are disabled */
-    _delay_ms(300);        // reduced to 300ms from 500ms to allow faster resetting when no usb connected
-    usbDeviceConnect();
-    usbInit();    // Initialize INT settings after reconnect
-    sei();
-}
-
-/*
-static inline void tiny85FlashInit(void) {
-    // check for erased first page (no bootloader interrupt vectors), add vectors if missing
-    // this needs to happen for usb communication to work later - essential to first run after bootloader
-    // being installed
-    
-	if(pgm_read_byte(RESET_VECTOR_OFFSET * 2+1) == 0xff) fillFlashWithVectors();   // write vectors if flash is empty
-	
-    // TODO: necessary to reset currentAddress?
-    currentAddress = 0;
-}
-*/
-
-// Write page buffer to flash. May only be called for full pages.
-
-static inline void tiny85FlashWrites(void) {
-    _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
-
-    writeFlashPage();  
-}
-
 // reset system to a normal state and launch user program
 static inline void leaveBootloader(void) {
     _delay_ms(10); // removing delay causes USB errors
@@ -359,20 +263,16 @@ static inline void leaveBootloader(void) {
     bootLoaderExit();
     cli();
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
-
-    wdt_disable();      /* Disable watchdog */
 	
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
 
     // clear magic word from bottom of stack before jumping to the app
     *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
-  //  *(uint8_t*)(RAMEND-1) = 0x00; 
     
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
-    // TODO: Test this and find out, do we need the +1 offset?
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
 		OSCCAL=stored_osc_calibration;
@@ -392,10 +292,9 @@ int main(void) {
         uint8_t prescaler_default = CLKPR;
     #endif
 
-	// MCUSR=0;    /* clean wdt reset bit if reset occured due to wdt */
-  //  wdt_disable();
-    wdt_enable(WDTO_1S);      /* enable watchdog and set to 500ms. */
-  //  tiny85FlashInit();
+    MCUSR=0;    /* need this to properly disable watchdog */
+    wdt_disable();
+    
     bootLoaderInit();
 	
 #	if AUTO_EXIT_NO_USB_MS	
@@ -413,28 +312,29 @@ int main(void) {
 #       if  LED_PRESENT
             LED_INIT();
 #       endif 
-        
-        initForUsbConnectivity();
-        
- 	
-        do {
 
+        usbDeviceDisconnect();  /* do this while interrupts are disabled */
+        _delay_ms(500);  
+        usbDeviceConnect();
+        usbInit();    // Initialize INT settings after reconnect
+        sei();        
+       	
+        do {
 			usbPoll();
-            wdt_reset();
             _delay_us(100);
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
             // and usually both of these will activate in the same loop, so host
             // needs to wait > 9ms before next usb request
             if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
-            if (isEvent(EVENT_WRITE_PAGE)) tiny85FlashWrites();
+            if (isEvent(EVENT_WRITE_PAGE)) {
+                _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
+                writeFlashPage();  
+            }
 
 #       if BOOTLOADER_CAN_EXIT            
-            if (isEvent(EVENT_EXECUTE)) { // when host requests device run uploaded program
-                break;
-            }
-#       endif
-           
+            if (isEvent(EVENT_EXECUTE)) break; // when host requests device run uploaded program
+#       endif        
             clearEvents();
 
 #       if  LED_PRESENT
