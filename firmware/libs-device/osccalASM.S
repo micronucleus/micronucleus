@@ -1,33 +1,17 @@
-/* Name: osccal.c
- * Author: Christian Starkjohann
- * Creation Date: 2008-04-10
+/* Name: osccalASM.S
+ * Author: cpldcpu@gmail.com
+ * Creation Date: 2013-11-3
  * Tabsize: 4
- * Copyright: (c) 2008 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * This Revision: $Id: osccal.c 762 2009-08-12 17:10:30Z cs $
  */
-
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#ifndef uchar
-#define uchar   unsigned char
-#endif
-
-int usbMeasureFrameLengthDecreasing(int);
-
-/* ------------------------------------------------------------------------- */
-/* ------------------------ Oscillator Calibration ------------------------- */
-/* ------------------------------------------------------------------------- */
 
 /* Calibrate the RC oscillator. Our timing reference is the Start Of Frame
  * signal (a single SE0 bit) repeating every millisecond immediately after
  * a USB RESET. 
  *
- * 
- * Optimized version by cpldcpu@gmail.com, Nov 3rd 2013.
  *
  * Benefits:
- *	  - Codesize reduced by 54 bytes.
+ *	  - Codesize reduced by 90 bytes.
  *    - Improved robustness due to removing timeout from frame length measurement and 
  *	    inserted NOP after OSCCAL writes.
  *
@@ -56,7 +40,131 @@ int usbMeasureFrameLengthDecreasing(int);
  * tested frequency setting is 192. This corresponds to ~20 Mhz core frequency and 
  * is still within spec for a 5V device.
  */
+ 
 
+#define __SFR_OFFSET 0      /* used by avr-libc's register definitions */
+#include "./usbdrv/usbdrv.h"         /* for common defs */
+
+#ifdef __IAR_SYSTEMS_ASM__
+/* Register assignments for usbMeasureFrameLengthDecreasing on IAR cc */
+/* Calling conventions on IAR:
+ * First parameter passed in r16/r17, second in r18/r19 and so on.
+ * Callee must preserve r4-r15, r24-r29 (r28/r29 is frame pointer)
+ * Result is passed in r16/r17
+ * In case of the "tiny" memory model, pointers are only 8 bit with no
+ * padding. We therefore pass argument 1 as "16 bit unsigned".
+ */
+
+//Untested
+
+#   define i		r20	
+#   define opV		r19
+#   define opD		r18
+#   define try		r21
+#   define stp		r22
+
+#   define cnt16L   r30
+#   define cnt16H   r31
+
+
+#else  /* __IAR_SYSTEMS_ASM__ */ 
+/* Register assignments for usbMeasureFrameLength on gcc */
+/* Calling conventions on gcc:
+ * First parameter passed in r24/r25, second in r22/23 and so on.
+ * Callee must preserve r1-r17, r28/r29
+ * Result is passed in r24/r25
+ */
+
+#   define i		r20	
+#   define opV		r19
+#   define opD		r18
+#   define try		r27
+#   define stp		r26
+#   define cnt16L   r24
+#   define cnt16H   r25
+#endif
+#   define cnt16    cnt16L
+
+; extern void calibrateOscillatorASM(void);
+
+.global calibrateOscillatorASM
+calibrateOscillatorASM:
+
+	cli
+	ldi		opD, 255	
+
+	ldi		try, 128	; calibration start value
+	ldi		stp, 64		; initial step width
+	ldi		i, 10		; 10 iterations
+
+usbCOloop:
+
+	out		OSCCAL, try
+	nop
+
+	; Delay values = F_CPU * 999e-6 / 5 + 0.5
+	
+#if (F_CPU == 16500000)
+	ldi		cnt16L, lo8(3297)
+	ldi		cnt16H, hi8(3297)
+#elif (F_CPU == 12800000)
+	ldi		cnt16L, lo8(2557)
+	ldi		cnt16H, hi8(2557)
+#else
+	#error "calibrateOscillatorASM: no delayvalues defined for this F_CPU setting"
+#endif
+
+usbCOWaitStrobe:            ; first wait for D- == 0 (idle strobe)
+    sbic    USBIN, USBMINUS ;
+    rjmp    usbCOWaitStrobe ;
+usbCOWaitIdle:              ; then wait until idle again
+    sbis    USBIN, USBMINUS ;1 wait for D- == 1
+    rjmp    usbCOWaitIdle   ;2
+usbCOWaitLoop:
+	sbiw	cnt16,1			;[0] [5]
+    sbic    USBIN, USBMINUS ;[2] 
+    rjmp    usbCOWaitLoop   ;[3]
+
+	sbrs	cnt16H, 7		;delay overflow?
+	rjmp	usbCOclocktoolow
+	sub		try, stp
+	neg		cnt16L
+	rjmp	usbCOclocktoohigh
+usbCOclocktoolow:
+	add		try, stp
+usbCOclocktoohigh:
+	lsr		stp
+	brne	usbCOnoneighborhoodsearch
+	cp		opD, cnt16L
+	brcs	usbCOnoimprovement
+	in		opV, OSCCAL
+	mov		opD, cnt16L
+usbCOnoimprovement:
+	ldi		stp, 1
+usbCOnoneighborhoodsearch:
+	subi	i, 1
+	brne	usbCOloop
+
+	out		OSCCAL, opV
+	nop
+	sei
+    ret
+
+#undef i
+#undef opV
+#undef opD
+#undef try
+#undef stp
+#undef cnt16
+#undef cnt16L
+#undef cnt16H
+
+/* ------------------------------------------------------------------------- */
+/* ------ Original C Implementation of improved calibrateOscillator -------- */
+/* ----------------------   for Reference only ----------------------------- */
+/* ------------------------------------------------------------------------- */
+
+#if 0
 void    calibrateOscillator(void)
 {
 	uchar       step, trialValue, optimumValue;
@@ -95,15 +203,14 @@ void    calibrateOscillator(void)
 		}
 		
 		/*
-			Halve stepwidth to perform binary search. Logical oring with 1 to ensure step is never equal to zero. 
-			This results in a neighborhood search with stepwidth 1 after binary search is finished.			
+			Halve stepwidth to perform binary search. At step=1 the mode changes to neighbourhood search.
 			Once the neighbourhood search stage is reached, x will be smaller than +-255, hence more code can be
 			saved by only working with the lower 8 bits.
 		*/
 		
 		step >>= 1;
 		
-		if (step==0)
+		if (step==0)   // Enter neighborhood search mode
 		{
 			step=1;			
 			if(xl <= optimumDev){
@@ -111,7 +218,6 @@ void    calibrateOscillator(void)
 				optimumValue = OSCCAL;
 			}
 		}
-
 	}
 
 	OSCCAL = optimumValue;
@@ -119,65 +225,4 @@ void    calibrateOscillator(void)
 	
 	sei(); // enable interrupts
 }
-
-void    calibrateOscillator_old(void)
-{
-	uchar       step, trialValue, optimumValue;
-	int         x, optimumDev, targetValue;
-	uchar		i;
-	
-	targetValue = (unsigned)((double)F_CPU * 999e-6 / 5.0 + 0.5);  /* Time is measured in multiples of 5 cycles. Target is 0.999µs */
-    optimumDev = 0x7f00;   // set to high positive value
-    optimumValue = OSCCAL; 
-	step=64;
-	trialValue = 128;
-	
-	/*
-		Performs seven iterations of a binary search (stepwidth decreasing9
-		with three additional steps of a neighborhood search (step=1, trialvalue will oscillate around target value to find optimum)
-	*/
-
-	for(i=0; i<10; i++){
-		OSCCAL = trialValue;
-		asm volatile(" NOP");
-	
-		x = usbMeasureFrameLengthDecreasing(targetValue);
-
-		if(x < 0)             /* frequency too high */
-		{
-			trialValue -= step;
-			x = -x;
-		}
-		else                  /* frequency too low */
-		{
-			trialValue += step;			
-		}
-		
-		/*
-			Halve stepwidth to perform binary search. Logical oring with 1 to ensure step is never equal to zero. 
-			This results in a neighborhood search with stepwidth 1 after binary search is finished.			
-		*/
-		
-		step >>= 1;
-		step |=1;	
-
-		if(x < optimumDev){
-			optimumDev = x;
-			optimumValue = OSCCAL;
-		}
-	}
-
-	OSCCAL = optimumValue;
-	asm volatile(" NOP");
-}
-
-/*
-Note: This calibration algorithm may try OSCCAL values of up to 192 even if
-the optimum value is far below 192. It may therefore exceed the allowed clock
-frequency of the CPU in low voltage designs!
-You may replace this search algorithm with any other algorithm you like if
-you have additional constraints such as a maximum CPU clock.
-For version 5.x RC oscillators (those with a split range of 2x128 steps, e.g.
-ATTiny25, ATTiny45, ATTiny85), it may be useful to search for the optimum in
-both regions.
-*/
+#endif

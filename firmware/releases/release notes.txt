@@ -1,3 +1,39 @@
+== 1.10rc3 - 2013-12-15 ==
+firmware:
+ o Major reorganization of the source and build system. 
+	- Used own crt1.s to create vector table in the first flash-page.
+	- Removed all functions related to vector-table writing.
+	- Refactored code and inlined all functions that were only called once.
+	- Removed redundantly defined types to avoid confusion. Only C99 types are used now.
+ o Size is now 1878 bytes, 6314 bytes user space. No changes to functionality.
+ 
+== 1.10rc2 - 2013-11-25 ==
+
+firmware:
+ o It seems that the USB specification does not define a maximum delay from device power up until
+   the host issues a bus reset. Therefore too short delays AUTO_EXIT_NO_USB_MS can lead to the 
+   bootloader exiting before enumeration on some systems. Disabled AUTO_EXIT_NO_USB_MS in default configuration. 
+    
+== 1.10rc1 - 2013-11-25 ==
+
+firmware:
+Version jump to 1.10 due to major changes in firmware by @cpldcpu.
+ o Reduced code size to below 2kb (1974 with standard configuration) by implementing oscillator 
+   calibration in assembler and various local code tweaking. See Github commit history for full details.
+   This version has 6208 bytes programmable code space.
+ o Micronucleus will now simulate an USB-disconnect when exiting the bootloader. This prevents various
+   issues with having a non-responsive USB device, including crashing the host tool. It is now possible 
+   to enter the bootloader again by resetting the device using the watchdog timer or the reset input without 
+   physically disconnecting from USB.
+ o Cleaned up bootloaderconfig.h
+ o Introduced a second time-out (AUTO_EXIT_NO_USB_MS) if no USB reset from the host is detected. This can be used
+   to quit the bootloader early if the device is not connected to USB. The bootloader will enter the user 
+   program after ~0.8s with the default settings instead of 6s when USB is connected. 
+ o Introduced optional code to flash a LED. See LED_PRESENT in bootloaderconfig.h for details.
+   Careful: Right now enabling the LED-code requires setting the bootloader base address to 0x1800 due
+   to increased code size.      
+ 
+
 == 1.06-jumper-v2 - 2013-5-20 ==
 
 firmware:

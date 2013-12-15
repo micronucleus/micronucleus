@@ -10,8 +10,11 @@ firmware/main.bin
 firmware/main.c.lst
 firmware/main.map
 firmware/main.o
+firmware/crt1.o
+firmware/main.lss
 firmware/usbdrv/oddebug.c.lst
 firmware/main.hex
 firmware/libs-device/osccal.o
+firmware/libs-device/osccalASM.o
 firmware/usbdrv/oddebug.o
 firmware/usbdrv/usbdrvasm.o

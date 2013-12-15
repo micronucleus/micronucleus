@@ -306,3 +306,24 @@ Scroll down to the bottom to see the most recent changes.
     endpoint now.
 
 * Release 2010-07-15
+
+  - Fixed bug in usbDriverSetup() which prevented descriptor sizes above 255
+    bytes.
+  - Avoid a compiler warning for unused parameter in usbHandleResetHook() when
+    compiler option -Wextra is enabled.
+  - Fixed wrong hex value for some IDs in USB-IDs-for-free.txt.
+  - Keep a define for USBATTR_BUSPOWER, although the flag does not exist
+    in USB 1.1 any more. Set it to 0. This is for backward compatibility.
+
+* Release 2012-01-09
+
+  - Define a separate (defined) type for usbMsgPtr so that projects using a
+    tiny memory model can define it to an 8 bit type in usbconfig.h. This
+    change also saves a couple of bytes when using a scalar 16 bit type.
+  - Inserted "const" keyword for all PROGMEM declarations because new GCC
+    requires it.
+  - Fixed problem with dependence of usbportability.h on usbconfig.h. This
+    problem occurred with IAR CC only.
+  - Prepared repository for github.com.
+
+* Release 2012-12-06

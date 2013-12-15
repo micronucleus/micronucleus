@@ -133,6 +133,7 @@ these macros are defined, the boot loader uses them.
  * programmer closes the connection to the device. Costs ~36 bytes.
  * Required for TINY85MODE
  */
+ 
 //#define HAVE_CHIP_ERASE             0
 /* If this macro is defined to 1, the boot loader implements the Chip Erase
  * ISP command. Otherwise pages are erased on demand before they are written.
@@ -169,12 +170,7 @@ these macros are defined, the boot loader uses them.
  * bootLoaderCondition() for efficiency.
  */
 
-
 #define JUMPER_BIT  0   /* jumper is connected to this bit in port B, active low */
-
-#ifndef MCUCSR          /* compatibility between ATMega8 and ATMega88 */
-#   define MCUCSR   MCUSR
-#endif
 
 /* tiny85 Architecture Specifics */
 #ifndef __AVR_ATtiny85__
@@ -205,17 +201,13 @@ these macros are defined, the boot loader uses them.
 #define USB_INTR_PENDING_BIT    PCIF
 #define USB_INTR_VECTOR         PCINT0_vect
 
-
-/* max 6200ms to not overflow idlePolls variable */
-#define AUTO_EXIT_MS    5000
-//#define AUTO_EXIT_CONDITION()   (idlePolls > (AUTO_EXIT_MS * 10UL))
-
+ 
 // uncomment for chips with clkdiv8 enabled in fuses
 //#define LOW_POWER_MODE 1
-// restore cpu speed calibration back to 8/16mhz instead of 8.25/16.5mhz
-//#define RESTORE_OSCCAL 1
+
 // set clock prescaler to a value before running user program
 //#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
+
 
 #ifdef BUILD_JUMPER_MODE
   #define START_JUMPER_PIN 5
@@ -234,10 +226,11 @@ these macros are defined, the boot loader uses them.
       PORTB = 0;
     }
   #endif /* __ASSEMBLER__ */
+    
 #else
   #define bootLoaderInit()
   #define bootLoaderExit()
-  #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
+  #define bootLoaderCondition()   (++idlePolls < (AUTO_EXIT_MS * 10UL))
   #if LOW_POWER_MODE
     // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
     // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
@@ -273,19 +266,73 @@ these macros are defined, the boot loader uses them.
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
-//static inline void  bootLoaderInit(void) {
-//  // DeuxVis pin-5 pullup
-//  DDRB |= _BV(DEUXVIS_JUMPER_PIN); // is an input
-//  PORTB |= _BV(DEUXVIS_JUMPER_PIN); // has pullup enabled
-//  _delay_ms(10);
-//}
-//static inline void  bootLoaderExit(void) {
-  // DeuxVis pin-5 pullup
-//  PORTB = 0;
-//  DDRB = 0;
-//}
+/*
+ * Define bootloader timeout value. 
+ * 
+ *  These will only be used if is bootLoaderCondition() evaluates idlePolls below!
+ * 
+ *  AUTO_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected.
+ *                             Set to 0 to disable
+ *                             Adds ~6 bytes.
+ *                             (This will wait for an USB SE0 reset from the host)
+ *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
+ *                             from the host tool was received.
+ *  
+ *  All values are approx. in milliseconds
+ */
+
+#define AUTO_EXIT_NO_USB_MS    0
+#define AUTO_EXIT_MS           6000
+
+ /*
+ *	Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
+ * 
+ *  OSCCAL_RESTORE            Set this to '1' to revert to factory calibration, which is 16.0 MHZ +/-10%
+ *                            Adds ~14 bytes.
+ *
+ *  OSCCAL_16.5MHz            Set this to '1' to use the same calibration as during program upload.
+ *                            This value is 16.5Mhz +/-1% as calibrated from the USB timing. Please note
+ *                            that only true if the ambient temperature does not change.
+ *                            This is the default behaviour of the Digispark.
+ *                            Adds ~38 bytes.
+ *
+ *  If both options are selected, OSCCAL_RESTORE takes precedence.
+ *
+ *  If no option is selected, OSCCAL will be left untouched and stay at either 16.0Mhz or 16.5Mhz depending
+ *  on whether the bootloader was activated. This will take the least memory. You can use this if your program
+ *  comes with its own OSCCAL calibration or an external clock source is used.
+ */
+ 
+ #define OSCCAL_RESTORE 0
+ #define OSCCAL_16_5MHz 1
+ 
+/*  
+ *  Defines handling of an indicator LED while the bootloader is active.  
+ * 
+ *  LED_PRESENT               Set this this to '1' to active all LED related code. If this is 0, all other
+ *                            defines are ignored.
+ *                            Adds 18 bytes depending on implementation.								
+ *
+ *  LED_DDR,LED_PORT,LED_PIN  Where is your LED connected?
+ *
+ *  LED_INIT                  Called once after bootloader entry
+ *  LED_EXIT                  Called once during bootloader exit
+ *  LED_MACRO                 Called in the main loop with the idle counter as parameter.
+ *                            Use to define pattern.
+ */ 
+
+#define	LED_PRESENT	    0
+
+#define	LED_DDR			DDRB
+#define LED_PORT		PORTB
+#define	LED_PIN			PB1
+
+#define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
+#define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
+#define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
 
 #endif /* __ASSEMBLER__ */
+
 
 /* ------------------------------------------------------------------------- */
 

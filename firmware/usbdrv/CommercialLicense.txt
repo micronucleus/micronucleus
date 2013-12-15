@@ -1,5 +1,5 @@
 V-USB Driver Software License Agreement
-Version 2009-08-03
+Version 2012-07-09
 
 THIS LICENSE AGREEMENT GRANTS YOU CERTAIN RIGHTS IN A SOFTWARE. YOU CAN
 ENTER INTO THIS AGREEMENT AND ACQUIRE THE RIGHTS OUTLINED BELOW BY PAYING
@@ -37,10 +37,10 @@ Product ID(s), sent to you in e-mail. These Product IDs are reserved
 exclusively for you. OBJECTIVE DEVELOPMENT has obtained USB Product ID
 ranges under the Vendor ID 5824 from Wouter van Ooijen (Van Ooijen
 Technische Informatica, www.voti.nl) and under the Vendor ID 8352 from
-Jason Kotzin (Clay Logic, www.claylogic.com). Both owners of the Vendor IDs
-have obtained these IDs from the USB Implementers Forum, Inc.
-(www.usb.org). OBJECTIVE DEVELOPMENT disclaims all liability which might
-arise from the assignment of USB IDs.
+Jason Kotzin (now flirc.tv, Inc.). Both owners of the Vendor IDs have
+obtained these IDs from the USB Implementers Forum, Inc. (www.usb.org).
+OBJECTIVE DEVELOPMENT disclaims all liability which might arise from the
+assignment of USB IDs.
 
 2.5 USB Certification. Although not part of this agreement, we want to make
 it clear that you cannot become USB certified when you use V-USB or a USB
