@@ -313,7 +313,7 @@ these macros are defined, the boot loader uses them.
  *                            defines are ignored.
  *                            Adds 18 bytes depending on implementation.								
  *
- *  LED_DDR,LED_PORT,LED_PIN  Where is you LED connected?
+ *  LED_DDR,LED_PORT,LED_PIN  Where is your LED connected?
  *
  *  LED_INIT                  Called once after bootloader entry
  *  LED_EXIT                  Called once during bootloader exit

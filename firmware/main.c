@@ -4,9 +4,11 @@
  * Creation Date: 2007-12-08
  * Tabsize: 4
  * Copyright: (c) 2012 Jenna Fox
+ * All changes past revision 1.06 authored by http://github.com/cpldcpu
  * Portions Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH (USBaspLoader)
  * Portions Copyright: (c) 2012 Louis Beaudoin (USBaspLoader-tiny85)
  * License: GNU GPL v2 (see License.txt)
+ *
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
@@ -340,10 +342,9 @@ int main(void) {
     
 #   if OSCCAL_RESTORE
 	OSCCAL=osccal_default;
-	asm volatile("nop");	// NOP to avoid CPU hickup during osccillator stabilization
+	asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
 #   endif
 
     leaveBootloader();
 }
-
 /* ------------------------------------------------------------------------ */
