@@ -1,4 +1,3 @@
-
 Micronucleus 
 =============
 Micronucleus is a bootloader designed for AVR tiny 85 chips with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. The project aims to release a 2.0kb usb bootloader, and has reached this goal with the latest release. By using the tinyvector mechanism designed by Embedded Creations in their USBaspLoader-tiny85 project, combined with the simplicity of Objective Development's bootloadHID and a unique bare bones usb protocol, Micronucleus is the smallest usb bootloader available for tiny85 at the time of writing.
@@ -16,7 +15,7 @@ This is release 1.10. Please use this at your own risk. The last official releas
 
 Changes compared to v1.06:
  • Major size optimization and code reorganization.
- • The size was reduced to 1878 bytes, allowing 256 bytes more user space.
+ • The size was reduced to 1878 bytes, allowing 6314 bytes user space (256 bytes more than in v1.06).
  • The bootloader will disconnect from USB on exit.
 
 See release notes (/firmware/releases/release notes.txt) for details.
