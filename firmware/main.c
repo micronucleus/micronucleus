@@ -30,28 +30,6 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #include "usbdrv/usbdrv.c"
 
 /* ------------------------------------------------------------------------ */
-
-#ifndef ulong
-#   define ulong    unsigned long
-#endif
-#ifndef uint
-#   define uint     unsigned int
-#endif
-
-#ifndef BOOTLOADER_CAN_EXIT
-#   define  BOOTLOADER_CAN_EXIT     0
-#endif
-
-/* allow compatibility with avrusbboot's bootloaderconfig.h: */
-#ifdef BOOTLOADER_INIT
-#   define bootLoaderInit()         BOOTLOADER_INIT
-#   define bootLoaderExit()
-#endif
-#ifdef BOOTLOADER_CONDITION
-#   define bootLoaderCondition()    BOOTLOADER_CONDITION
-#endif
-
-/* ------------------------------------------------------------------------ */
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
 // and used to in USBaspLoader-tiny85 store the checksum iirc
 #define POSTSCRIPT_SIZE 6
@@ -120,7 +98,7 @@ static inline void eraseApplication(void) {
     }
     
 	currentAddress = 0;
-    for (i=0; i<16; i++) writeWordToPageBuffer(0xFFFF);  // Write first 16 words to fill in vectors.
+    for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
     writeFlashPage();  // enables interrupts
 }
 
@@ -193,8 +171,8 @@ static uchar usbFunctionSetup(uchar data[8]) {
     ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
 	
     static uchar replyBuffer[4] = {
-        (((uint)PROGMEM_SIZE) >> 8) & 0xff,
-        ((uint)PROGMEM_SIZE) & 0xff,
+        (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
+        ((uint16_t)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
         MICRONUCLEUS_WRITE_SLEEP
     };
@@ -291,10 +269,7 @@ int main(void) {
     #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
         uint8_t prescaler_default = CLKPR;
     #endif
-
-    MCUSR=0;    /* need this to properly disable watchdog */
-    wdt_disable();
-    
+  
     bootLoaderInit();
 	
 #	if AUTO_EXIT_NO_USB_MS	
@@ -302,6 +277,10 @@ int main(void) {
 #	endif	
 
     if (bootLoaderStartCondition()) {
+    
+        MCUSR=0;    /* need this to properly disable watchdog */
+        wdt_disable();
+ 
         #if LOW_POWER_MODE
             // turn off clock prescalling - chip must run at full speed for usb
             // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
