@@ -48,7 +48,7 @@
 #endif
 
 // events system schedules functions to run in the main loop
-// static uchar events = 0; // bitmap of events to run
+// static uint8_t events = 0; // bitmap of events to run
 register uint8_t  events asm( "r1" ); // register saves many bytes 
 
 #define EVENT_ERASE_APPLICATION 1
@@ -77,8 +77,8 @@ static uint16_t currentAddress; // current progmem address, used for erasing and
 static inline void eraseApplication(void);
 static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
-static uchar usbFunctionSetup(uchar data[8]);
-static uchar usbFunctionWrite(uchar *data, uchar length);
+static uint8_t usbFunctionSetup(uint8_t data[8]);
+static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length);
 static inline void leaveBootloader(void);
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
@@ -165,11 +165,11 @@ static void writeWordToPageBuffer(uint16_t data) {
 }
 
 /* ------------------------------------------------------------------------ */
-static uchar usbFunctionSetup(uchar data[8]) {
+static uint8_t usbFunctionSetup(uint8_t data[8]) {
     usbRequest_t *rq = (void *)data;
     ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
 	
-    static uchar replyBuffer[4] = {
+    static uint8_t replyBuffer[4] = {
         (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint16_t)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
@@ -197,7 +197,7 @@ static uchar usbFunctionSetup(uchar data[8]) {
 }
 
 // read in a page over usb, and write it in to the flash write buffer
-static uchar usbFunctionWrite(uchar *data, uchar length) {
+static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
     do {     
         // make sure we don't write over the bootloader!
         if (currentAddress >= BOOTLOADER_ADDRESS) break;
@@ -210,9 +210,9 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     // if we have now reached another page boundary, we're done
 #if SPM_PAGESIZE<256
 	// Hack to reduce code size
-    uchar isLast = ((((uchar)currentAddress) % SPM_PAGESIZE) == 0);
+    uint8_t isLast = ((((uint8_t)currentAddress) % SPM_PAGESIZE) == 0);
 #else
-    uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
+    uint8_t isLast = ((currentAddress % SPM_PAGESIZE) == 0);
 #endif
 
     // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
