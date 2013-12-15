@@ -149,12 +149,12 @@ CC = avr-gcc
 DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
 # Remove the -fno-* options when you use gcc 3, it does not understand them
 # 
-CFLAGS = -g2 -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -Wall -Os  -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop  -I. -Ilibs-device -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
+CFLAGS = -g2 -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -Wall -Os  -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop  -I. -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map,--section-start=.zerotable=0
 
 
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
-OBJECTS += libs-device/osccalASM.o
+OBJECTS += osccalASM.o
 # symbolic targets:
 all: main.hex
 
