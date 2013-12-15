@@ -12,14 +12,14 @@ Micronucleus is now widely installed on over 40,000 Digispark devices from Digis
 Changes 
 =======
 
-This is release 1.10. Please use this at your own risk. The last official release for the DigiSpark is v1.06, which can be found (here)[https://github.com/micronucleus/micronucleus/tree/v1.06].
+This is release 1.10. Please use this at your own risk. The last official release for the DigiSpark is v1.06, which can be found here: https://github.com/micronucleus/micronucleus/tree/v1.06
 
 Changes compared to v1.06:
-  * Major size optimization and code reorganization.
-  * The size was reduced to 1878 bytes, allowing 256 bytes more user space.
-  * The bootloader will disconnect USB on exit.
+ • Major size optimization and code reorganization.
+ • The size was reduced to 1878 bytes, allowing 256 bytes more user space.
+ • The bootloader will disconnect from USB on exit.
 
-See (release notes)[/firmware/releases/release notes.txt] for details.
+See release notes (/firmware/releases/release notes.txt) for details.
   
 @cpldcpu - Dec 15th, 2013
 
