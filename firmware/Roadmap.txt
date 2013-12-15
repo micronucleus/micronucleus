@@ -6,7 +6,8 @@ Changes to client firmware:
 	- Only time out bootloader if program is loaded
 	- CRC check
 	- Move clean boot page to initialization
-
+	- Integrate blarrgg global optimizations
+	
 2.x Improvements (New Protocol, new command line tool)
 
 Changes to client firmware:

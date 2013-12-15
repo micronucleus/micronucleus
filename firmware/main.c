@@ -16,7 +16,6 @@
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
-
 // Use the old delay routines without NOP padding. This saves memory.
 #define __DELAY_BACKWARD_COMPATIBLE__     
 
@@ -26,7 +25,6 @@
 #include <avr/boot.h>
 #include <util/delay.h>
 
-static void leaveBootloader() __attribute__((__noreturn__));
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
@@ -50,7 +48,9 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #endif
 
 // events system schedules functions to run in the main loop
-static uchar events = 0; // bitmap of events to run
+// static uchar events = 0; // bitmap of events to run
+register uint8_t  events asm( "r1" ); // register saves many bytes 
+
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE        2
 #define EVENT_EXECUTE           4
@@ -156,10 +156,7 @@ static void writeWordToPageBuffer(uint16_t data) {
     previous_sreg=SREG;    
     cli(); // ensure interrupts are disabled
     
-    // clear page buffer as a precaution before filling the buffer on the first page
-    // in case the bootloader somehow ran after user program and there was something
-    // in the page buffer already
-    if (currentAddress == 0x0000) __boot_page_fill_clear();
+ 
     boot_page_fill(currentAddress, data);
     
     // increment progmem address by one word
@@ -235,8 +232,33 @@ void PushMagicWord (void) {
     asm volatile("push r16"::);
 }
 
+static void initHardware (void)
+{
+        MCUSR=0;    /* need this to properly disable watchdog */
+        wdt_disable();
+ 
+        #if LOW_POWER_MODE
+            // turn off clock prescalling - chip must run at full speed for usb
+            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
+            CLKPR = 1 << CLKPCE;
+            CLKPR = 0;
+        #endif
+
+        // clear page buffer as a precaution before filling the buffer on the first page
+        // in case the bootloader somehow ran after user program and there was something
+        // in the page buffer already
+        __boot_page_fill_clear();
+    
+        usbDeviceDisconnect();  /* do this while interrupts are disabled */
+        _delay_ms(500);  
+        usbDeviceConnect();
+        usbInit();    // Initialize INT settings after reconnect
+        sei();        
+}
+
 /* ------------------------------------------------------------------------ */
 // reset system to a normal state and launch user program
+static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
     _delay_ms(10); // removing delay causes USB errors
     
@@ -280,26 +302,11 @@ int main(void) {
 
     if (bootLoaderStartCondition()) {
     
-        MCUSR=0;    /* need this to properly disable watchdog */
-        wdt_disable();
- 
-        #if LOW_POWER_MODE
-            // turn off clock prescalling - chip must run at full speed for usb
-            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
-            CLKPR = 1 << CLKPCE;
-            CLKPR = 0;
-        #endif
+        initHardware();
         
 #       if  LED_PRESENT
             LED_INIT();
-#       endif 
-
-        usbDeviceDisconnect();  /* do this while interrupts are disabled */
-        _delay_ms(500);  
-        usbDeviceConnect();
-        usbInit();    // Initialize INT settings after reconnect
-        sei();        
-       	
+#       endif     	
         do {
 			usbPoll();
             _delay_us(100);
