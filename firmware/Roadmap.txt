@@ -3,10 +3,11 @@ Development Roadmap
 1.x Improvements (No protocol change, micronucleus host tool stays the same)
 
 Changes to client firmware:
-	- Only time out bootloader if program is loaded
-	- CRC check
-	- Move clean boot page to initialization
-	- Integrate blarrgg global optimizations
+	- Only time out bootloader if program is loaded - done
+	- Move clean boot page to initialization - done
+	- Integrate blargg optimizations  
+		* turned "event"-variable into register to save memory
+		* moved flash buffer clean to hardware initialization function
 	
 2.x Improvements (New Protocol, new command line tool)
 
@@ -22,6 +23,7 @@ Changes to protocol/command line tool
 	- Move writing of tiny vector table to host tool. Reset vector patching stays on client
 			-> no risk of bricking device, since bootloader will remain active
 	- erase command
+	- CRC check
 	
 			
 	

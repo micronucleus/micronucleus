@@ -25,7 +25,6 @@
 #include <avr/boot.h>
 #include <util/delay.h>
 
-
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
@@ -49,7 +48,7 @@
 
 // events system schedules functions to run in the main loop
 // static uint8_t events = 0; // bitmap of events to run
-register uint8_t  events asm( "r1" ); // register saves many bytes 
+register uint8_t  events asm( "r3" ); // register saves many bytes 
 
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE        2
@@ -156,7 +155,6 @@ static void writeWordToPageBuffer(uint16_t data) {
     previous_sreg=SREG;    
     cli(); // ensure interrupts are disabled
     
- 
     boot_page_fill(currentAddress, data);
     
     // increment progmem address by one word
@@ -260,7 +258,7 @@ static void initHardware (void)
 // reset system to a normal state and launch user program
 static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
-    _delay_ms(10); // removing delay causes USB errors
+   _delay_ms(10); // removing delay causes USB errors
     
     bootLoaderExit();
     cli();
@@ -308,28 +306,27 @@ int main(void) {
             LED_INIT();
 #       endif     	
         do {
+            clearEvents();
 			usbPoll();
             _delay_us(100);
-            
-            // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
-            // and usually both of these will activate in the same loop, so host
-            // needs to wait > 9ms before next usb request
-            if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
-            if (isEvent(EVENT_WRITE_PAGE)) {
-                _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
-                writeFlashPage();  
-            }
 
-#       if BOOTLOADER_CAN_EXIT            
-            if (isEvent(EVENT_EXECUTE)) break; // when host requests device run uploaded program
-#       endif        
-            clearEvents();
+                // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
+                // and usually both of these will activate in the same loop, so host
+                // needs to wait > 9ms before next usb request
+                if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
+                if (isEvent(EVENT_WRITE_PAGE)) {
+                    _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
+                    writeFlashPage();  
+                }
 
 #       if  LED_PRESENT
             LED_MACRO( ((uint8_t*)&idlePolls)[1] )
 #       endif
-	            
-        } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
+            
+            // Only try to execute program if reset vector is set - bootloader will not time out with erased memory
+            if (!bootLoaderCondition()&&(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)!=0xff)) fireEvent(EVENT_EXECUTE);
+	                            
+        } while(!isEvent(EVENT_EXECUTE));  /* main event loop runs as long as program is not executed */
     }
     
     // set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
