@@ -179,6 +179,10 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
         return 4;
         
     } else if (rq->bRequest == 1) { // write page
+    
+        // clear page buffer as a precaution before filling the buffer in case 
+        // a previous write operation failed and there is still something in the buffer.
+        __boot_page_fill_clear();
         currentAddress = rq->wIndex.word;        
         return USB_NO_MSG; // hands off work to usbFunctionWrite
         
@@ -242,10 +246,6 @@ static void initHardware (void)
             CLKPR = 0;
         #endif
 
-        // clear page buffer as a precaution before filling the buffer on the first page
-        // in case the bootloader somehow ran after user program and there was something
-        // in the page buffer already
-        __boot_page_fill_clear();
     
         usbDeviceDisconnect();  /* do this while interrupts are disabled */
         _delay_ms(500);  
