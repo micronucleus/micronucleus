@@ -324,7 +324,7 @@ int main(void) {
 #       endif
             
             // Only try to execute program if reset vector is set - bootloader will not time out with erased memory
-            if (!bootLoaderCondition()&&(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET)!=0xff)) fireEvent(EVENT_EXECUTE);
+            if (!bootLoaderCondition()&&(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)) fireEvent(EVENT_EXECUTE);
 	                            
         } while(!isEvent(EVENT_EXECUTE));  /* main event loop runs as long as program is not executed */
     }
