@@ -1,5 +1,15 @@
 Before contributing, please keep in mind the following:
 
+ - The development branch of micronucleus is called "testing" and contains all
+   the latest changes. You can check it out with "git checkout testing" or using
+   a graphical git tools. 
+   https://github.com/micronucleus/micronucleus/tree/testing
+ 
+ - Please commit contributions as a pull request to "testing" so there is less
+   troube with merging. Alternatively, if you only have small changes, just
+   open an issue and one of the maintainers will add it manually.
+   https://github.com/micronucleus/micronucleus/issues
+   
  - Have a look at License.txt
  - If you're going to write or change C or Ruby code, read Style Guide.txt
  - When writing commit messages, please prefix your message with one of these:
@@ -11,3 +21,4 @@ Before contributing, please keep in mind the following:
 	 This will help us all understand what your commit is primarily in relation
 	 to when reading through the commit history hunting for specific changes.
  - Even if you aren't writing code, we prefer spaces to tabs.
+ 
