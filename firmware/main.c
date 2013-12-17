@@ -92,14 +92,14 @@ static inline void eraseApplication(void) {
     // during upload
     
     uint8_t i;
-	uint16_t ptr = BOOTLOADER_ADDRESS;
+    uint16_t ptr = BOOTLOADER_ADDRESS;
     cli();
     while (ptr) {
         ptr -= SPM_PAGESIZE;        
         boot_page_erase(ptr);
     }
     
-	currentAddress = 0;
+    currentAddress = 0;
     for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
     writeFlashPage();  // enables interrupts
 }
@@ -150,7 +150,7 @@ static void writeWordToPageBuffer(uint16_t data) {
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
         data = OSCCAL;
-#endif		
+#endif      
     }
 
     previous_sreg=SREG;    
@@ -171,7 +171,7 @@ static void writeWordToPageBuffer(uint16_t data) {
 static uchar usbFunctionSetup(uchar data[8]) {
     usbRequest_t *rq = (void *)data;
     ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
-	
+    
     static uchar replyBuffer[4] = {
         (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint16_t)PROGMEM_SIZE) & 0xff,
@@ -212,7 +212,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     // if we have now reached another page boundary, we're done
 #if SPM_PAGESIZE<256
-	// Hack to reduce code size
+    // Hack to reduce code size
     uchar isLast = ((((uchar)currentAddress) % SPM_PAGESIZE) == 0);
 #else
     uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
@@ -242,8 +242,8 @@ static inline void leaveBootloader(void) {
     
     bootLoaderExit();
     cli();
-	usbDeviceDisconnect();  /* Disconnect micronucleus */
-	
+    usbDeviceDisconnect();  /* Disconnect micronucleus */
+    
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
 
@@ -255,8 +255,8 @@ static inline void leaveBootloader(void) {
     // as when it was uploaded originally
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
-		OSCCAL=stored_osc_calibration;
-		asm volatile("nop");
+        OSCCAL=stored_osc_calibration;
+        asm volatile("nop");
     }
 #endif
     // jump to application reset vector at end of flash
@@ -273,10 +273,10 @@ int main(void) {
     #endif
   
     bootLoaderInit();
-	
-#	if AUTO_EXIT_NO_USB_MS	
-	((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
-#	endif	
+    
+#   if AUTO_EXIT_NO_USB_MS  
+    ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
+#   endif   
 
     if (bootLoaderStartCondition()) {
     
@@ -299,9 +299,9 @@ int main(void) {
         usbDeviceConnect();
         usbInit();    // Initialize INT settings after reconnect
         sei();        
-       	
+        
         do {
-			usbPoll();
+            usbPoll();
             _delay_us(100);
             
             // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
@@ -321,7 +321,7 @@ int main(void) {
 #       if  LED_PRESENT
             LED_MACRO( ((uint8_t*)&idlePolls)[1] )
 #       endif
-	            
+                
         } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
     }
     
@@ -341,8 +341,8 @@ int main(void) {
 #   endif
     
 #   if OSCCAL_RESTORE
-	OSCCAL=osccal_default;
-	asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
+    OSCCAL=osccal_default;
+    asm volatile("nop");    // NOP to avoid CPU hickup during oscillator stabilization
 #   endif
 
     leaveBootloader();
