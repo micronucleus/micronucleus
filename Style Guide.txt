@@ -1,0 +1,37 @@
+Code under /firmware/, /commandline/, /upgrade/ should be written to conform to:
+
+The UNSW Computer Science C Styleguide:
+	https://wiki.cse.unsw.edu.au/info/CoreCourses/StyleGuide
+
+With the following additions:
+- Structured Programming rules can (and are frequently) broken because this is
+  often useful in getting code to compile smaller. Returns from inside loops are
+  completely fine.
+- We use spaces for code indentation - two spaces precisely. C Code in these
+  folders should never contain tab characters.
+- Width of lines should be kept under 80 chars where practical. Function calls
+  can be split over multiple lines and have following arguments indented with
+  spaces.
+- Comments on the same line as code are bad.
+- C Preprocessor directives must always be indented with code correctly. Inside
+  a function #if's and #ifdefs are indented along with code, using spaces.
+- Specifically in firmware code, any of the rules can be broken to make code
+  compile smaller, and we don't care about polluting the global namespace with
+  global variables and stuff like that.
+- Anything in a folder called 'usbdrv' is exempt from this style guide
+  -> it follows Objective Development's V-USB style.
+  -> you probably shouldn't be changing stuff in there anyway!
+  -> our usbdrv is hacked with some stuff to handle redirecting PCINT0
+
+On use of Ruby:
+
+Micronucleus uses ruby code for some little tasks, especially to aid in testing
+and building data for /upgrade/. The stuff in /ruby/ is out of date and doesn't
+work very well for uploading programs to devices. It isn't as good at recovering
+from errors as the commandline tool. It is mainly a legacy thing.
+
+The Ruby community has a long established style and all Ruby code in this
+repository should be styled in conformance with that. We use 2-space intents.
+
+We currently write for and use Ruby 2.0, but all the code should work fine with
+Ruby 1.9.2 and above, at the time of writing.

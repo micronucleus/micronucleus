@@ -1,0 +1,13 @@
+Before contributing, please keep in mind the following:
+
+ - Have a look at License.txt
+ - If you're going to write or change C or Ruby code, read Style Guide.txt
+ - When writing commit messages, please prefix your message with one of these:
+	   firmware:
+	   upgrade:
+	   commandline:
+	   ruby:
+	   tests:
+	 This will help us all understand what your commit is primarily in relation
+	 to when reading through the commit history hunting for specific changes.
+ - Even if you aren't writing code, we prefer spaces to tabs.

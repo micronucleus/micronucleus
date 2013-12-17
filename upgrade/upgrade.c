@@ -30,6 +30,7 @@ void secure_interrupt_vector_table(void);
 void write_new_bootloader(void);
 void forward_interrupt_vector_table(void);
 void beep(void);
+void reboot(void);
 
 void load_table(uint16_t address, uint16_t words[SPM_PAGESIZE / 2]);
 void erase_page(uint16_t address);
