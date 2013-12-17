@@ -151,7 +151,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
 
     // give microcontroller enough time to write this page and come back online
     delay(deviceHandle->write_sleep);
-    
+
     if (res != page_length) return -1;
   }
 
