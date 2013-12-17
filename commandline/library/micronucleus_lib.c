@@ -50,17 +50,19 @@ micronucleus* micronucleus_connect() {
         nucleus->version.minor = dev->descriptor.bcdDevice & 0xFF;
 
         if (nucleus->version.major > MICRONUCLEUS_MAX_MAJOR_VERSION) {
-	        fprintf(stderr, "Warning: device with unknown new version of Micronucleus detected.\n");
-	        fprintf(stderr, "This tool doesn't know how to upload to this new device. Updates may be available.\n");
-	        fprintf(stderr, "Device reports version as: %d.%d\n", nucleus->version.major, nucleus->version.minor);
-	        return NULL;
+          fprintf(stderr,
+                  "Warning: device with unknown new version of Micronucleus detected.\n"
+                  "This tool doesn't know how to upload to this new device. Updates may be available.\n"
+                  "Device reports version as: %d.%d\n",
+                  nucleus->version.major, nucleus->version.minor);
+          return NULL;
         }
 
         nucleus->device = usb_open(dev);
 
         // get nucleus info
         unsigned char buffer[4];
-        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
         assert(res >= 4);
 
         nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -102,7 +104,7 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
   if (res == -5 || res == -34 || res == -84) {
-    if (res = -34) {
+    if (res == -34) {
       usb_close(deviceHandle->device);
       deviceHandle->device = NULL;
     }
@@ -149,7 +151,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
 
     // give microcontroller enough time to write this page and come back online
     delay(deviceHandle->write_sleep);
-    
+
     if (res != page_length) return -1;
   }
 
