@@ -119,6 +119,7 @@ int main(int argc, char **argv) {
       use_ansi = 0;
     } else if (strcmp(argv[arg_pointer], "--erase-only") == 0) {
       erase_only = 1;
+      progress_total_steps -= 1;
     } else if (strcmp(argv[arg_pointer], "--timeout") == 0) {
       arg_pointer += 1;
       if (sscanf(argv[arg_pointer], "%d", &timeout) != 1) {
@@ -223,16 +224,6 @@ int main(int argc, char **argv) {
   }
 
   printProgress(1.0);
-
-  if (startAddress >= endAddress) {
-    printf("> No data in input file, exiting.\n");
-    return EXIT_FAILURE;
-  }
-
-  if (endAddress > my_device->flash_size) {
-    printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - my_device->flash_size);
-    return EXIT_FAILURE;
-  }
 
   setProgressData("erasing", 4);
   printf("> Erasing the memory ...\n");
