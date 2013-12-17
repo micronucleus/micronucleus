@@ -25,6 +25,7 @@
 #include <errno.h>
 #include <string.h>
 #include <stdlib.h>
+#include <time.h>
 #include "micronucleus_lib.h"
 #include "littleWire_util.h"
 
@@ -41,8 +42,8 @@ unsigned char dataBuffer[65536 + 256];    /* buffer for file data */
 /******************************************************************************
 * Function prototypes
 ******************************************************************************/
-static int parseRaw(char *hexfile, char* buffer, int *startAddr, int *endAddr);
-static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr); /* taken from bootloadHID example from obdev */
+static int parseRaw(char *hexfile, unsigned char *buffer, int *startAddr, int *endAddr);
+static int parseIntelHex(char *hexfile, unsigned char *buffer, int *startAddr, int *endAddr); /* taken from bootloadHID example from obdev */
 static int parseUntilColon(FILE *fp); /* taken from bootloadHID example from obdev */
 static int parseHex(FILE *fp, int numDigits); /* taken from bootloadHID example from obdev */
 static void printProgress(float progress);
@@ -337,7 +338,7 @@ static int parseHex(FILE *file_pointer, int num_digits) {
 /******************************************************************************/
 
 /******************************************************************************/
-static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAddr) {
+static int parseIntelHex(char *hexfile, unsigned char *buffer, int *startAddr, int *endAddr) {
   int address, base, d, segment, i, lineLen, sum;
   FILE *input;
   
@@ -383,7 +384,7 @@ static int parseIntelHex(char *hexfile, char* buffer, int *startAddr, int *endAd
 /******************************************************************************/
 
 /******************************************************************************/
-static int parseRaw(char *filename, char* data_buffer, int *start_address, int *end_address) {
+static int parseRaw(char *filename, unsigned char *data_buffer, int *start_address, int *end_address) {
   FILE *input;
   
   input = strcmp(filename, "-") == 0 ? stdin : fopen(filename, "r");
