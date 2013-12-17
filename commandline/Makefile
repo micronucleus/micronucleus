@@ -1,17 +1,17 @@
 # Makefile initially writen for Little-Wire by Omer Kilic <omerkilic@gmail.com>
-# Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application. 
+# Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application.
 
 CC=gcc
 
 # FIXME: Need to add OSX stuff
 ifeq ($(shell uname), Linux)
-	USBFLAGS = `libusb-config --cflags`
-	USBLIBS = `libusb-config --libs`
+	USBFLAGS=$(shell libusb-config --cflags)
+	USBLIBS=$(shell libusb-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)
-	USBFLAGS = `libusb-config --cflags`
-	USBLIBS = `libusb-config --libs`
+	USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
+	USBLIBS=$(shell libusb-config --libs || libusb-legacy-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D MAC_OS
 else
@@ -36,7 +36,7 @@ library: $(LWLIBS)
 
 $(LWLIBS):
 	@echo Building library: $@...
-	$(CC) $(CFLAGS) -c library/$@.c 
+	$(CC) $(CFLAGS) -c library/$@.c
 
 $(EXAMPLES): $(addsuffix .o, $(LWLIBS))
 	@echo Building example: $@...
