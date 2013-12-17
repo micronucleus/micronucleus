@@ -102,7 +102,7 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
   if (res == -5 || res == -34 || res == -84) {
-    if (res = -34) {
+    if (res == -34) {
       usb_close(deviceHandle->device);
       deviceHandle->device = NULL;
     }
