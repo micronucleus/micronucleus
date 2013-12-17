@@ -192,8 +192,7 @@ int main(int argc, char **argv) {
 
   int startAddress = 1, endAddress = 0;
 
-  if (!erase_only)
-  {
+  if (!erase_only) {
     setProgressData("parsing", 3);
     printProgress(0.0);
     memset(dataBuffer, 0xFF, sizeof(dataBuffer));
@@ -257,8 +256,7 @@ int main(int argc, char **argv) {
   }
   printProgress(1.0);
 
-  if (!erase_only)
-  {
+  if (!erase_only) {
     printf("> Starting to upload ...\n");
     setProgressData("writing", 5);
     res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
@@ -270,7 +268,6 @@ int main(int argc, char **argv) {
   }
 
   if (run) {
-
     printf("> Starting the user app ...\n");
     setProgressData("running", 6);
     printProgress(0.0);
