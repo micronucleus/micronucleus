@@ -44,7 +44,7 @@
 #define MICRONUCLEUS_VENDOR_ID   0x16D0
 #define MICRONUCLEUS_PRODUCT_ID  0x0753
 #define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
-#define MICRONUCLEUS_MAX_MAJOR_VERSION 1
+#define MICRONUCLEUS_MAX_MAJOR_VERSION 2
 /*******************************************************************************/
 
 /********************************************************************************
