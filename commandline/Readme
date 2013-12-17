@@ -6,7 +6,7 @@ three. To make and install, do the regular 'make; sudo make install' on unixes.
 On windows just 'make' with mingw and do whatever people do with windows exes.
 
 Usage on Ubuntu:
-	sudo micronucleus --run name_of_the_file.hex
+  micronucleus --run name_of_the_file.hex
 Usage on Mac:
   micronucleus --run name_of_the_file.hex
 Usage on Windows
