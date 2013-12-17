@@ -284,20 +284,23 @@ static inline void leaveBootloader(void) {
 }
 
 int main(void) {
-    /* initialize  */
-    #if OSCCAL_RESTORE
-        osccal_default = OSCCAL;
-    #endif
-    #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
-        uint8_t prescaler_default = CLKPR;
-    #endif
-  
-    bootLoaderInit();
-	
-#	if AUTO_EXIT_NO_USB_MS	
-	((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
-#	endif	
 
+  /* initialize  */
+  #if OSCCAL_RESTORE
+    osccal_default = OSCCAL;
+  #endif
+  
+  #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
+    uint8_t prescaler_default = CLKPR;
+  #endif
+  
+  bootLoaderInit();
+	
+  #if AUTO_EXIT_NO_USB_MS	
+    ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
+  #endif	
+
+  
     if (bootLoaderStartCondition()) {
     
         initHardware();
@@ -319,14 +322,15 @@ int main(void) {
                     writeFlashPage();  
                 }
 
-#       if  LED_PRESENT
-            LED_MACRO( ((uint8_t*)&idlePolls)[1] )
-#       endif
+      #if  LED_PRESENT
+        LED_MACRO( ((uint8_t*)&idlePolls)[1] )
+      #endif
             
-            // Only try to execute program if reset vector is set - bootloader will not time out with erased memory
-            if (!bootLoaderCondition()&&(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)) fireEvent(EVENT_EXECUTE);
-	                            
-        } while(!isEvent(EVENT_EXECUTE));  /* main event loop runs as long as program is not executed */
+            // Try to execute program if bootloader exit condition is met
+            if (!bootLoaderCondition()) fireEvent(EVENT_EXECUTE);
+
+              /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
+        } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
     }
     
     // set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
@@ -340,15 +344,15 @@ int main(void) {
         #endif
     #endif
     
-#   if  LED_PRESENT
-        LED_EXIT();
-#   endif
+  #if LED_PRESENT
+    LED_EXIT();
+  #endif
     
-#   if OSCCAL_RESTORE
-	OSCCAL=osccal_default;
-	asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
-#   endif
+  #if OSCCAL_RESTORE
+    OSCCAL=osccal_default;
+    asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
+  #endif
 
-    leaveBootloader();
+  leaveBootloader();
 }
 /* ------------------------------------------------------------------------ */
