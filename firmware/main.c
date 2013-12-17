@@ -11,8 +11,8 @@
  *
  */
  
-#define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 10
+#define MICRONUCLEUS_VERSION_MAJOR 2
+#define MICRONUCLEUS_VERSION_MINOR 0
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
@@ -126,6 +126,7 @@ static void writeFlashPage(void) {
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
     uint8_t previous_sreg;
+        if (currentAddress >= BOOTLOADER_ADDRESS) return;
     
     // first two interrupt vectors get replaced with a jump to the bootloader's vector table
     // remember vectors or the tinyvector table 
@@ -178,26 +179,25 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
         usbMsgPtr = replyBuffer;
         return 4;
         
-    } else if (rq->bRequest == 1) { // write page
-    
+    } else if (rq->bRequest == 1) { // initialize write page    
         // clear page buffer as a precaution before filling the buffer in case 
         // a previous write operation failed and there is still something in the buffer.
         __boot_page_fill_clear();
         currentAddress = rq->wIndex.word;        
-        return USB_NO_MSG; // hands off work to usbFunctionWrite
-        
     } else if (rq->bRequest == 2) { // erase application
         fireEvent(EVENT_ERASE_APPLICATION);
-        
+    } else if (rq->bRequest == 3) { // Write data
+        writeWordToPageBuffer(rq->wValue.word);
+        writeWordToPageBuffer(rq->wIndex.word);
+        uint8_t isLast = ((((uint8_t)currentAddress) % SPM_PAGESIZE) == 0);
+        if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page        
     } else { // exit bootloader
-#       if BOOTLOADER_CAN_EXIT
-            fireEvent(EVENT_EXECUTE);
-#       endif
+        fireEvent(EVENT_EXECUTE);
     }
     
     return 0;
 }
-
+#if 0
 // read in a page over usb, and write it in to the flash write buffer
 static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
     do {     
@@ -222,7 +222,7 @@ static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
     
     return isLast; // let vusb know we're done with this request
 }
-
+#endif
 /* ------------------------------------------------------------------------ */
 void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
 
