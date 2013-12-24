@@ -598,9 +598,25 @@ static inline void leaveBootloader(void)
 	__app_reset();
 }
 
+/*
+ * wdt_disable() from avr-libc does not seem to work on tiny-167 and maybe
+ * others, the following is straight from the tiny85 datasheet, but also works
+ * with the 167.
+ */
+static inline void wdt_disable_2()
+{
+	wdt_reset();
+	/* Clear WDRF in MCUSR */
+	MCUSR = 0x00;
+	/* Write logical one to WDCE and WDE */
+	WDTCR |= _BV(WDCE) | _BV(WDE);
+	/* Turn off WDT */
+	WDTCR = 0x00;
+}
+
 int main(void)
 {
-	wdt_disable();  /* main app may have enabled watchdog */
+	wdt_disable_2();  /* main app may have enabled watchdog */
 
 	store_osccal();
 	store_clkpr();
