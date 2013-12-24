@@ -1,0 +1,6 @@
+
+include $(SRCDIR)/hardware/t167-c12.mk
+
+MICRONUCLEUS_WIRING = 1
+DEFINES += -DENABLE_WDT
+

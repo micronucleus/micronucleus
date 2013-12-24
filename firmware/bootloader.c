@@ -75,6 +75,7 @@
 #include "bootloader-restore-osccal.h"
 #include "bootloader-jumper-mode.h"
 #include "bootloader-led.h"
+#include "bootloader-enable-wdt.h"
 
 /* ------------------------------------------------------------------------ */
 
@@ -593,6 +594,8 @@ static inline void leaveBootloader(void)
 	restore_jumper();
 	restore_clkpr();
 	restore_osccal();
+
+	enable_wdt();
 
 	// jump to application reset vector at end of flash
 	__app_reset();

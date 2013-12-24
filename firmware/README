@@ -119,4 +119,21 @@ Hardware/Application specific
 
     Note: If this precondition is not met, the application will crash. Use with care.
 
+  * ENABLE_WDT
+
+    Enable the watchdog timer when leaving the bootloader.
+
+    Neither the bootloader, nor vUSB do check for CRC errors on received USB
+    frames, thus there is a certain possibility that we write invalid code into
+    the flash. If that happens, manual intervention may be needed to get the device
+    back into the bootloader, so that the user can fix the situation.
+
+    The watchdog timer can help here, since the broken application is likely not able
+    to properly reset the WDT in time, which then would cause a reset, back into
+    the booloader.
+
+    A better method would be to verify the applications consistency before
+    leaving the bootloader, which is costly (in terms of code size) and would
+    probably break the protocol).
+
 
