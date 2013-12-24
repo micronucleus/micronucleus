@@ -11,6 +11,11 @@
 #ifndef __usbconfig_h_included__
 #define __usbconfig_h_included__
 
+#if __GNUC__ > 4 || (__GNUC__ == 4 && (__GNUC_MINOR__ > 7 ))
+#define	USB_CFG_USE_SWITCH_STATEMENT 1
+#endif
+
+
 /* YOU SHOULD NOT NEED TO MODIFY THIS FILE! All configurations are supposed
  * to go into bootloaderconfig.h!
  */

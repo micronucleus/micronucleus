@@ -416,10 +416,9 @@ static void writeWordToPageBuffer(uint16_t data)
 	sreg = SREG;
 	cli();
 	boot_page_fill(currentAddress, data);
-	SREG = sreg;
-
 	// increment progmem address by one word
 	currentAddress += 2;
+	SREG = sreg;
 }
 
 // fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
