@@ -37,40 +37,48 @@ void mnflash_hexdump_header()
 void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 {
 	int addr = start;
-	unsigned char ascii[17];
+	char ascii[17];
+	char linebuf[81];
 	int first = 1;
 
+	memset(linebuf, 0, sizeof(linebuf));
 	memset(ascii,' ',sizeof(ascii) - 1);
 	ascii[sizeof(ascii) - 1] = 0;
 
 	if ( (start % 16) != 0 ) {
 		addr = ((start / 16) * 16);
 
-		mnflash_msg( "%4.4x ", addr);
+		snprintf(linebuf, sizeof(linebuf), "%4.4x ", addr);
 		while ( addr < start ) {
 			if (( addr % 8) == 0 )
-				mnflash_msg(" ");
-			mnflash_msg( ".. ");
+				strncat(linebuf," ",sizeof(linebuf) - strlen(linebuf) - 1);
+			strncat(linebuf,"..",sizeof(linebuf) - strlen(linebuf) - 1 );
 			addr ++;
 		}
 	}
 
 	while ( addr - start < buflen ) {
 		unsigned char c = buffer[addr - start];
+		char bb[4];
 
 		if ( (addr % 16) == 0 ) {
 			if ( first ) {
-				mnflash_msg("%4.4x  ", addr);
+				snprintf(linebuf, sizeof(linebuf), "%4.4x ", addr);
 			} else {
-				mnflash_msg( "  %s%4.4x  ", ascii, addr);
+				strncat(linebuf, " ",   sizeof(linebuf) - strlen(linebuf) - 1);
+				strncat(linebuf, ascii, sizeof(linebuf) - strlen(linebuf) - 1);
+				mnflash_msg(linebuf);
+				memset(linebuf, 0, sizeof(linebuf));
+				snprintf(linebuf, sizeof(linebuf), "%4.4x ", addr);
 			}
 			memset(ascii,' ',sizeof(ascii) - 1);
 		}
 		else if ( (addr % 8) == 0 ) {
-			mnflash_msg(" ");
+			strncat(linebuf, " ", sizeof(linebuf) - strlen(linebuf) - 1);
 		}
 
-		mnflash_msg( "%2.2x ", c );
+		snprintf(bb, sizeof(bb), "%2.2x ", c );
+		strncat(linebuf, bb, sizeof(linebuf) - strlen(linebuf) - 1);
 		if ( isprint(c) ) {
 			ascii[addr % 16] = c;
 		} else {
@@ -81,10 +89,12 @@ void mnflash_hexdump(int start, uint8_t * buffer, size_t buflen)
 	}
 
 	while ( (addr % 16) != 0 ) {
-		mnflash_msg( "   ");
+		strncat(linebuf,"   ",sizeof(linebuf) - strlen(linebuf) - 1);
 		addr ++;
 	}
 
-	mnflash_msg( "   %s", ascii);
+	strncat(linebuf, " ", sizeof(linebuf) - strlen(linebuf) - 1);
+	strncat(linebuf, ascii, sizeof(linebuf) - strlen(linebuf) - 1);
+	mnflash_msg(linebuf);
 }
 
