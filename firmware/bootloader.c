@@ -310,12 +310,13 @@ static inline void eraseApplication(void)
 	// while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
 	// to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
 	// during upload
-	uint8_t currentPage = (BOOTLOADER_ADDRESS + TINY_TABLE_LEN) / SPM_PAGESIZE;
+
+	uint16_t currentPage = (BOOTLOADER_ADDRESS + TINY_TABLE_LEN);
 	cli();
 	while (currentPage) {
-		currentPage --;
+		currentPage -= SPM_PAGESIZE;
 
-		boot_page_erase(currentPage * SPM_PAGESIZE);
+		boot_page_erase(currentPage);
 		boot_spm_busy_wait();
 	}
 
@@ -567,7 +568,7 @@ static inline void leaveBootloader(void)
 
 	// clear magic word from bottom of stack before jumping to the app
 	*(uint8_t *)(RAMEND) = 0x00;
-	*(uint8_t *)(RAMEND - 1) = 0x00;
+	*(uint16_t *)(RAMEND - 1) = 0x00;
 
 #ifndef SKIP_OSCCAL_FROM_FLASH
 	// adjust clock to previous calibration value, so user program always starts with same calibration
