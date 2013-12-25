@@ -163,11 +163,9 @@
  * for each control- and out-endpoint to check for duplicate packets.
  */
 #ifndef WITH_CRYSTAL
-#  define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   1
 #  include "osccal.h"
-#else
-#  define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
+#define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */

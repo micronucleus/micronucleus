@@ -48,9 +48,7 @@
 #  define MICRONUCLEUS_WIRING	255
 #endif
 
-#ifndef WITH_CRYSTAL
-#    include <libs-device/osccal.c>
-#else
+#ifdef WITH_CRYSTAL
 #  undef RESTORE_OSCCAL
 #endif
 

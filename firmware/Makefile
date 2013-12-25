@@ -58,9 +58,9 @@ LDFLAGS = \
 	-Wl,--relax \
 	-Wl,--gc-sections
 
-BOOTLOADER_SOURCES =  usbdrv/usbdrvasm.S bootloader.c bootloader-vectors.S
+BOOTLOADER_SOURCES =  usbdrv/usbdrvasm.S libs-device/osccalASM.S bootloader.c bootloader-vectors.S
 
-BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o bootloader.o bootloader-vectors.o
+BOOTLOADER_OBJECTS =  usbdrv/usbdrvasm.o libs-device/osccalASM.o bootloader.o bootloader-vectors.o
 
 BOOTLOADER_LDFLAGS= \
 	-nostartfiles \

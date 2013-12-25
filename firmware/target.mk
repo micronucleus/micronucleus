@@ -19,6 +19,7 @@ install: $(OBJDIRS)
 $(OBJDIRS):
 	+@[ -d $@ ] || mkdir -p $@
 	+@[ -d $@/usbdrv ] || mkdir -p $@/usbdrv
+	+@[ -d $@/libs-device ] || mkdir -p $@/libs-device
 	+@echo "######################## $@ ##########################"
 	+@$(MAKETARGET)
 
