@@ -421,12 +421,20 @@ static void writeWordToPageBuffer(uint16_t data)
 	SREG = sreg;
 }
 
+#if SPM_PAGESIZE > 256
+static inline uint16_t currentPageOffset( void ) {
+#else
+static inline uint8_t currentPageOffset( void ) {
+#endif
+	return (currentAddress % SPM_PAGESIZE);
+}
+
 // fills the rest of this page with vectors - interrupt vector or tinyvector tables where needed
 static void fillFlashWithVectors(void)
 {
 	do {
 		writeWordToPageBuffer(0xFFFF);
-	} while (currentAddress % SPM_PAGESIZE);
+	} while (currentPageOffset());
 
 	writeFlashPage();
 }
@@ -526,7 +534,7 @@ static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length)
 	} while (length);
 
 	// if we have now reached another page boundary, we're done
-	uint8_t isLast = ((currentAddress % SPM_PAGESIZE) == 0);
+	uint8_t isLast = (currentPageOffset() == 0);
 	// definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
 	if (isLast) fireEvent(EVENT_WRITE_PAGE);        // ask runloop to write our page
 
@@ -551,7 +559,7 @@ static inline void tiny85FlashWrites(void)
 	// write page to flash, interrupts will be disabled for > 4.5ms including erase
 
 	// TODO: Do we need this? Wouldn't the programmer always send full sized pages?
-	if (currentAddress % SPM_PAGESIZE)      // when we aren't perfectly aligned to a flash page boundary
+	if (currentPageOffset())		// when we aren't perfectly aligned to a flash page boundary
 		fillFlashWithVectors();         // fill up the rest of the page with 0xFFFF (unprogrammed) bits
 	else
 		writeFlashPage();               // otherwise just write it
