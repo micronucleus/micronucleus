@@ -15,6 +15,7 @@
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
 
+#define __DELAY_BACKWARD_COMPATIBLE__	1
 
 #include <avr/io.h>
 #include <avr/interrupt.h>
