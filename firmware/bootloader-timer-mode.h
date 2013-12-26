@@ -18,11 +18,6 @@
 
 uint16_t idlePolls = 0;
 
-static inline void incr_idle_polls(void)
-{
-	idlePolls ++;
-}
-
 static inline void reset_idle_polls(void)
 {
 	idlePolls = 0;
@@ -37,11 +32,10 @@ static inline void two_more_idle_polls(void)
 #define bootLoaderStartCondition() 1
 
 #undef  bootLoaderCondition
-#define bootLoaderCondition() (idlePolls < (AUTO_EXIT_MS * 10UL))
+#define bootLoaderCondition() (++idlePolls < (AUTO_EXIT_MS * 10UL))
 
 #else
 
-#define incr_idle_polls()
 #define reset_idle_polls()
 #define two_more_idle_polls()
 

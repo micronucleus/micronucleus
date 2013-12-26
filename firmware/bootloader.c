@@ -652,7 +652,6 @@ int main(void)
 		do {
 			usbPoll();
 			_delay_us(100);
-			incr_idle_polls();
 
 			// these next two freeze the chip for ~ 4.5ms, breaking usb protocol
 			// and usually both of these will activate in the same loop, so host
