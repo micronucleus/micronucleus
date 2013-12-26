@@ -20,11 +20,11 @@ firmwaredir=${datarootdir}/micronucleus
 
 ALL_HARDWARE=$(basename $(notdir $(wildcard hardware/*.mk)))
 
+DEFINES := $(EXTRA_DEFINES)
+
 ifeq (,$(filter target-%,$(notdir $(CURDIR))))
 include target.mk
 else
-
-DEFINES :=
 
 include $(SRCDIR)/hardware/$(HARDWARE).mk
 
