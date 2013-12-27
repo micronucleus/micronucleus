@@ -60,8 +60,9 @@ register uint8_t  events asm( "r3" ); // register saves many bytes
 #define clearEvents()    events = 0
 
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
-#define sei() __asm__ __volatile__ ("sei")
-#define cli() __asm__ __volatile__ ("cli")
+#define sei() asm volatile("sei")
+#define cli() asm volatile("cli")
+#define nop() asm volatile("nop")
 
 uint16_t idlePolls = 0; // how long have we been idle?
 
@@ -276,7 +277,7 @@ static inline void leaveBootloader(void) {
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
 		OSCCAL=stored_osc_calibration;
-		asm volatile("nop");
+		nop();
     }
 #endif
     // jump to application reset vector at end of flash
@@ -350,7 +351,7 @@ int main(void) {
     
   #if OSCCAL_RESTORE
     OSCCAL=osccal_default;
-    asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
+    nop();	// NOP to avoid CPU hickup during oscillator stabilization
   #endif
 
   leaveBootloader();
