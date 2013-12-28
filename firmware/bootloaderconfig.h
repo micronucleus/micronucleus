@@ -115,81 +115,21 @@ these macros are defined, the boot loader uses them.
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
 
-//#define HAVE_EEPROM_PAGED_ACCESS    0
-/* If HAVE_EEPROM_PAGED_ACCESS is defined to 1, page mode access to EEPROM is
- * compiled in. Whether page mode or byte mode access is used by AVRDUDE
- * depends on the target device. Page mode is only used if the device supports
- * it, e.g. for the ATMega88, 168 etc. You can save quite a bit of memory by
- * disabling page mode EEPROM access. Costs ~ 138 bytes.
- */
-//#define HAVE_EEPROM_BYTE_ACCESS     0
-/* If HAVE_EEPROM_BYTE_ACCESS is defined to 1, byte mode access to EEPROM is
- * compiled in. Byte mode is only used if the device (as identified by its
- * signature) does not support page mode for EEPROM. It is required for
- * accessing the EEPROM on the ATMega8. Costs ~54 bytes.
- */
 #define BOOTLOADER_CAN_EXIT         1
 /* If this macro is defined to 1, the boot loader will exit shortly after the
  * programmer closes the connection to the device. Costs ~36 bytes.
  * Required for TINY85MODE
  */
  
-//#define HAVE_CHIP_ERASE             0
-/* If this macro is defined to 1, the boot loader implements the Chip Erase
- * ISP command. Otherwise pages are erased on demand before they are written.
- */
-//#define SIGNATURE_BYTES             0x1e, 0x93, 0x0b, 0     /* ATtiny85 */
-/* This macro defines the signature bytes returned by the emulated USBasp to
- * the programmer software. They should match the actual device at least in
- * memory size and features. If you don't define this, values for ATMega8,
- * ATMega88, ATMega168 and ATMega328 are guessed correctly.
- */
-
-/* The following block guesses feature options so that the resulting code
- * should fit into 2k bytes boot block with the given device and clock rate.
- * Activate by passing "-DUSE_AUTOCONFIG=1" to the compiler.
- * This requires gcc 3.4.6 for small enough code size!
- */
-// #if USE_AUTOCONFIG
-// #   undef HAVE_EEPROM_PAGED_ACCESS
-// #   define HAVE_EEPROM_PAGED_ACCESS     (USB_CFG_CLOCK_KHZ >= 16000)
-// #   undef HAVE_EEPROM_BYTE_ACCESS
-// #   define HAVE_EEPROM_BYTE_ACCESS      1
-// #   undef BOOTLOADER_CAN_EXIT
-// #   define BOOTLOADER_CAN_EXIT          1
-// #   undef SIGNATURE_BYTES
-// #endif /* USE_AUTOCONFIG */
-
-/* ------------------------------------------------------------------------- */
-
-/* Example configuration: Port D bit 3 is connected to a jumper which ties
- * this pin to GND if the boot loader is requested. Initialization allows
- * several clock cycles for the input voltage to stabilize before
- * bootLoaderCondition() samples the value.
- * We use a function for bootLoaderInit() for convenience and a macro for
- * bootLoaderCondition() for efficiency.
- */
-
-#define JUMPER_BIT  0   /* jumper is connected to this bit in port B, active low */
+/* ----------------------- Optional MCU Description ------------------------ */
 
 /* tiny85 Architecture Specifics */
 #ifndef __AVR_ATtiny85__
 #  error "uBoot is only designed for attiny85"
 #endif
-
 #define TINY85MODE
 
-// number of bytes before the boot loader vectors to store the tiny application vector table
-#define TINYVECTOR_RESET_OFFSET     4
-#define TINYVECTOR_USBPLUS_OFFSET   2
-#define TINYVECTOR_OSCCAL_OFFSET    6
-
-#define RESET_VECTOR_OFFSET         0
-#define USBPLUS_VECTOR_OFFSET       2
-
-//#if BOOTLOADER_CAN_EXIT == 0
-//#    define BOOTLOADER_CAN_EXIT 1
-//#endif
+/* ------------- Set up interrupt configuration (CPU specific) -------------- */
 
 // setup interrupt for Pin Change for D+
 #define USB_INTR_CFG            PCMSK
@@ -201,12 +141,27 @@ these macros are defined, the boot loader uses them.
 #define USB_INTR_PENDING_BIT    PCIF
 #define USB_INTR_VECTOR         PCINT0_vect
 
- 
-// uncomment for chips with clkdiv8 enabled in fuses
-//#define LOW_POWER_MODE 1
+// Microcontroller Vectortable entries in the flash
+#define RESET_VECTOR_OFFSET         0
+#define USBPLUS_VECTOR_OFFSET       2
 
-// set clock prescaler to a value before running user program
-//#define SET_CLOCK_PRESCALER _BV(CLKPS0) /* divide by 2 for 8mhz */
+
+// number of bytes before the boot loader vectors to store the tiny application vector table
+#define TINYVECTOR_RESET_OFFSET     4
+#define TINYVECTOR_USBPLUS_OFFSET   2
+#define TINYVECTOR_OSCCAL_OFFSET    6
+
+
+
+/* Example configuration: Port D bit 3 is connected to a jumper which ties
+ * this pin to GND if the boot loader is requested. Initialization allows
+ * several clock cycles for the input voltage to stabilize before
+ * bootLoaderCondition() samples the value.
+ * We use a function for bootLoaderInit() for convenience and a macro for
+ * bootLoaderCondition() for efficiency.
+ */
+
+#define JUMPER_BIT  0   /* jumper is connected to this bit in port B, active low */
 
 
 #ifdef BUILD_JUMPER_MODE
@@ -241,28 +196,7 @@ these macros are defined, the boot loader uses them.
   #endif
 #endif
 
-/* ----------------------- Optional MCU Description ------------------------ */
-
-/* The following configurations have working defaults in usbdrv.h. You
- * usually don't need to set them explicitly. Only if you want to run
- * the driver on a device which is not yet supported or with a compiler
- * which is not fully supported (such as IAR C) or if you use a different
- * interrupt than INT0, you may have to define some of these.
- */
-/* #define USB_INTR_CFG            MCUCR */
-/* #define USB_INTR_CFG_SET        ((1 << ISC00) | (1 << ISC01)) */
-/* #define USB_INTR_CFG_CLR        0 */
-/* #define USB_INTR_ENABLE         GIMSK */
-/* #define USB_INTR_ENABLE_BIT     INT0 */
-/* #define USB_INTR_PENDING        GIFR */
-/* #define USB_INTR_PENDING_BIT    INTF0 */
-/* #define USB_INTR_VECTOR         INT0_vect */
-
-// todo: change to pin 5
-//#define DEUXVIS_JUMPER_PIN 5
-//#define digitalRead(pin) ((PINB >> pin) & 0b00000001)
-//#define bootLoaderStartCondition() (!digitalRead(DEUXVIS_JUMPER_PIN))
-//#define bootLoaderCondition()   (1)
+/* ------------------------------------------------------------------------- */
 
 #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
@@ -332,6 +266,8 @@ these macros are defined, the boot loader uses them.
 #define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
 
 #endif /* __ASSEMBLER__ */
+
+
 
 
 /* ------------------------------------------------------------------------- */
