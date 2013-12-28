@@ -326,7 +326,8 @@ int main(void) {
       #if  LED_PRESENT
         LED_MACRO( ((uint8_t*)&idlePolls)[1] )
       #endif
-            
+      
+            idlePolls++;
             // Try to execute program if bootloader exit condition is met
             if (!bootLoaderCondition()) fireEvent(EVENT_EXECUTE);
 

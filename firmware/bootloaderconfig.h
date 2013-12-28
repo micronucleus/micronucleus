@@ -141,16 +141,14 @@ these macros are defined, the boot loader uses them.
 #define USB_INTR_PENDING_BIT    PCIF
 #define USB_INTR_VECTOR         PCINT0_vect
 
-// Microcontroller Vectortable entries in the flash
+// Microcontroller vectortable entries in the flash
 #define RESET_VECTOR_OFFSET         0
 #define USBPLUS_VECTOR_OFFSET       2
-
 
 // number of bytes before the boot loader vectors to store the tiny application vector table
 #define TINYVECTOR_RESET_OFFSET     4
 #define TINYVECTOR_USBPLUS_OFFSET   2
 #define TINYVECTOR_OSCCAL_OFFSET    6
-
 
 
 /* Example configuration: Port D bit 3 is connected to a jumper which ties
@@ -185,7 +183,7 @@ these macros are defined, the boot loader uses them.
 #else
   #define bootLoaderInit()
   #define bootLoaderExit()
-  #define bootLoaderCondition()   (++idlePolls < (AUTO_EXIT_MS * 10UL))
+  #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
   #if LOW_POWER_MODE
     // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
     // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
