@@ -239,7 +239,12 @@ static void initHardware (void)
   MCUSR=0;    
   WDTCR = 1<<WDCE | 1<<WDE;
   WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
-  
+
+  /* initialize  */
+  #if OSCCAL_RESTORE
+    osccal_default = OSCCAL;
+  #endif
+    
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(500);  
   usbDeviceConnect();
@@ -252,7 +257,6 @@ static void initHardware (void)
 // reset system to a normal state and launch user program
 static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
- _delay_ms(10); // removing delay causes USB errors
   
   bootLoaderExit();
   cli();
@@ -264,25 +268,24 @@ static inline void leaveBootloader(void) {
   // clear magic word from bottom of stack before jumping to the app
   *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
     
-#if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
-  // adjust clock to previous calibration value, so user program always starts with same calibration
-  // as when it was uploaded originally
-  unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
-  if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
-  OSCCAL=stored_osc_calibration;
-  nop();
-  }
-#endif
+  #if OSCCAL_RESTORE
+    OSCCAL=osccal_default;
+    nop();	// NOP to avoid CPU hickup during oscillator stabilization
+  #elif OSCCAL_16_5MHz   
+    // adjust clock to previous calibration value, so user program always starts with same calibration
+    // as when it was uploaded originally
+    unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
+    if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
+      OSCCAL=stored_osc_calibration;
+      nop();
+    }
+  #endif
+
   // jump to application reset vector at end of flash
   asm volatile ("rjmp __vectors - 4");
 }
 
 int main(void) {
-
-  /* initialize  */
-  #if OSCCAL_RESTORE
-    osccal_default = OSCCAL;
-  #endif
     
   bootLoaderInit();
 	
@@ -301,34 +304,26 @@ int main(void) {
       
       clearEvents();
       usbPoll();
-
-
-      // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
-      // and usually both of these will activate in the same loop, so host
-      // needs to wait > 9ms before next usb request
-      if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
-      if (isEvent(EVENT_WRITE_PAGE)) {
-          _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
-          writeFlashPage();  
-      }
-
-      LED_MACRO( ((uint8_t*)&idlePolls)[1] );
+           
       idlePolls++;
       
       // Try to execute program if bootloader exit condition is met
       if (AUTO_EXIT_MS&&(idlePolls>AUTO_EXIT_MS*10L)) fireEvent(EVENT_EXECUTE);
+      LED_MACRO( ((uint8_t*)&idlePolls)[1] );
 
+      // Wait for USB traffic to finish before a blocking event is executed
+      // All events will render the MCU unresponsive to USB traffic for a while.
+      if (events) _delay_ms(2);
+
+      if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
+      if (isEvent(EVENT_WRITE_PAGE))        writeFlashPage();  
+ 
       /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
     } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
+
+    LED_EXIT();
   }
     
-  LED_EXIT();
-    
-  #if OSCCAL_RESTORE
-    OSCCAL=osccal_default;
-    nop();	// NOP to avoid CPU hickup during oscillator stabilization
-  #endif
-
   leaveBootloader();
 }
 /* ------------------------------------------------------------------------ */

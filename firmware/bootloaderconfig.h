@@ -142,8 +142,8 @@ these macros are defined, the boot loader uses them.
 /*
  *  Define Bootloader entry condition
  * 
- *  If the entry condition is not met, the bootloader will not be activated and the userprogram
- *  is executed directly after a reset. If no userprogram has been loaded, the bootloader
+ *  If the entry condition is not met, the bootloader will not be activated and the user program
+ *  is executed directly after a reset. If no user program has been loaded, the bootloader
  *  is always active.
  * 
  *  ENTRY_ALWAYS        Always activate the bootloader after reset. Requires the least
