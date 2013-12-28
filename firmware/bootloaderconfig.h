@@ -146,17 +146,17 @@ these macros are defined, the boot loader uses them.
  *  is executed directly after a reset. If no userprogram has been loaded, the bootloader
  *  is always active.
  * 
- *  ENTRY_ALWAYS        Always activate the bootloader after reset. Required the least
+ *  ENTRY_ALWAYS        Always activate the bootloader after reset. Requires the least
  *                      amount of code.
  *
  *  ENTRY_WATCHDOG      Activate the bootloader after a watchdog reset. This can be used
  *                      to enter the bootloader from the user program.
  *                      Adds 22 bytes.
  *
- *  ENTRY_EXT_RESET     Activate the bootloader after an external reset was issues by 
+ *  ENTRY_EXT_RESET     Activate the bootloader after an external reset was issued by 
  *                      pulling the reset pin low. It may be necessary to add an external
- *                      resistor to the reset pin in case the bootloader is also entered
- *                      after power up.
+ *                      pull-up resistor to the reset pin if this entry method appears to
+ *                      behave unreliably.
  *                      Adds 22 bytes.
  *
  *  ENTRY_JUMPER        Activate the bootloader when a specific pin is pulled low by an 
@@ -206,12 +206,13 @@ these macros are defined, the boot loader uses them.
 /*
  * Define bootloader timeout value. 
  * 
- *  These will only be used if is bootLoaderCondition() evaluates idlePolls below!
+ *  The bootloader will only time out if a user program was loaded.
  * 
  *  AUTO_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected.
  *                             Set to 0 to disable
  *                             Adds ~6 bytes.
  *                             (This will wait for an USB SE0 reset from the host)
+ *
  *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
  *                             from the host tool was received.
  *                             Set to 0 to disable
