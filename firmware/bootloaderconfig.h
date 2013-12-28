@@ -170,7 +170,7 @@ these macros are defined, the boot loader uses them.
  * 
  */
 
-#define ENTRYMODE ENTRY_EXT_RESET
+#define ENTRYMODE ENTRY_ALWAYS
 
 #define JUMPER_PIN    PB0
 #define JUMPER_PORT   PORTB 

@@ -325,7 +325,7 @@ int main(void) {
       idlePolls++;
       
       // Try to execute program if bootloader exit condition is met
-      if (AUTO_EXIT_MS&&(idlePolls>AUTO_EXIT_MS*10)) fireEvent(EVENT_EXECUTE);
+      if (AUTO_EXIT_MS&&(idlePolls>AUTO_EXIT_MS*10L)) fireEvent(EVENT_EXECUTE);
 
       /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
     } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
