@@ -208,6 +208,7 @@ these macros are defined, the boot loader uses them.
  *                             (This will wait for an USB SE0 reset from the host)
  *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
  *                             from the host tool was received.
+ *                             Set to 0 to disable
  *  
  *  All values are approx. in milliseconds
  */
@@ -258,10 +259,15 @@ these macros are defined, the boot loader uses them.
 #define LED_PORT		PORTB
 #define	LED_PIN			PB1
 
-#define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
-#define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
-#define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
-
+#if LED_PRESENT
+  #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
+  #define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
+  #define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
+#else
+  #define LED_INIT(x)		
+  #define LED_EXIT(x)		
+  #define LED_MACRO(x)	
+#endif
 /* ------------------------------------------------------------------------- */
 
 #endif /* __bootloader_h_included__ */
