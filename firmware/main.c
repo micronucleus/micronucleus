@@ -301,8 +301,7 @@ int main(void) {
     ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
   #endif	
   
-//    if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
-  if (bootLoaderStartCondition()) {
+  if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
     initHardware();        
     LED_INIT();
@@ -322,9 +321,9 @@ int main(void) {
           writeFlashPage();  
       }
 
-      LED_MACRO( ((uint8_t*)&idlePolls)[1] )
-
+      LED_MACRO( ((uint8_t*)&idlePolls)[1] );
       idlePolls++;
+      
       // Try to execute program if bootloader exit condition is met
       if (AUTO_EXIT_MS&&(idlePolls>AUTO_EXIT_MS*10)) fireEvent(EVENT_EXECUTE);
 

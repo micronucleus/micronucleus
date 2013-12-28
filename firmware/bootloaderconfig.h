@@ -12,13 +12,6 @@
 #ifndef __bootloaderconfig_h_included__
 #define __bootloaderconfig_h_included__
 
-// uncomment this to enable the 'jumper from d5 to gnd to enable programming' mode
-//#define BUILD_JUMPER_MODE 1
-
-#ifndef BOOTLOADER_ADDRESS
-#define BOOTLOADER_ADDRESS 0
-#endif
-
 /*
 General Description:
 This file (together with some settings in Makefile) configures the boot loader
@@ -51,46 +44,46 @@ these macros are defined, the boot loader uses them.
 #define HARDWARE_CONFIG     TINY85_HARDWARE_CONFIG_2
 
 #define USB_CFG_IOPORTNAME      B
-/* This is the port where the USB bus is connected. When you configure it to
- * "B", the registers PORTB, PINB and DDRB will be used.
- */
+  /* This is the port where the USB bus is connected. When you configure it to
+   * "B", the registers PORTB, PINB and DDRB will be used.
+   */
 
 #ifndef __AVR_ATtiny85__
-# define USB_CFG_DMINUS_BIT      0
-/* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
- * This may be any bit in the port.
- */
-# define USB_CFG_DPLUS_BIT       2
-/* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
- * This may be any bit in the port. Please note that D+ must also be connected
- * to interrupt pin INT0!
- */
+  # define USB_CFG_DMINUS_BIT      0
+  /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
+   * This may be any bit in the port.
+   */
+  #define USB_CFG_DPLUS_BIT       2
+  /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
+   * This may be any bit in the port. Please note that D+ must also be connected
+   * to interrupt pin INT0!
+   */
 #endif
  
 #if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_1)
-# define USB_CFG_DMINUS_BIT      0
-/* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
- * This may be any bit in the port.
- */
-# define USB_CFG_DPLUS_BIT       2
-/* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
- * This may be any bit in the port, but must be configured as a pin change interrupt.
- */
- #endif
+  #define USB_CFG_DMINUS_BIT      0
+  /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
+   * This may be any bit in the port.
+   */
+  #define USB_CFG_DPLUS_BIT       2
+  /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
+   * This may be any bit in the port, but must be configured as a pin change interrupt.
+   */
+#endif
  
 #if (defined __AVR_ATtiny85__) && (HARDWARE_CONFIG == TINY85_HARDWARE_CONFIG_2)
-# define USB_CFG_DMINUS_BIT      3
+#define USB_CFG_DMINUS_BIT      3
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
-# define USB_CFG_DPLUS_BIT       4
+#define USB_CFG_DPLUS_BIT       4
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
- #endif
+#endif
 
 #define USB_CFG_CLOCK_KHZ       (F_CPU/1000)
-/* Clock rate of the AVR in MHz. Legal values are 12000, 16000 or 16500.
+/* Clock rate of the AVR in kHz. Legal values are 12000, 16000 or 16500.
  * The 16.5 MHz version of the code requires no crystal, it tolerates +/- 1%
  * deviation from the nominal frequency. All other rates require a precision
  * of 2000 ppm and thus a crystal!
@@ -114,12 +107,6 @@ these macros are defined, the boot loader uses them.
 /* ------------------------------------------------------------------------- */
 /* ---------------------- feature / code size options ---------------------- */
 /* ------------------------------------------------------------------------- */
-
-#define BOOTLOADER_CAN_EXIT         1
-/* If this macro is defined to 1, the boot loader will exit shortly after the
- * programmer closes the connection to the device. Costs ~36 bytes.
- * Required for TINY85MODE
- */
  
 /* ----------------------- Optional MCU Description ------------------------ */
 
@@ -150,52 +137,71 @@ these macros are defined, the boot loader uses them.
 #define TINYVECTOR_USBPLUS_OFFSET   2
 #define TINYVECTOR_OSCCAL_OFFSET    6
 
-
-/* Example configuration: Port D bit 3 is connected to a jumper which ties
- * this pin to GND if the boot loader is requested. Initialization allows
- * several clock cycles for the input voltage to stabilize before
- * bootLoaderCondition() samples the value.
- * We use a function for bootLoaderInit() for convenience and a macro for
- * bootLoaderCondition() for efficiency.
- */
-
-#define JUMPER_BIT  0   /* jumper is connected to this bit in port B, active low */
-
-
-#ifdef BUILD_JUMPER_MODE
-  #define START_JUMPER_PIN 5
-  #define digitalRead(pin) (PINB & _BV(pin))
-  #define bootLoaderStartCondition() (!digitalRead(START_JUMPER_PIN))
-  #define bootLoaderCondition() 1
-  
-  #ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
-    static inline void  bootLoaderInit(void) {
-      // DeuxVis pin-5 pullup
-      PORTB |= _BV(START_JUMPER_PIN); // has pullup enabled
-      _delay_ms(10);
-    }
-    static inline void  bootLoaderExit(void) {
-      // DeuxVis pin-5 pullup
-      PORTB = 0;
-    }
-  #endif /* __ASSEMBLER__ */
-    
-#else
-  #define bootLoaderInit()
-  #define bootLoaderExit()
-  #define bootLoaderCondition()   (idlePolls < (AUTO_EXIT_MS * 10UL))
-  #if LOW_POWER_MODE
-    // only starts bootloader if USB D- is pulled high on startup - by putting your pullup in to an external connector
-    // you can avoid ever entering an out of spec clock speed or waiting on bootloader when that pullup isn't there
-    #define bootLoaderStartCondition() \
-      (PINB & (_BV(USB_CFG_DMINUS_BIT) | _BV(USB_CFG_DMINUS_BIT))) == _BV(USB_CFG_DMINUS_BIT)
-  #else
-    #define bootLoaderStartCondition() 1
-  #endif
-#endif
-
 /* ------------------------------------------------------------------------- */
 
+/*
+ *  Define Bootloader entry condition
+ * 
+ *  If the entry condition is not met, the bootloader will not be activated and the userprogram
+ *  is executed directly after a reset. If no userprogram has been loaded, the bootloader
+ *  is always active.
+ * 
+ *  ENTRY_ALWAYS        Always activate the bootloader after reset. Required the least
+ *                      amount of code.
+ *
+ *  ENTRY_WATCHDOG      Activate the bootloader after a watchdog reset. This can be used
+ *                      to enter the bootloader from the user program.
+ *                      Adds 22 bytes.
+ *
+ *  ENTRY_EXT_RESET     Activate the bootloader after an external reset was issues by 
+ *                      pulling the reset pin low. It may be necessary to add an external
+ *                      resistor to the reset pin in case the bootloader is also entered
+ *                      after power up.
+ *                      Adds 22 bytes.
+ *
+ *  ENTRY_JUMPER        Activate the bootloader when a specific pin is pulled low by an 
+ *                      external jumper. 
+ *                      Adds 34 bytes.
+ *
+ *       JUMPER_PIN     Pin the jumper is connected to. (e.g. PB0)
+ *       JUMPER_PORT    Port out register for the jumper (e.g. PORTB)  
+ *       JUMPER_DDR     Port data direction register for the jumper (e.g. DDRB)  
+ *       JUMPER_INP     Port inout register for the jumper (e.g. PINB)  
+ * 
+ */
+
+#define ENTRYMODE ENTRY_EXT_RESET
+
+#define JUMPER_PIN    PB0
+#define JUMPER_PORT   PORTB 
+#define JUMPER_DDR    DDRB 
+#define JUMPER_INP    PINB 
+ 
+#define ENTRY_ALWAYS    1
+#define ENTRY_WATCHDOG  2
+#define ENTRY_EXT_RESET 3
+#define ENTRY_JUMPER    4
+
+#if ENTRYMODE==ENTRY_ALWAYS
+  #define bootLoaderInit()
+  #define bootLoaderExit()
+  #define bootLoaderStartCondition() 1
+#elif ENTRYMODE==ENTRY_WATCHDOG
+  #define bootLoaderInit()
+  #define bootLoaderExit()
+  #define bootLoaderStartCondition() (MCUSR&_BV(WDRF))
+#elif ENTRYMODE==ENTRY_EXT_RESET
+  #define bootLoaderInit()
+  #define bootLoaderExit()
+  #define bootLoaderStartCondition() (MCUSR&_BV(EXTRF))
+#elif ENTRYMODE==ENTRY_JUMPER
+  // Enable pull up on jumper pin and delay to stabilize input    
+  #define bootLoaderInit()   {JUMPER_DDR&=~_BV(JUMPER_PIN);JUMPER_PORT|=_BV(JUMPER_PIN);_delay_ms(1);}
+  #define bootLoaderExit()   {JUMPER_PORT&=~_BV(JUMPER_PIN);}
+  #define bootLoaderStartCondition() (!(JUMPER_INP&_BV(JUMPER_PIN)))
+#else
+   #error "No entry mode defined"
+#endif
 
 /*
  * Define bootloader timeout value. 
