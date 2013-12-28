@@ -237,22 +237,15 @@ void PushMagicWord (void) {
 
 static void initHardware (void)
 {
-        MCUSR=0;    /* need this to properly disable watchdog */
-        wdt_disable();
- 
-        #if LOW_POWER_MODE
-            // turn off clock prescalling - chip must run at full speed for usb
-            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
-            CLKPR = 1 << CLKPCE;
-            CLKPR = 0;
-        #endif
+  MCUSR=0;    /* need this to properly disable watchdog */
+  wdt_disable();
 
-    
-        usbDeviceDisconnect();  /* do this while interrupts are disabled */
-        _delay_ms(500);  
-        usbDeviceConnect();
-        usbInit();    // Initialize INT settings after reconnect
-        sei();        
+  usbDeviceDisconnect();  /* do this while interrupts are disabled */
+  _delay_ms(500);  
+  usbDeviceConnect();
+  usbInit();    // Initialize INT settings after reconnect
+
+  sei();        
 }
 
 /* ------------------------------------------------------------------------ */
@@ -290,11 +283,7 @@ int main(void) {
   #if OSCCAL_RESTORE
     osccal_default = OSCCAL;
   #endif
-  
-  #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
-    uint8_t prescaler_default = CLKPR;
-  #endif
-  
+    
   bootLoaderInit();
 	
   #if AUTO_EXIT_NO_USB_MS	
@@ -330,17 +319,6 @@ int main(void) {
       /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
     } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
   }
-    
-    // set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
-    #if LOW_POWER_MODE
-        #ifdef SET_CLOCK_PRESCALER
-            CLKPR = 1 << CLKPCE;
-            CLKPR = SET_CLOCK_PRESCALER;
-        #else
-            CLKPR = 1 << CLKPCE;
-            CLKPR = prescaler_default;
-        #endif
-    #endif
     
   LED_EXIT();
     
