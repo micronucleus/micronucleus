@@ -198,7 +198,6 @@ these macros are defined, the boot loader uses them.
 
 /* ------------------------------------------------------------------------- */
 
-#ifndef __ASSEMBLER__   /* assembler cannot parse function definitions */
 
 /*
  * Define bootloader timeout value. 
@@ -264,11 +263,6 @@ these macros are defined, the boot loader uses them.
 #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
 #define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
 #define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
-
-#endif /* __ASSEMBLER__ */
-
-
-
 
 /* ------------------------------------------------------------------------- */
 
