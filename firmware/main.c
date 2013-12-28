@@ -113,10 +113,10 @@ static void writeFlashPage(void) {
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
-#define __boot_page_fill_clear()   \
-(__extension__({                                 \
-  __asm__ __volatile__                         \
-  (                                            \
+#define __boot_page_fill_clear()             \
+(__extension__({                             \
+  __asm__ __volatile__                       \
+  (                                          \
     "sts %0, %1\n\t"                         \
     "spm\n\t"                                \
     :                                        \
@@ -235,9 +235,11 @@ void PushMagicWord (void) {
 
 static void initHardware (void)
 {
-  MCUSR=0;    /* need this to properly disable watchdog */
-  wdt_disable();
-
+  // Disable watchdog and set timeout to maximum in case the WDT is fused on 
+  MCUSR=0;    
+  WDTCR = 1<<WDCE | 1<<WDE;
+  WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
+  
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(500);  
   usbDeviceConnect();
@@ -294,10 +296,12 @@ int main(void) {
     LED_INIT();
     
     do {
+      _delay_us(100);
+      wdt_reset();   // Only necessary if WDT is fused on
+      
       clearEvents();
       usbPoll();
-      
-      _delay_us(100);
+
 
       // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
       // and usually both of these will activate in the same loop, so host
