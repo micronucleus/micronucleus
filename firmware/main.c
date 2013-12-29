@@ -304,17 +304,18 @@ int main(void) {
       
       clearEvents();
       usbPoll();
-           
+     
       idlePolls++;
       
       // Try to execute program if bootloader exit condition is met
-      if (AUTO_EXIT_MS&&(idlePolls>AUTO_EXIT_MS*10L)) fireEvent(EVENT_EXECUTE);
+      if (AUTO_EXIT_MS&&(idlePolls==AUTO_EXIT_MS*10L)) fireEvent(EVENT_EXECUTE);
+ 
       LED_MACRO( ((uint8_t*)&idlePolls)[1] );
 
       // Wait for USB traffic to finish before a blocking event is executed
       // All events will render the MCU unresponsive to USB traffic for a while.
       if (events) _delay_ms(2);
-
+ 
       if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
       if (isEvent(EVENT_WRITE_PAGE))        writeFlashPage();  
  
