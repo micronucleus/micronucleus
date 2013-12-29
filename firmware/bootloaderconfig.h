@@ -137,6 +137,11 @@ these macros are defined, the boot loader uses them.
 #define TINYVECTOR_USBPLUS_OFFSET   2
 #define TINYVECTOR_OSCCAL_OFFSET    6
 
+/* ------------------------------------------------------------------------ */
+// postscript are the few bytes at the end of programmable memory which store tinyVectors
+#define POSTSCRIPT_SIZE 6
+#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
+
 /* ------------------------------------------------------------------------- */
 
 /*
@@ -264,7 +269,7 @@ these macros are defined, the boot loader uses them.
 
 #define	LED_DDR			DDRB
 #define LED_PORT		PORTB
-#define	LED_PIN			PB1
+#define	LED_PIN			PB2
 
 #if LED_PRESENT
   #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);

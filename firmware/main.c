@@ -299,9 +299,11 @@ int main(void) {
       // All events will render the MCU unresponsive to USB traffic for a while.
       if (command!=cmd_nop) _delay_ms(2);
  
-      if (command==cmd_erase_application) eraseApplication();
-      if (command==cmd_write_page)        writeFlashPage();  
- 
+      if (command==cmd_erase_application) 
+        eraseApplication();
+      else if (command==cmd_write_page) 
+        writeFlashPage();
+       
       /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
     } while((command!=cmd_exit)||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
 
