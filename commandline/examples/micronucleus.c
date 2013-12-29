@@ -52,6 +52,7 @@ static int progress_total_steps = 0; // total steps for upload
 static char* progress_friendly_name; // name of progress section
 static int dump_progress = 0; // output computer friendly progress info
 static int use_ansi = 0; // output ansi control character stuff
+static int erase_only = 0; // only erase, dont't write file
 static int timeout = 0; // 
 /*****************************************************************************/
 
@@ -62,15 +63,16 @@ int main(int argc, char **argv) {
   int res;
   char *file = NULL;
   micronucleus *my_device = NULL;
-
+  
   // parse arguments
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] [--timeout integer] filename";
+  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] [--timeout integer] [--erase-only] filename";
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
+  erase_only = 0;
   timeout = 0; // no timeout by default
   //#if defined(WIN)
   //  use_ansi = 0;
@@ -99,6 +101,8 @@ int main(int argc, char **argv) {
       puts("                           bytes (intel hex is default)");
       puts("          --dump-progress: Output progress data in computer-friendly form");
       puts("                           for driving GUIs");
+      puts("             --erase-only: Erase the device without programming. Fills the");
+      puts("                           program memory with 0xFFFF. Any files are ignored.");
       puts("                    --run: Ask bootloader to run the program when finished");
       puts("                           uploading provided program");
       //#ifndef WIN
@@ -112,6 +116,8 @@ int main(int argc, char **argv) {
       dump_progress = 1;
     } else if (strcmp(argv[arg_pointer], "--no-ansi") == 0) {
       use_ansi = 0;
+    } else if (strcmp(argv[arg_pointer], "--erase-only") == 0) {
+      erase_only = 1;
     } else if (strcmp(argv[arg_pointer], "--timeout") == 0) {
       arg_pointer += 1;
       if (sscanf(argv[arg_pointer], "%d", &timeout) != 1) {
@@ -182,34 +188,38 @@ int main(int argc, char **argv) {
   printf("> Whole page count: %d\n", my_device->pages);
   printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
   
-  setProgressData("parsing", 3);
-  printProgress(0.0);
-  memset(dataBuffer, 0xFF, sizeof(dataBuffer));
-  
   int startAddress = 1, endAddress = 0;
-  if (file_type == FILE_TYPE_INTEL_HEX) {
-    if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
-      printf("> Error loading or parsing hex file.\n");
-      return EXIT_FAILURE;
-    }
-  } else if (file_type == FILE_TYPE_RAW) {
-    if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
-      printf("> Error loading raw file.\n");
-      return EXIT_FAILURE;
-    }
-  }
-  
-  printProgress(1.0);
 
-  if (startAddress >= endAddress) {
-    printf("> No data in input file, exiting.\n");
-    return EXIT_FAILURE;
-  }
-  
-  if (endAddress > my_device->flash_size) {
-    printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - my_device->flash_size);
-    return EXIT_FAILURE;
-  }
+  if (!erase_only)
+  {
+    setProgressData("parsing", 3);
+    printProgress(0.0);
+    memset(dataBuffer, 0xFF, sizeof(dataBuffer));
+    
+    if (file_type == FILE_TYPE_INTEL_HEX) {
+      if (parseIntelHex(file, dataBuffer, &startAddress, &endAddress)) {
+        printf("> Error loading or parsing hex file.\n");
+        return EXIT_FAILURE;
+      }
+    } else if (file_type == FILE_TYPE_RAW) {
+      if (parseRaw(file, dataBuffer, &startAddress, &endAddress)) {
+        printf("> Error loading raw file.\n");
+        return EXIT_FAILURE;
+      }
+    }
+    
+    printProgress(1.0);
+
+    if (startAddress >= endAddress) {
+      printf("> No data in input file, exiting.\n");
+      return EXIT_FAILURE;
+    }
+          
+    if (endAddress > my_device->flash_size) {
+      printf("> Program file is %d bytes too big for the bootloader!\n", endAddress - my_device->flash_size);
+      return EXIT_FAILURE;
+    }
+  } 
   
   setProgressData("erasing", 4);
   printf("> Erasing the memory ...\n");
@@ -243,13 +253,16 @@ int main(int argc, char **argv) {
   }
   printProgress(1.0);
   
-  printf("> Starting to upload ...\n");
-  setProgressData("writing", 5);
-  res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
-  if (res != 0) {
-    printf(">> Flash write error %d has occured ...\n", res);
-    printf(">> Please unplug the device and restart the program.\n");
-    return EXIT_FAILURE;
+  if (!erase_only)
+  {
+    printf("> Starting to upload ...\n");
+    setProgressData("writing", 5);
+    res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
+    if (res != 0) {
+      printf(">> Flash write error %d has occured ...\n", res);
+      printf(">> Please unplug the device and restart the program.\n");
+      return EXIT_FAILURE;
+    }
   }
   
   if (run) {

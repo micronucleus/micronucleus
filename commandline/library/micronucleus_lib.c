@@ -135,15 +135,36 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
         page_buffer[page_address] = program[address + page_address]; // load from user program
       }
     }
+   
+    if (deviceHandle->version.major == 1)
+    {
+      // Firmware rev.1 transfers a page as a single block
+      // ask microcontroller to write this page's data
+      res = usb_control_msg(deviceHandle->device,
+             USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
+             1,
+             page_length, address,
+             page_buffer, page_length,
+             MICRONUCLEUS_USB_TIMEOUT);
+    } else if (deviceHandle->version.major == 2)
+    {
+      // Firmware rev.2 uses individual set up packets to transfer data
+      res = usb_control_msg(deviceHandle->device, 0xC0, 1, page_length, address, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
+      if (res) return -1;   
+      int i;
+      
+      for (i=0; i< page_length; i+=4)
+      {
+        int w1,w2;
+        w1=(page_buffer[i+1]<<8)+(page_buffer[i+0]<<0);
+        w2=(page_buffer[i+3]<<8)+(page_buffer[i+2]<<0);
+        
+        res = usb_control_msg(deviceHandle->device, 0xC0, 3, w1, w2, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
+        if (res) return -1;   
+      }     
 
-    // ask microcontroller to write this page's data
-    res = usb_control_msg(deviceHandle->device,
-           USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
-           1,
-           page_length, address,
-           page_buffer, page_length,
-           MICRONUCLEUS_USB_TIMEOUT);
-
+      res=page_length;
+    }
     // call progress update callback if that's a thing
     if (prog) prog(((float) address) / ((float) deviceHandle->flash_size));
 

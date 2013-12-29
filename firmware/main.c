@@ -11,12 +11,11 @@
  *
  */
  
-#define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 10
+#define MICRONUCLEUS_VERSION_MAJOR 2
+#define MICRONUCLEUS_VERSION_MINOR 0
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
-
 // Use the old delay routines without NOP padding. This saves memory.
 #define __DELAY_BACKWARD_COMPATIBLE__     
 
@@ -25,8 +24,6 @@
 #include <avr/wdt.h>
 #include <avr/boot.h>
 #include <util/delay.h>
-
-static void leaveBootloader() __attribute__((__noreturn__));
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
@@ -50,7 +47,9 @@ static void leaveBootloader() __attribute__((__noreturn__));
 #endif
 
 // events system schedules functions to run in the main loop
-static uchar events = 0; // bitmap of events to run
+// static uint8_t events = 0; // bitmap of events to run
+register uint8_t  events asm( "r3" ); // register saves many bytes 
+
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE        2
 #define EVENT_EXECUTE           4
@@ -77,8 +76,8 @@ static uint16_t currentAddress; // current progmem address, used for erasing and
 static inline void eraseApplication(void);
 static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
-static uchar usbFunctionSetup(uchar data[8]);
-static uchar usbFunctionWrite(uchar *data, uchar length);
+static uint8_t usbFunctionSetup(uint8_t data[8]);
+static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length);
 static inline void leaveBootloader(void);
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
@@ -92,14 +91,14 @@ static inline void eraseApplication(void) {
     // during upload
     
     uint8_t i;
-    uint16_t ptr = BOOTLOADER_ADDRESS;
+	uint16_t ptr = BOOTLOADER_ADDRESS;
     cli();
     while (ptr) {
         ptr -= SPM_PAGESIZE;        
         boot_page_erase(ptr);
     }
     
-    currentAddress = 0;
+	currentAddress = 0;
     for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
     writeFlashPage();  // enables interrupts
 }
@@ -127,6 +126,7 @@ static void writeFlashPage(void) {
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
     uint8_t previous_sreg;
+        if (currentAddress >= BOOTLOADER_ADDRESS) return;
     
     // first two interrupt vectors get replaced with a jump to the bootloader's vector table
     // remember vectors or the tinyvector table 
@@ -150,16 +150,12 @@ static void writeWordToPageBuffer(uint16_t data) {
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
     } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
         data = OSCCAL;
-#endif      
+#endif		
     }
 
     previous_sreg=SREG;    
     cli(); // ensure interrupts are disabled
     
-    // clear page buffer as a precaution before filling the buffer on the first page
-    // in case the bootloader somehow ran after user program and there was something
-    // in the page buffer already
-    if (currentAddress == 0x0000) __boot_page_fill_clear();
     boot_page_fill(currentAddress, data);
     
     // increment progmem address by one word
@@ -168,11 +164,11 @@ static void writeWordToPageBuffer(uint16_t data) {
 }
 
 /* ------------------------------------------------------------------------ */
-static uchar usbFunctionSetup(uchar data[8]) {
+static uint8_t usbFunctionSetup(uint8_t data[8]) {
     usbRequest_t *rq = (void *)data;
     ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
-    
-    static uchar replyBuffer[4] = {
+	
+    static uint8_t replyBuffer[4] = {
         (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
         ((uint16_t)PROGMEM_SIZE) & 0xff,
         SPM_PAGESIZE,
@@ -183,24 +179,27 @@ static uchar usbFunctionSetup(uchar data[8]) {
         usbMsgPtr = replyBuffer;
         return 4;
         
-    } else if (rq->bRequest == 1) { // write page
+    } else if (rq->bRequest == 1) { // initialize write page    
+        // clear page buffer as a precaution before filling the buffer in case 
+        // a previous write operation failed and there is still something in the buffer.
+        __boot_page_fill_clear();
         currentAddress = rq->wIndex.word;        
-        return USB_NO_MSG; // hands off work to usbFunctionWrite
-        
     } else if (rq->bRequest == 2) { // erase application
         fireEvent(EVENT_ERASE_APPLICATION);
-        
+    } else if (rq->bRequest == 3) { // Write data
+        writeWordToPageBuffer(rq->wValue.word);
+        writeWordToPageBuffer(rq->wIndex.word);
+        uint8_t isLast = ((((uint8_t)currentAddress) % SPM_PAGESIZE) == 0);
+        if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page        
     } else { // exit bootloader
-#       if BOOTLOADER_CAN_EXIT
-            fireEvent(EVENT_EXECUTE);
-#       endif
+        fireEvent(EVENT_EXECUTE);
     }
     
     return 0;
 }
-
+#if 0
 // read in a page over usb, and write it in to the flash write buffer
-static uchar usbFunctionWrite(uchar *data, uchar length) {
+static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
     do {     
         // make sure we don't write over the bootloader!
         if (currentAddress >= BOOTLOADER_ADDRESS) break;
@@ -212,10 +211,10 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     // if we have now reached another page boundary, we're done
 #if SPM_PAGESIZE<256
-    // Hack to reduce code size
-    uchar isLast = ((((uchar)currentAddress) % SPM_PAGESIZE) == 0);
+	// Hack to reduce code size
+    uint8_t isLast = ((((uint8_t)currentAddress) % SPM_PAGESIZE) == 0);
 #else
-    uchar isLast = ((currentAddress % SPM_PAGESIZE) == 0);
+    uint8_t isLast = ((currentAddress % SPM_PAGESIZE) == 0);
 #endif
 
     // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
@@ -223,7 +222,7 @@ static uchar usbFunctionWrite(uchar *data, uchar length) {
     
     return isLast; // let vusb know we're done with this request
 }
-
+#endif
 /* ------------------------------------------------------------------------ */
 void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
 
@@ -235,15 +234,36 @@ void PushMagicWord (void) {
     asm volatile("push r16"::);
 }
 
+static void initHardware (void)
+{
+        MCUSR=0;    /* need this to properly disable watchdog */
+        wdt_disable();
+ 
+        #if LOW_POWER_MODE
+            // turn off clock prescalling - chip must run at full speed for usb
+            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
+            CLKPR = 1 << CLKPCE;
+            CLKPR = 0;
+        #endif
+
+    
+        usbDeviceDisconnect();  /* do this while interrupts are disabled */
+        _delay_ms(500);  
+        usbDeviceConnect();
+        usbInit();    // Initialize INT settings after reconnect
+        sei();        
+}
+
 /* ------------------------------------------------------------------------ */
 // reset system to a normal state and launch user program
+static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
-    _delay_ms(10); // removing delay causes USB errors
+   _delay_ms(10); // removing delay causes USB errors
     
     bootLoaderExit();
     cli();
-    usbDeviceDisconnect();  /* Disconnect micronucleus */
-    
+	usbDeviceDisconnect();  /* Disconnect micronucleus */
+	
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
 
@@ -255,8 +275,8 @@ static inline void leaveBootloader(void) {
     // as when it was uploaded originally
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
-        OSCCAL=stored_osc_calibration;
-        asm volatile("nop");
+		OSCCAL=stored_osc_calibration;
+		asm volatile("nop");
     }
 #endif
     // jump to application reset vector at end of flash
@@ -264,65 +284,53 @@ static inline void leaveBootloader(void) {
 }
 
 int main(void) {
-    /* initialize  */
-    #if OSCCAL_RESTORE
-        osccal_default = OSCCAL;
-    #endif
-    #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
-        uint8_t prescaler_default = CLKPR;
-    #endif
-  
-    bootLoaderInit();
-    
-#   if AUTO_EXIT_NO_USB_MS  
-    ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
-#   endif   
 
+  /* initialize  */
+  #if OSCCAL_RESTORE
+    osccal_default = OSCCAL;
+  #endif
+  
+  #if (!SET_CLOCK_PRESCALER) && LOW_POWER_MODE
+    uint8_t prescaler_default = CLKPR;
+  #endif
+  
+  bootLoaderInit();
+	
+  #if AUTO_EXIT_NO_USB_MS	
+    ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
+  #endif	
+
+  
     if (bootLoaderStartCondition()) {
     
-        MCUSR=0;    /* need this to properly disable watchdog */
-        wdt_disable();
- 
-        #if LOW_POWER_MODE
-            // turn off clock prescalling - chip must run at full speed for usb
-            // if you might run chip at lower voltages, detect that in bootLoaderStartCondition
-            CLKPR = 1 << CLKPCE;
-            CLKPR = 0;
-        #endif
+        initHardware();
         
 #       if  LED_PRESENT
             LED_INIT();
-#       endif 
-
-        usbDeviceDisconnect();  /* do this while interrupts are disabled */
-        _delay_ms(500);  
-        usbDeviceConnect();
-        usbInit();    // Initialize INT settings after reconnect
-        sei();        
-        
+#       endif     	
         do {
-            usbPoll();
-            _delay_us(100);
-            
-            // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
-            // and usually both of these will activate in the same loop, so host
-            // needs to wait > 9ms before next usb request
-            if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
-            if (isEvent(EVENT_WRITE_PAGE)) {
-                _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
-                writeFlashPage();  
-            }
-
-#       if BOOTLOADER_CAN_EXIT            
-            if (isEvent(EVENT_EXECUTE)) break; // when host requests device run uploaded program
-#       endif        
             clearEvents();
+			usbPoll();
+            _delay_us(100);
 
-#       if  LED_PRESENT
-            LED_MACRO( ((uint8_t*)&idlePolls)[1] )
-#       endif
-                
-        } while(bootLoaderCondition());  /* main event loop runs so long as bootLoaderCondition remains truthy */
+                // these next two freeze the chip for ~ 4.5ms, breaking usb protocol
+                // and usually both of these will activate in the same loop, so host
+                // needs to wait > 9ms before next usb request
+                if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
+                if (isEvent(EVENT_WRITE_PAGE)) {
+                    _delay_us(2000); // Wait for USB traffic to finish before halting CPU with write-
+                    writeFlashPage();  
+                }
+
+      #if  LED_PRESENT
+        LED_MACRO( ((uint8_t*)&idlePolls)[1] )
+      #endif
+            
+            // Try to execute program if bootloader exit condition is met
+            if (!bootLoaderCondition()) fireEvent(EVENT_EXECUTE);
+
+              /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
+        } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
     }
     
     // set clock prescaler to desired clock speed (changing from clkdiv8, or no division, depending on fuses)
@@ -336,15 +344,15 @@ int main(void) {
         #endif
     #endif
     
-#   if  LED_PRESENT
-        LED_EXIT();
-#   endif
+  #if LED_PRESENT
+    LED_EXIT();
+  #endif
     
-#   if OSCCAL_RESTORE
+  #if OSCCAL_RESTORE
     OSCCAL=osccal_default;
-    asm volatile("nop");    // NOP to avoid CPU hickup during oscillator stabilization
-#   endif
+    asm volatile("nop");	// NOP to avoid CPU hickup during oscillator stabilization
+  #endif
 
-    leaveBootloader();
+  leaveBootloader();
 }
 /* ------------------------------------------------------------------------ */
