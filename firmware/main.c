@@ -1,14 +1,13 @@
-/* Name: main.c
- * Project: Micronucleus 
- * Author: Jenna Fox
- * Creation Date: 2007-12-08
- * Tabsize: 4
- * Copyright: (c) 2012 Jenna Fox
- * All changes past revision 1.06 authored by http://github.com/cpldcpu
- * Portions Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH (USBaspLoader)
- * Portions Copyright: (c) 2012 Louis Beaudoin (USBaspLoader-tiny85)
- * License: GNU GPL v2 (see License.txt)
+/* 
+ * Project: Micronucleus -  v1.11
+ * 
+ * Author                        (c) 2012 Jenna Fox
+ * Optimizations after v1.06     (c) 2013 Tim Bo"scke - cpldcpu@gmail.com
+ * Further input                 (c) 2013 Shay Green
+ * Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
+ * Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  *
+ * License: GNU GPL v2 (see License.txt)
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
@@ -27,12 +26,6 @@
 
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
-
-/* ------------------------------------------------------------------------ */
-// postscript are the few bytes at the end of programmable memory which store tinyVectors
-// and used to in USBaspLoader-tiny85 store the checksum iirc
-#define POSTSCRIPT_SIZE 6
-#define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 // verify the bootloader address aligns with page size
 #if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
