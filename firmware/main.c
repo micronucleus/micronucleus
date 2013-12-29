@@ -39,15 +39,7 @@
 #  error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
 #endif
 
-#ifdef AUTO_EXIT_MS
-#  if AUTO_EXIT_MS < (MICRONUCLEUS_WRITE_SLEEP * (BOOTLOADER_ADDRESS / SPM_PAGESIZE))
-#    warning "AUTO_EXIT_MS is shorter than the time it takes to perform erase function - might affect reliability?"
-#    warning "Try increasing AUTO_EXIT_MS if you have stability problems"
-#  endif
-#endif
-
-// events system schedules functions to run in the main loop
-// static uint8_t events = 0; // bitmap of events to run
+// command system schedules functions to run in the main loop
 register uint8_t  command asm( "r3" ); // register saves many bytes 
 
 enum {
@@ -57,16 +49,6 @@ enum {
   cmd_exit
 };
 
-/*
-#define EVENT_ERASE_APPLICATION 1
-#define EVENT_WRITE_PAGE        2
-#define EVENT_EXECUTE           4
-
-// controls state of events
-#define fireEvent(event) events |= (event)
-#define isEvent(event)   (events & (event))
-#define clearEvents()    events = 0
-*/
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
 #define sei() asm volatile("sei")
 #define cli() asm volatile("cli")
