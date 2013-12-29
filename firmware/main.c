@@ -1,5 +1,5 @@
 /* Name: main.c
- * Project: Micronucleus
+ * Project: Micronucleus 
  * Author: Jenna Fox
  * Creation Date: 2007-12-08
  * Tabsize: 4
@@ -12,7 +12,7 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 10
+#define MICRONUCLEUS_VERSION_MINOR 11
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 8
@@ -48,8 +48,16 @@
 
 // events system schedules functions to run in the main loop
 // static uint8_t events = 0; // bitmap of events to run
-register uint8_t  events asm( "r3" ); // register saves many bytes 
+register uint8_t  command asm( "r3" ); // register saves many bytes 
 
+enum {
+  cmd_nop=0,
+  cmd_erase_application,
+  cmd_write_page,
+  cmd_exit
+};
+
+/*
 #define EVENT_ERASE_APPLICATION 1
 #define EVENT_WRITE_PAGE        2
 #define EVENT_EXECUTE           4
@@ -58,7 +66,7 @@ register uint8_t  events asm( "r3" ); // register saves many bytes
 #define fireEvent(event) events |= (event)
 #define isEvent(event)   (events & (event))
 #define clearEvents()    events = 0
-
+*/
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
 #define sei() asm volatile("sei")
 #define cli() asm volatile("cli")
@@ -188,10 +196,10 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
     return USB_NO_MSG; // hands off work to usbFunctionWrite
     
   } else if (rq->bRequest == 2) { // erase application
-    fireEvent(EVENT_ERASE_APPLICATION);
+    command=cmd_erase_application;
       
   } else { // exit bootloader
-    fireEvent(EVENT_EXECUTE);
+    command=cmd_exit;
   }
   
   return 0;
@@ -217,7 +225,7 @@ static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
 #endif
 
   // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
-  if (isLast) fireEvent(EVENT_WRITE_PAGE); // ask runloop to write our page
+  if (isLast) command=cmd_write_page; // ask runloop to write our page
   
   return isLast; // let vusb know we're done with this request
 }
@@ -302,25 +310,25 @@ int main(void) {
       _delay_us(100);
       wdt_reset();   // Only necessary if WDT is fused on
       
-      clearEvents();
+      command=cmd_nop;
       usbPoll();
      
       idlePolls++;
       
       // Try to execute program if bootloader exit condition is met
-      if (AUTO_EXIT_MS&&(idlePolls==AUTO_EXIT_MS*10L)) fireEvent(EVENT_EXECUTE);
+      if (AUTO_EXIT_MS&&(idlePolls==AUTO_EXIT_MS*10L)) command=cmd_exit;
  
       LED_MACRO( ((uint8_t*)&idlePolls)[1] );
 
       // Wait for USB traffic to finish before a blocking event is executed
       // All events will render the MCU unresponsive to USB traffic for a while.
-      if (events) _delay_ms(2);
+      if (command!=cmd_nop) _delay_ms(2);
  
-      if (isEvent(EVENT_ERASE_APPLICATION)) eraseApplication();
-      if (isEvent(EVENT_WRITE_PAGE))        writeFlashPage();  
+      if (command==cmd_erase_application) eraseApplication();
+      if (command==cmd_write_page)        writeFlashPage();  
  
       /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
-    } while((!isEvent(EVENT_EXECUTE))||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
+    } while((command!=cmd_exit)||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
 
     LED_EXIT();
   }
