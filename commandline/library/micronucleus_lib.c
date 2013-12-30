@@ -121,38 +121,49 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
   unsigned int  address; // overall flash memory address
   unsigned int  page_address; // address within this page when copying buffer
   unsigned int  res;
-
+  unsigned int  pagecontainsdata;
+  
   for (address = 0; address < deviceHandle->flash_size; address += deviceHandle->page_size) {
     // work around a bug in older bootloader versions
     if (deviceHandle->version.major == 1 && deviceHandle->version.minor <= 2
         && address / deviceHandle->page_size == deviceHandle->pages - 1) {
       page_length = deviceHandle->flash_size % deviceHandle->page_size;
     }
+    
+    pagecontainsdata=0; 
 
     // copy in bytes from user program
     for (page_address = 0; page_address < page_length; page_address += 1) {
       if (address + page_address > program_size) {
         page_buffer[page_address] = 0xFF; // pad out remainder with unprogrammed bytes
       } else {
+        pagecontainsdata=1; // page contains data and needs to be written
         page_buffer[page_address] = program[address + page_address]; // load from user program
       }
     }
 
+    // always write last page so bootloader can insert the tiny vector table
+    if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
+      pagecontainsdata = 1;
+  
     // ask microcontroller to write this page's data
-    res = usb_control_msg(deviceHandle->device,
-           USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
-           1,
-           page_length, address,
-           page_buffer, page_length,
-           MICRONUCLEUS_USB_TIMEOUT);
+    if (pagecontainsdata) {
+      res = usb_control_msg(deviceHandle->device,
+             USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
+             1,
+             page_length, address,
+             page_buffer, page_length,
+             MICRONUCLEUS_USB_TIMEOUT);
+             
+      if (res != page_length) return -1;
 
-    // call progress update callback if that's a thing
-    if (prog) prog(((float) address) / ((float) deviceHandle->flash_size));
+      // give microcontroller enough time to write this page and come back online
+      delay(deviceHandle->write_sleep);
+    }
+    
+  // call progress update callback if that's a thing
+  if (prog) prog(((float) address) / ((float) deviceHandle->flash_size));
 
-    // give microcontroller enough time to write this page and come back online
-    delay(deviceHandle->write_sleep);
-
-    if (res != page_length) return -1;
   }
 
   // call progress update callback with completion status

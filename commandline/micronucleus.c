@@ -185,9 +185,10 @@ int main(int argc, char **argv) {
   //   return EXIT_FAILURE;
   // }
 
-  printf("> Available space for user application: %d bytes\n", my_device->flash_size);
+  printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
+  printf("> Available space for user applications: %d bytes\n", my_device->flash_size);
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
-  printf("> Whole page count: %d\n", my_device->pages);
+  printf("> Whole page count: %d  page size: %d\n", my_device->pages,my_device->page_size);
   printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
 
   int startAddress = 1, endAddress = 0;
