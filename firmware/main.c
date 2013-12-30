@@ -36,10 +36,11 @@
 register uint8_t  command asm( "r3" ); // register saves many bytes 
 
 enum {
-  cmd_nop=0,
-  cmd_erase_application,
-  cmd_write_page,
-  cmd_exit
+  cmd_nop=0, // also: get device info
+  cmd_transfer_page=1,
+  cmd_erase_application=2,
+  cmd_exit=4,
+  cmd_write_page=5,
 };
 
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
@@ -162,22 +163,18 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
   if (rq->bRequest == 0) { // get device info
     usbMsgPtr = replyBuffer;
     return 4;      
-  } else if (rq->bRequest == 1) { // write page
+  } else if (rq->bRequest == cmd_transfer_page) { // transfer page
   
     // clear page buffer as a precaution before filling the buffer in case 
     // a previous write operation failed and there is still something in the buffer.
     __boot_page_fill_clear();
     currentAddress = rq->wIndex.word;        
     return USB_NO_MSG; // hands off work to usbFunctionWrite
-    
-  } else if (rq->bRequest == 2) { // erase application
-    command=cmd_erase_application;
-      
-  } else { // exit bootloader
-    command=cmd_exit;
-  }
-  
+  } else {
+  // Handle cmd_erase_application and cmd_exit
+  command=rq->bRequest;
   return 0;
+  }
 }
 
 // read in a page over usb, and write it in to the flash write buffer

@@ -269,7 +269,7 @@ these macros are defined, the boot loader uses them.
 
 #define	LED_DDR			DDRB
 #define LED_PORT		PORTB
-#define	LED_PIN			PB2
+#define	LED_PIN			PB1
 
 #if LED_PRESENT
   #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
