@@ -39,8 +39,8 @@ $(LWLIBS):
 	$(CC) $(CFLAGS) -c library/$@.c
 
 $(EXAMPLES): $(addsuffix .o, $(LWLIBS))
-	@echo Building example: $@...
-	$(CC) $(CFLAGS) -o $@$(EXE_SUFFIX) examples/$@.c $^ $(LIBS)
+	@echo Building command line tool: $@...
+	$(CC) $(CFLAGS) -o $@$(EXE_SUFFIX) $@.c $^ $(LIBS)
 
 clean:
 	rm -f $(EXAMPLES)$(EXE_SUFFIX) *.o *.exe
