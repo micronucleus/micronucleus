@@ -29,11 +29,23 @@
 
 // verify the bootloader address aligns with page size
 #if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
-#  error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+  #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+#endif
+
+#if SPM_PAGESIZE>256
+  #error "Micronucleus only supports pagesizes up to 256 bytes"
 #endif
 
 // command system schedules functions to run in the main loop
-register uint8_t  command asm( "r3" ); // register saves many bytes 
+register uint8_t        command         asm("r3");  // bind command to r3 
+register uint16_union_t currentAddress  asm("r4");  // r4/r5 current progmem address, used for erasing and writing 
+register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
+
+#if OSCCAL_RESTORE
+  register uint8_t      osccal_default  asm("r2");
+#endif 
+
+static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 
 enum {
   cmd_local_nop=0, // also: get device info
@@ -48,15 +60,6 @@ enum {
 #define sei() asm volatile("sei")
 #define cli() asm volatile("cli")
 #define nop() asm volatile("nop")
-
-uint16_t idlePolls = 0; // how long have we been idle?
-
-static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
-static uint16_t currentAddress; // current progmem address, used for erasing and writing
-
-#if OSCCAL_RESTORE
-  static uint8_t osccal_default;  // due to compiler insanity, having this as global actually saves memory
-#endif 
 
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
@@ -85,7 +88,7 @@ static inline void eraseApplication(void) {
     boot_page_erase(ptr);
   }
     
-	currentAddress = 0;
+	currentAddress.w = 0;
   for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
   writeFlashPage();  // enables interrupts
 }
@@ -93,7 +96,7 @@ static inline void eraseApplication(void) {
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
   cli();
-  boot_page_write(currentAddress - 2);   // will halt CPU, no waiting required
+  boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
   sei();
 }
 
@@ -116,12 +119,12 @@ static void writeWordToPageBuffer(uint16_t data) {
   
   // first two interrupt vectors get replaced with a jump to the bootloader's vector table
   // remember vectors or the tinyvector table 
-    if (currentAddress == RESET_VECTOR_OFFSET * 2) {
+    if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
       vectorTemp[0] = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
     
-    if (currentAddress == USBPLUS_VECTOR_OFFSET * 2) {
+    if (currentAddress.w == USBPLUS_VECTOR_OFFSET * 2) {
       vectorTemp[1] = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
@@ -129,12 +132,12 @@ static void writeWordToPageBuffer(uint16_t data) {
   // at end of page just before bootloader, write in tinyVector table
   // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
   // for info on how the tiny vector table works
-  if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
+  if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
       data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
-  } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
+  } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
       data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
-  } else if (currentAddress == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
+  } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
       data = OSCCAL;
 #endif		
   }
@@ -142,10 +145,10 @@ static void writeWordToPageBuffer(uint16_t data) {
   previous_sreg=SREG;    
   cli(); // ensure interrupts are disabled
   
-  boot_page_fill(currentAddress, data);
+  boot_page_fill(currentAddress.w, data);
   
   // increment progmem address by one word
-  currentAddress += 2;
+  currentAddress.w += 2;
   SREG=previous_sreg;
 }
 
@@ -160,8 +163,8 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
     MICRONUCLEUS_WRITE_SLEEP
   };
 
-  ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
-  
+  idlePolls.b[1]=0; // reset idle polls when we get usb traffic
+
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = replyBuffer;
     return 4;      
@@ -169,7 +172,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
     // clear page buffer as a precaution before filling the buffer in case 
     // a previous write operation failed and there is still something in the buffer.
     __boot_page_fill_clear();
-    currentAddress = rq->wIndex.word;        
+    currentAddress.w = rq->wIndex.word;        
     return USB_NO_MSG; // hands off work to usbFunctionWrite
   } else {
     // Handle cmd_erase_application and cmd_exit
@@ -182,7 +185,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
 static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
   do {     
     // make sure we don't write over the bootloader!
-    if (currentAddress >= BOOTLOADER_ADDRESS) break;
+    if (currentAddress.w >= BOOTLOADER_ADDRESS) break;
     
     writeWordToPageBuffer(*(uint16_t *) data);
     data += 2; // advance data pointer
@@ -190,17 +193,10 @@ static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
   } while(length);
   
   // if we have now reached another page boundary, we're done
-#if SPM_PAGESIZE<256
-	// Hack to reduce code size
-  uint8_t isLast = ((((uint8_t)currentAddress) % SPM_PAGESIZE) == 0);
-#else
-  uint8_t isLast = ((currentAddress % SPM_PAGESIZE) == 0);
-#endif
-
-  // definitely need this if! seems usbFunctionWrite gets called again in future usbPoll's in the runloop!
+  uint8_t isLast = ((currentAddress.b[0] % SPM_PAGESIZE) == 0);
   if (isLast) command=cmd_write_page; // ask runloop to write our page
   
-  return isLast; // let vusb know we're done with this request
+  return isLast; // let V-USB know we're done with this request
 }
 
 /* ------------------------------------------------------------------------ */
@@ -271,14 +267,16 @@ int main(void) {
     
   bootLoaderInit();
 	
-  #if AUTO_EXIT_NO_USB_MS	
-    ((uint8_t*)&idlePolls)[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8; // write only high byte to save 6 bytes
-  #endif	
-  
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
     initHardware();        
     LED_INIT();
+
+    if (AUTO_EXIT_NO_USB_MS>0) {
+      idlePolls.b[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8;
+    } else {
+      idlePolls.b[1]=0;
+    }
     
     do {
       _delay_us(100);
@@ -287,12 +285,12 @@ int main(void) {
       command=cmd_local_nop;
       usbPoll();
      
-      idlePolls++;
+      idlePolls.w++;
       
       // Try to execute program if bootloader exit condition is met
-      if (AUTO_EXIT_MS&&(idlePolls==AUTO_EXIT_MS*10L)) command=cmd_exit;
+      if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
  
-      LED_MACRO( ((uint8_t*)&idlePolls)[1] );
+      LED_MACRO( idlePolls.b[1] );
 
       // Wait for USB traffic to finish before a blocking event is executed
       // All events will render the MCU unresponsive to USB traffic for a while.

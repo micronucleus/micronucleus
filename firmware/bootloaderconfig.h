@@ -13,6 +13,16 @@
 #define __bootloaderconfig_h_included__
 
 /*
+ *  Bootloader defines
+ */
+ 
+#ifndef __ASSEMBLER__
+  typedef union {
+    uint16_t w;
+    uint8_t b[2];
+  } uint16_union_t;
+#endif
+/*
 General Description:
 This file (together with some settings in Makefile) configures the boot loader
 according to the hardware.
