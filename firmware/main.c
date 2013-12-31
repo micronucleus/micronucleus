@@ -36,7 +36,8 @@
 register uint8_t  command asm( "r3" ); // register saves many bytes 
 
 enum {
-  cmd_nop=0, // also: get device info
+  cmd_local_nop=0, // also: get device info
+  cmd_device_info=0,
   cmd_transfer_page=1,
   cmd_erase_application=2,
   cmd_exit=4,
@@ -151,7 +152,6 @@ static void writeWordToPageBuffer(uint16_t data) {
 /* ------------------------------------------------------------------------ */
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
   usbRequest_t *rq = (void *)data;
-  ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
 
   static uint8_t replyBuffer[4] = {
     (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
@@ -159,21 +159,22 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
     SPM_PAGESIZE,
     MICRONUCLEUS_WRITE_SLEEP
   };
-    
-  if (rq->bRequest == 0) { // get device info
+
+  ((uint8_t*)&idlePolls)[1] = 0;              // reset idle polls when we get usb traffic
+  
+  if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = replyBuffer;
     return 4;      
-  } else if (rq->bRequest == cmd_transfer_page) { // transfer page
-  
+  } else if (rq->bRequest == cmd_transfer_page) { // transfer page  
     // clear page buffer as a precaution before filling the buffer in case 
     // a previous write operation failed and there is still something in the buffer.
     __boot_page_fill_clear();
     currentAddress = rq->wIndex.word;        
     return USB_NO_MSG; // hands off work to usbFunctionWrite
   } else {
-  // Handle cmd_erase_application and cmd_exit
-  command=rq->bRequest;
-  return 0;
+    // Handle cmd_erase_application and cmd_exit
+    command=rq->bRequest;
+    return 0;
   }
 }
 
@@ -263,7 +264,7 @@ static inline void leaveBootloader(void) {
 
   // jump to application reset vector at end of flash
   asm volatile ("rjmp __vectors - 4");
-}
+  }
 
 int main(void) {
     
@@ -282,7 +283,7 @@ int main(void) {
       _delay_us(100);
       wdt_reset();   // Only necessary if WDT is fused on
       
-      command=cmd_nop;
+      command=cmd_local_nop;
       usbPoll();
      
       idlePolls++;
@@ -294,7 +295,7 @@ int main(void) {
 
       // Wait for USB traffic to finish before a blocking event is executed
       // All events will render the MCU unresponsive to USB traffic for a while.
-      if (command!=cmd_nop) _delay_ms(2);
+      if (command!=cmd_local_nop) _delay_ms(2);
  
       if (command==cmd_erase_application) 
         eraseApplication();
