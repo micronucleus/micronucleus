@@ -4,10 +4,10 @@ Firmware:
   - The bootloader will now always start if no user program was loaded, regardless of the
     entry condition.
   - The bootloader will not quit if no user program is loaded. This prevents periodic
-    reenumeration of the bootloader and should make driver installiation much easier.
+    re-enumeration of the bootloader and should make driver installation much easier.
     THe new "--erase-only" function of the commandline tool can be used to erase the
-    firmware and create a stabile device for easier installiation.
-  - New entrymodes can be selected in "bootloader.h". Please read the comments for details.
+    firmware and create a stable device for easier installiation.
+  - New entry modes can be selected in "bootloader.h". Please read the comments for details.
     + ENTRY_ALWAYS    
     + ENTRY_WATCHDOG  
     + ENTRY_EXT_RESET 
@@ -31,7 +31,7 @@ Commandline tool:
   - Client firmware version will now be displayed after connecting.
  o  Internal changes:
   - Clean up of source code
-  - Bugixes (see commits)
+  - Bugfixes (see commits)
 
 == 1.10rc3 - 2013-12-15 ==
 firmware:

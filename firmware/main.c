@@ -1,9 +1,11 @@
 /* 
  * Project: Micronucleus -  v1.11
  * 
- * Author                        (c) 2012 Jenna Fox
- * Optimizations after v1.06     (c) 2013 Tim Bo"scke - cpldcpu@gmail.com
- * Further input                 (c) 2013 Shay Green
+ * Original author               (c) 2012 Jenna Fox
+ *
+ * Optimizations v1.10/v1.11     (c) 2013 Tim Bo"scke - cpldcpu@gmail.com
+ *                     v1.11     (c) 2013 Shay Green
+ *
  * Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
  * Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  *
@@ -25,6 +27,9 @@
 #include <util/delay.h>
 
 #include "bootloaderconfig.h"
+
+
+
 #include "usbdrv/usbdrv.c"
 
 // verify the bootloader address aligns with page size
@@ -151,6 +156,9 @@ static void writeWordToPageBuffer(uint16_t data) {
   currentAddress.w += 2;
   SREG=previous_sreg;
 }
+
+// This function is never called, it is just here to suppress a compiler warning.
+USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; }
 
 /* ------------------------------------------------------------------------ */
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
