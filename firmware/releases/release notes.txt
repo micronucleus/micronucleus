@@ -1,10 +1,45 @@
+== 1.11 - 2013-01-04 ==
+Firmware:
+ o New features
+  - The bootloader will now always start if no user program was loaded, regardless of the
+    entry condition.
+  - The bootloader will not quit if no user program is loaded. This prevents periodic
+    reenumeration of the bootloader and should make driver installiation much easier.
+    THe new "--erase-only" function of the commandline tool can be used to erase the
+    firmware and create a stabile device for easier installiation.
+  - New entrymodes can be selected in "bootloader.h". Please read the comments for details.
+    + ENTRY_ALWAYS    
+    + ENTRY_WATCHDOG  
+    + ENTRY_EXT_RESET 
+    + ENTRY_JUMPER    
+  - The bootloader is now able to cope with a fused-on watch dog timer.  
+ o Internal changes
+  - A CRC is now performed on all incoming USB traffic.
+  - The flash buffer is now cleaned before loading a page to prevent data corruption.
+  - Further size optimizations (62 bytes gained, despite new features)
+    + Changed event system into a directly mapped command system.
+    + Introduce union types and forced global variables to registers.
+  - More sourcecode cleaning up.  
+ o Size is now 1816 bytes, 6380 bytes user space. Note that avr-objcopy reports 8 bytes 
+   more due to the zero vector table which is overwritten by the userprogram.
+  
+Commandline tool:
+ o  New features (Note: All new features are compatible with previous firmware releases)
+  - Added "--erase-only" command to erase the device without writing a new user program.
+  - The commandline tool will not transfer empty memory pages any more, resulting in  
+    a significantly reduced programming time in many cases.
+  - Client firmware version will now be displayed after connecting.
+ o  Internal changes:
+  - Clean up of source code
+  - Bugixes (see commits)
+
 == 1.10rc3 - 2013-12-15 ==
 firmware:
  o Major reorganization of the source and build system. 
-	- Used own crt1.s to create vector table in the first flash-page.
-	- Removed all functions related to vector-table writing.
-	- Refactored code and inlined all functions that were only called once.
-	- Removed redundantly defined types to avoid confusion. Only C99 types are used now.
+  - Used own crt1.s to create vector table in the first flash-page.
+  - Removed all functions related to vector-table writing.
+  - Refactored code and inlined all functions that were only called once.
+  - Removed redundantly defined types to avoid confusion. Only C99 types are used now.
  o Size is now 1878 bytes, 6314 bytes user space. No changes to functionality.
  
 == 1.10rc2 - 2013-11-25 ==
