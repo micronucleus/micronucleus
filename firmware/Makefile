@@ -24,7 +24,7 @@ LOCKOPT = -U lock:w:0x2f:m
 # - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
 # - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 18C0
+BOOTLOADER_ADDRESS = 17C0
 
 PROGRAMMER = -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
@@ -159,17 +159,17 @@ OBJECTS += osccalASM.o
 all: main.hex
 
 .c.o:
-	$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$<.lst
+	@$(CC) $(CFLAGS) -c $< -o $@ -Wa,-ahls=$<.lst
 
 .S.o:
-	$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
+	@$(CC) $(CFLAGS) -x assembler-with-cpp -c $< -o $@
 # "-x assembler-with-cpp" should not be necessary since this is the default
 # file type for the .S (with capital S) extension. However, upper case
 # characters are not always preserved on Windows. To ensure WinAVR
 # compatibility define the file type manually.
 
 .c.s:
-	$(CC) $(CFLAGS) -S $< -o $@
+	@$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i -B 10
@@ -190,22 +190,22 @@ read_fuses:
 	$(UISP) --rd_fuses
 
 clean:
-	rm -f main.hex main.bin main.c.lst main.map *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s *.lss
+	@rm -f main.hex main.bin main.c.lst main.map *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
 
 # file targets:
 main.bin:	$(OBJECTS)
-	$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
+	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
 
 main.hex:	main.bin
-	rm -f main.hex main.eep.hex
-	avr-objcopy -j .text -j .zerotable -j .data -O ihex main.bin main.hex
-	avr-size main.hex
+	@rm -f main.hex main.eep.hex
+	@avr-objcopy -j .text -j .zerotable -j .data -O ihex main.bin main.hex
+	@avr-size main.bin
 
 disasm:	main.bin
-	avr-objdump -d -S main.bin >main.lss
+	@avr-objdump -d -S main.bin >main.lss
 
 cpp:
-	$(CC) $(CFLAGS) -E main.c
+	@$(CC) $(CFLAGS) -E main.c
 
 # Special rules for generating hex files for various devices and clock speeds
 ALLHEXFILES = hexfiles/mega8_12mhz.hex hexfiles/mega8_15mhz.hex hexfiles/mega8_16mhz.hex \

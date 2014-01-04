@@ -27,9 +27,6 @@
 #include <util/delay.h>
 
 #include "bootloaderconfig.h"
-
-
-
 #include "usbdrv/usbdrv.c"
 
 // verify the bootloader address aligns with page size
@@ -100,9 +97,9 @@ static inline void eraseApplication(void) {
 
 // simply write currently stored page in to already erased flash memory
 static void writeFlashPage(void) {
-  cli();
+ // cli();
   boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
-  sei();
+ // sei();
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
@@ -147,14 +144,14 @@ static void writeWordToPageBuffer(uint16_t data) {
 #endif		
   }
 
-  previous_sreg=SREG;    
-  cli(); // ensure interrupts are disabled
+ // previous_sreg=SREG;    
+ // cli(); // ensure interrupts are disabled
   
   boot_page_fill(currentAddress.w, data);
   
   // increment progmem address by one word
   currentAddress.w += 2;
-  SREG=previous_sreg;
+ // SREG=previous_sreg;
 }
 
 // This function is never called, it is just here to suppress a compiler warning.
@@ -231,11 +228,14 @@ static void initHardware (void)
   #endif
     
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
-  _delay_ms(500);  
+  _delay_ms(300);  
   usbDeviceConnect();
+  
+  // Todo: timeout if no reset is found
+  calibrateOscillatorASM();
   usbInit();    // Initialize INT settings after reconnect
-
-  sei();        
+  
+ // sei();        
 }
 
 /* ------------------------------------------------------------------------ */
@@ -244,7 +244,7 @@ static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
   
   bootLoaderExit();
-  cli();
+  //cli();
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
 
   USB_INTR_ENABLE = 0;
@@ -271,6 +271,33 @@ static inline void leaveBootloader(void) {
   for (;;); // Make sure function does not return to help compiler optimize
 }
 
+
+static void wait_usb_interrupt( void )
+{
+        // Clear any stale pending interrupt, then wait for interrupt flag
+        USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+        while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) )
+                wdt_reset();
+        
+        for ( ;; )
+        {
+                // Vector interrupt manually
+                USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+                USB_INTR_VECTOR();
+                
+                // Wait a little while longer in case another one comes
+                uchar n = 250; // about 90us timeout
+                do {
+                        if ( !--n )
+                                goto handled;
+                }
+                while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+        }
+handled:
+        command=cmd_local_nop;        
+        usbPoll();
+}
+
 int main(void) {
     
   bootLoaderInit();
@@ -287,23 +314,68 @@ int main(void) {
     }
     
     do {
-      _delay_us(100);
-      wdt_reset();   // Only necessary if WDT is fused on
+ 
+       uint8_t n=200;
+       while (--n)
+       {
+           if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
+           {
+             // Vector interrupt manually
+             USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+             USB_INTR_VECTOR();
+             n=100;
+            }
+       }
+  command=cmd_local_nop;     
+  usbPoll();
+
+       if ( command != cmd_local_nop)
+       {
+           // Make sure all USB activity has finished before running any blocking events
+           uint16_t n=1000;
+           while (--n)
+           {
+               if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
+               {
+                 // Vector interrupt manually
+                 USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+                 USB_INTR_VECTOR();
+                   n=1000;
+               }
+           }
+       }
+    
+//      _delay_us(100);
+ //     wdt_reset();   // Only necessary if WDT is fused on
       
-      command=cmd_local_nop;
-      usbPoll();
+//      command=cmd_local_nop;
+ //     usbPoll();
      
       idlePolls.w++;
       
       // Try to execute program if bootloader exit condition is met
-      if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
+  //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
  
       LED_MACRO( idlePolls.b[1] );
 
       // Wait for USB traffic to finish before a blocking event is executed
       // All events will render the MCU unresponsive to USB traffic for a while.
-      if (command!=cmd_local_nop) _delay_ms(2);
- 
+      /*
+      if (command!=cmd_local_nop) {
+ // Make sure all USB activity has finished before running any blocking events
+           uint16_t n=1000;
+           while (--n)
+           {
+               if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
+               {
+                 // Vector interrupt manually
+                 USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+                 USB_INTR_VECTOR();
+                   n=1000;
+               }
+           }       
+        }
+ */
       if (command==cmd_erase_application) 
         eraseApplication();
       else if (command==cmd_write_page) 

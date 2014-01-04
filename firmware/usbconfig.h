@@ -163,20 +163,18 @@ return;\
  * usbFunctionWrite(). Use the global usbCurrentDataToken and a static variable
  * for each control- and out-endpoint to check for duplicate packets.
  */
-//#if USB_CFG_CLOCK_KHZ==16500
 
-//#include "osccal.h"
-
+ 
 #ifndef __ASSEMBLER__
 	void calibrateOscillatorASM(void);
-  
+/*  
   #if AUTO_EXIT_NO_USB_MS>0
     extern uint16_union_t idlePolls;
     #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ idlePolls.b[1]=0; calibrateOscillatorASM();}
   #else
     #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ calibrateOscillatorASM();}
   #endif
-
+*/
   #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 

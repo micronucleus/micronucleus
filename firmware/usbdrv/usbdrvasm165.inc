@@ -49,9 +49,7 @@ USB_INTR_VECTOR:
     in      YL, SREG				; 
     push    YL						; 
 
-#ifdef TINY85MODE
-; look for magic word "B007" at the bottom of the stack
-	lds YL, RAMEND
+#if 0
 	cpi YL, 0xB0
 	brne cleanupAndJumpToApp
 
