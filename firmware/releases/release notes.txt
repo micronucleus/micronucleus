@@ -5,8 +5,8 @@ Firmware:
     entry condition.
   - The bootloader will not quit if no user program is loaded. This prevents periodic
     re-enumeration of the bootloader and should make driver installation much easier.
-    THe new "--erase-only" function of the commandline tool can be used to erase the
-    firmware and create a stable device for easier installiation.
+    THhe new "--erase-only" function of the commandline tool can be used to erase the
+    user program and create a stable device for easier installiation.
   - New entry modes can be selected in "bootloader.h". Please read the comments for details.
     + ENTRY_ALWAYS    
     + ENTRY_WATCHDOG  
