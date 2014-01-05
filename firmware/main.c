@@ -1,9 +1,8 @@
 /* 
  * Project: Micronucleus -  v2.0
  *
- * Micronucleus             V2.0 (c) 2014 Tim Bo"scke - cpldcpu@gmail.com
- *                          V2.0 (c) 2014 Shay Green
- *
+ * Micronucleus V2.0             (c) 2014 Tim Bo"scke - cpldcpu@gmail.com
+ *                               (c) 2014 Shay Green
  * Original Micronucleus         (c) 2012 Jenna Fox
  *
  * Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
@@ -14,11 +13,6 @@
  
 #define MICRONUCLEUS_VERSION_MAJOR 2
 #define MICRONUCLEUS_VERSION_MINOR 0
-// how many milliseconds should host wait till it sends another erase or write?
-// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define MICRONUCLEUS_WRITE_SLEEP 5
-// Use the old delay routines without NOP padding. This saves memory.
-#define __DELAY_BACKWARD_COMPATIBLE__     
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -29,6 +23,10 @@
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
+// how many milliseconds should host wait till it sends another erase or write?
+// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
+#define MICRONUCLEUS_WRITE_SLEEP 5
+
 // verify the bootloader address aligns with page size
 #if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
   #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
@@ -38,15 +36,28 @@
   #error "Micronucleus only supports pagesizes up to 256 bytes"
 #endif
 
-// command system schedules functions to run in the main loop
-register uint8_t        command         asm("r3");  // bind command to r3 
-register uint16_union_t currentAddress  asm("r4");  // r4/r5 current progmem address, used for erasing and writing 
-register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
+// Device configuration reply
+// Length: 4 bytes
+//   Byte 0:  User program memory size, high byte
+//   Byte 1:  User program memory size, low byte   
+//   Byte 2:  Flash Pagesize in bytes
+//   Byte 3:  Page write timing in ms
+
+PROGMEM const uint8_t configurationReply[4] = {
+  (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
+  ((uint16_t)PROGMEM_SIZE) & 0xff,
+  SPM_PAGESIZE,
+  MICRONUCLEUS_WRITE_SLEEP
+};  
 
 #if OSCCAL_RESTORE
   register uint8_t      osccal_default  asm("r2");
 #endif 
 
+register uint16_union_t currentAddress  asm("r4");  // r4/r5 current progmem address, used for erasing and writing 
+register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
+
+// command system schedules functions to run in the main loop
 enum {
   cmd_local_nop=0, // also: get device info
   cmd_device_info=0,
@@ -56,11 +67,15 @@ enum {
   cmd_exit=4,
   cmd_write_page=64,  // internal commands start at 64
 };
+register uint8_t        command         asm("r3");  // bind command to r3 
 
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
 #define sei() asm volatile("sei")
 #define cli() asm volatile("cli")
 #define nop() asm volatile("nop")
+
+// Use the old delay routines without NOP padding. This saves memory.
+#define __DELAY_BACKWARD_COMPATIBLE__   
 
 /* ------------------------------------------------------------------------ */
 static inline void eraseApplication(void);
@@ -68,6 +83,9 @@ static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
 static uint8_t usbFunctionSetup(uint8_t data[8]);
 static inline void leaveBootloader(void);
+
+// This function is never called, it is just here to suppress a compiler warning.
+USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; }
 
 // clear memory which stores data to be written by next writeFlashPage call
 #define __boot_page_fill_clear()             \
@@ -108,16 +126,15 @@ static inline void eraseApplication(void) {
   currentAddress.w = 0; 
   writeWordToPageBuffer(0xffff);
   command=cmd_write_page;
-  }
-  
+}
 
 // simply write currently stored page in to already erased flash memory
 static inline void writeFlashPage(void) {
   if (currentAddress.w<=BOOTLOADER_ADDRESS)
-    boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
+      boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
 }
 
-// write a word in to the page buffer, doing interrupt table modifications where they're required
+// write a word into the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
   
   // Patch the bootloader reset vector into the main vectortable to ensure
@@ -136,20 +153,8 @@ static void writeWordToPageBuffer(uint16_t data) {
 #endif
   
   boot_page_fill(currentAddress.w, data);
-  
   currentAddress.w += 2;
 }
-
-// This function is never called, it is just here to suppress a compiler warning.
-USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; }
-
-  PROGMEM const uint8_t replyBuffer[4] = {
-    (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
-    ((uint16_t)PROGMEM_SIZE) & 0xff,
-    SPM_PAGESIZE,
-    MICRONUCLEUS_WRITE_SLEEP
- };  
-
 
 /* ------------------------------------------------------------------------ */
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
@@ -158,7 +163,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
   idlePolls.b[1]=0; // reset idle polls when we get usb traffic
 
   if (rq->bRequest == cmd_device_info) { // get device info
-    usbMsgPtr = (usbMsgPtr_t)replyBuffer;
+    usbMsgPtr = (usbMsgPtr_t)configurationReply;
     return 4;      
   } else if (rq->bRequest == cmd_transfer_page) { // initialize write page
       currentAddress.w = rq->wIndex.word;     
