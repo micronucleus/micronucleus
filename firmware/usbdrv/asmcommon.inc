@@ -82,9 +82,41 @@ se0:
 ;   rjmp    handleSetupOrOut    ; fallthrough
 
 ;Setup and Out are followed by a data packet two bit times (16 cycles) after
-;the end of SE0. The sync code allows up to 40 cycles delay from the start of
-;the sync pattern until the first bit is sampled. That's a total of 56 cycles.
+;the end of SE0. The sync code allows up to 40 cycles delay (5 bit times) from 
+;the start of  the sync pattern until the first bit is sampled. That's a total of 56 cycles.
+
+; TB 2014-01-04
+; USB1.1 spec defines a minimum of two bit times and a maximum of 6.5 bit times
+; between Setup/Out and Data. We have to make sure we also cover the upper end
+; of the spec on a 16Mhz device. 
+;
+;           Bit times       µs      cycles @12Mhz    cycles @16 Mhz
+; minimum     2             1.33      16                21
+; maximum     6.5           4.33      52                69
+; meas. Win7  3             2.04      24                32
+; meas. Linux 5             3.5       40                53
+;
+; Currently it is only checked at cycle 46..49 if another interrupt occured. This is
+; too early for 16 Mhz and the interrupt will not catch the data packet if it is later
+; than 4 bit times.
+; 
+; fix: Introduce additional delay with timeout for the 16 und 16.5 Mhz version. 
+; The 12 and 12.8 Mhz versions are still fine without as the maximum delay is less than 46 cycles.
+; 
+; The total time until the next packet may not exceed 2 (min) +5 (sync tolerance) bit times 
+;     = 75 cycles @16Mhz to
+; The minimum time to cover max. timeout is 6.5 bit times = 70 cycles @16 Mhz
+;  
+; Additional delay = 70-46=24 cycles. -> going to 21 cycles to be safe.
+
 handleSetupOrOut:               ;[32]
+; Delay, see above
+#if (F_CPU >= 16000000)
+    ldi     YL, 7     ;
+USBdelay:
+    subi    YL, 1      
+    brne    USBdelay   
+#endif
 #if USB_CFG_IMPLEMENT_FN_WRITEOUT   /* if we have data for endpoint != 0, set usbCurrentTok to address */
     andi    x3, 0xf             ;[32]
     breq    storeTokenAndReturn ;[33]
@@ -94,6 +126,7 @@ storeTokenAndReturn:
     sts     usbCurrentTok, token;[35]
 doReturn:
     POP_STANDARD                ;[37] 12...16 cycles
+
     USB_LOAD_PENDING(YL)        ;[49]
     sbrc    YL, USB_INTR_PENDING_BIT;[50] check whether data is already arriving
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
