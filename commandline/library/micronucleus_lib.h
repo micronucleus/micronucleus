@@ -44,11 +44,12 @@
 #define MICRONUCLEUS_VENDOR_ID   0x16D0
 #define MICRONUCLEUS_PRODUCT_ID  0x0753
 #define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
-#define MICRONUCLEUS_MAX_MAJOR_VERSION 1
+#define MICRONUCLEUS_MAX_MAJOR_VERSION 2
+
 /*******************************************************************************/
 
 /********************************************************************************
-* Declearations
+* Declarations
 ********************************************************************************/
 //typedef usb_dev_handle micronucleus;
 // representing version number of micronucleus device
@@ -56,6 +57,8 @@ typedef struct _micronucleus_version {
   unsigned char major;
   unsigned char minor;
 } micronucleus_version;
+
+#define MICRONUCLEUS_COMMANDLINE_VERSION "Commandline tool version: 2.0a2"
 
 // handle representing one micronucleus device
 typedef struct _micronucleus {
@@ -77,7 +80,7 @@ typedef void (*micronucleus_callback)(float progress);
 * Try to connect to the device
 *     Returns: device handle for success, NULL for fail
 ********************************************************************************/
-micronucleus* micronucleus_connect();
+micronucleus* micronucleus_connect(int fast_mode);
 /*******************************************************************************/
 
 /********************************************************************************

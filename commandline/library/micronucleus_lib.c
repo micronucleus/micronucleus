@@ -28,7 +28,7 @@
 #include "micronucleus_lib.h"
 #include "littleWire_util.h"
 
-micronucleus* micronucleus_connect() {
+micronucleus* micronucleus_connect(int fast_mode) {
   micronucleus *nucleus = NULL;
   struct usb_bus *busses;
 
@@ -69,8 +69,15 @@ micronucleus* micronucleus_connect() {
         nucleus->page_size = buffer[2];
         nucleus->pages = (nucleus->flash_size / nucleus->page_size);
         if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
-        nucleus->write_sleep = buffer[3];
-        nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
+        
+        if ((nucleus->version.major>=2)&&(!fast_mode)) {
+          // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
+          nucleus->write_sleep = buffer[3]+2;
+          nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
+        } else {  
+          nucleus->write_sleep = buffer[3];
+          nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
+        }      
       }
     }
   }
@@ -122,6 +129,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
   unsigned int  page_address; // address within this page when copying buffer
   unsigned int  res;
   unsigned int  pagecontainsdata;
+  unsigned int  userReset;
   
   for (address = 0; address < deviceHandle->flash_size; address += deviceHandle->page_size) {
     // work around a bug in older bootloader versions
@@ -142,6 +150,26 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
       }
     }
 
+    // Reset vector patching is done in the host tool in micronucleus >=2    
+    if (deviceHandle->version.major >=2)
+    {
+       if ( address == 0 )
+        // save user reset vector (bootloader will patch with its vector)
+        userReset = page_buffer [1] * 0x100 + page_buffer [0];
+      
+      if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
+      {
+        // move user reset vector to end of last page
+        // The reset vector is always the last vector in the tinyvectortable
+        unsigned user_reset_addr = (deviceHandle->pages*deviceHandle->page_size)-2;
+        unsigned data = (userReset + 0x1000 - user_reset_addr/2) & ~0x1000;
+        
+        page_buffer [user_reset_addr - address + 0] = data >> 0 & 0xff;
+        page_buffer [user_reset_addr - address + 1] = data >> 8 & 0xff;
+      }
+    }   
+    
+       
     // always write last page so bootloader can insert the tiny vector table
     if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
       pagecontainsdata = 1;
