@@ -130,7 +130,7 @@ static inline void eraseApplication(void) {
 
 // simply write currently stored page in to already erased flash memory
 static inline void writeFlashPage(void) {
-  if (currentAddress.w<=BOOTLOADER_ADDRESS)
+  if (currentAddress.w - 2 <BOOTLOADER_ADDRESS)
       boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
 }
 
@@ -164,7 +164,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
 
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = (usbMsgPtr_t)configurationReply;
-    return 4;      
+    return sizeof(configurationReply);      
   } else if (rq->bRequest == cmd_transfer_page) { // initialize write page
       currentAddress.w = rq->wIndex.word;     
     } else if (rq->bRequest == cmd_write_data) { // Write data
@@ -250,80 +250,80 @@ int main(void) {
     }
     
     do {
-     
-    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
+           
+      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
 
-    while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-    USB_INTR_VECTOR();
+      while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+      USB_INTR_VECTOR();
+            
+            
+      command=cmd_local_nop;     
+      PORTB|=_BV(PB1);
+      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
+      usbPoll();
+      
+       // Test whether another interrupt occured during the processing of USBpoll.
+       // If yes, we missed a data packet on the bus. This is not a big issue, since
+       // USB seems to allow timeout of up the two packets. (On my machine an USB
+       // error is triggered after the third missed packet.) 
+       // The most critical situation occurs when a PID IN packet is missed due to
+       // it's short length. Each packet + timeout takes around 45µs, meaning that
+       // usbpoll must take less than 90µs or resyncing is not possible.
+       // To avoid synchronizing of the interrupt routine, we must not call it while
+       // a packet is transmitted. Therefore we have to wait until the bus is idle again.
+       //
+       // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
+       // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
+       // In that case we may resynch within a transmission, causing errors.
+       //
+       // A safer way is to wait until the bus was idle for the time it takes to send
+       // an ACK packet by the client (10.5µs on D+) but not as long as bus
+       // time out (12µs)
+       //
+       // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
+            
+       if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
+       {        
+         PORTB|=_BV(PB0);
+          uint8_t ctr;
+         
+          // loop takes 5 cycles
+          asm volatile(      
+          "         ldi  %0,%1 \n\t"        
+          "loop%=:  sbic %2,%3  \n\t"        
+          "         ldi  %0,%1  \n\t"
+          "         subi %0,1   \n\t"        
+          "         brne loop%= \n\t"   
+          : "=&d" (ctr)
+          :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
+          );       
+                    
+         PORTB&=~_BV(PB0);
+       }     
+      PORTB&=~_BV(PB1);
+
+      if (command == cmd_local_nop) continue;
+    /*  if (!ackSent) {ackSent=1;continue;}
+      ackSent=0;*/
+      
+      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+      while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+               USB_INTR_VECTOR();  
+
+          idlePolls.w++;
           
-          
-    command=cmd_local_nop;     
-    PORTB|=_BV(PB1);
-    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
-    usbPoll();
-    
-     // Test whether another interrupt occured during the processing of USBpoll.
-     // If yes, we missed a data packet on the bus. This is not a big issue, since
-     // USB seems to allow timeout of up the two packets. (On my machine an USB
-     // error is triggered after the third missed packet.) 
-     // The most critical situation occurs when a PID IN packet is missed due to
-     // it's short length. Each packet + timeout takes around 45µs, meaning that
-     // usbpoll must take less than 90µs or resyncing is not possible.
-     // To avoid synchronizing of the interrupt routine, we must not call it while
-     // a packet is transmitted. Therefore we have to wait until the bus is idle again.
-     //
-     // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
-     // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
-     // In that case we may resynch within a transmission, causing errors.
-     //
-     // A safer way is to wait until the bus was idle for the time it takes to send
-     // an ACK packet by the client (10.5µs on D+) but not as long as bus
-     // time out (12µs)
-     //
-     // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
-          
-     if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
-     {        
-       PORTB|=_BV(PB0);
-        uint8_t ctr;
-       
-        // loop takes 5 cycles
-        asm volatile(      
-        "         ldi  %0,%1 \n\t"        
-        "loop%=:  sbic %2,%3  \n\t"        
-        "         ldi  %0,%1  \n\t"
-        "         subi %0,1   \n\t"        
-        "         brne loop%= \n\t"   
-        : "=&d" (ctr)
-        :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
-        );       
-                  
-       PORTB&=~_BV(PB0);
-     }     
-    PORTB&=~_BV(PB1);
+          // Try to execute program if bootloader exit condition is met
+      //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
+   
+        LED_MACRO( idlePolls.b[1] );
 
-    if (command == cmd_local_nop) continue;
-  /*  if (!ackSent) {ackSent=1;continue;}
-    ackSent=0;*/
-    
-    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-    while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-             USB_INTR_VECTOR();  
-
-        idlePolls.w++;
-        
-        // Try to execute program if bootloader exit condition is met
-    //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
- 
-      LED_MACRO( idlePolls.b[1] );
-
-      if (command==cmd_erase_application) 
-        eraseApplication();
-      // Attention: eraseApplication will set command=cmd_write_page!
-      if (command==cmd_write_page) 
-        writeFlashPage();
-       
-      /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
+        if (command==cmd_erase_application) 
+          eraseApplication();
+        // Attention: eraseApplication will set command=cmd_write_page!
+        if (command==cmd_write_page) 
+          writeFlashPage();
+         
+        /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
     } while((command!=cmd_exit)||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
 
     LED_EXIT();
