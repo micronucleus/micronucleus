@@ -273,33 +273,6 @@ static inline void leaveBootloader(void) {
   for (;;); // Make sure function does not return to help compiler optimize
 }
 
-
-static void wait_usb_interrupt( void )
-{
-        // Clear any stale pending interrupt, then wait for interrupt flag
-        USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-        while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) )
-                wdt_reset();
-        
-        for ( ;; )
-        {
-                // Vector interrupt manually
-                USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-                USB_INTR_VECTOR();
-                
-                // Wait a little while longer in case another one comes
-                uchar n = 50; // about 90us timeout
-                do {
-                        if ( !--n )
-                                goto handled;
-                }
-                while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-        }
-handled:
-        command=cmd_local_nop;        
-        usbPoll();
-}
-
 int main(void) {
     
   bootLoaderInit();
@@ -318,22 +291,6 @@ int main(void) {
     }
     
     do {
-//             USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; // <--
-
-/*             
-       uint8_t n=200;
-       while (--n)
-       {
-           if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
-           {
-             // Vector interrupt manually
-             USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-             USB_INTR_VECTOR();
-             n=50;  // 25µs
-            }
-       }
-       */
-
 
   while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
            USB_INTR_VECTOR();
@@ -347,7 +304,7 @@ int main(void) {
    // Test whether another interrupt occured during the processing of USBpoll.
    // If yes, we missed a data packet on the bus. This is not a big issue, since
    // USB seems to allow timeout of up the two packets. (On my machine an USB
-   // error is triggers after the third missed packet.) 
+   // error is triggered after the third missed packet.) 
    // The most critical situation occurs when a PID IN packet is missed due to
    // it's short length. Each packet + timeout takes around 45µs, meaning that
    // usbpoll must take less than 90µs or resyncing is not possible.
@@ -355,11 +312,14 @@ int main(void) {
    // a packet is transmitted. Therefore we have to wait until the bus is idle again.
    //
    // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
-   // as the host may have been sending a multi-packet transmisstion (eg. OUT, DATA0/1)
-   // Restarting at the DATA packet may lead to errors.
+   // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
+   // In that case we may resynch within a transmission, causing errors.
    //
-   // A safer way is to wait until the bus was idle for the the host-timeout
-   // period (18 bit times = 12µs).
+   // A safer way is to wait until the bus was idle for the time it takes to send
+   // an ACK packet by the client (10.5µs on D+) but not as long as bus
+   // time out (12µs)
+   //
+   // TODO: Fix usb receiver to discard DATA1/0 packets without preceding OUT or SETUP
         
    if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll intersected with data packe
    {        
@@ -373,7 +333,6 @@ int main(void) {
         uint8_t usbin=USBIN;
         
         if (usbin&(1<<USB_CFG_DPLUS_BIT)) {tx=timeout;}
-     //   if (!(usbin&USBMASK)) {t=2;}
         
       }
      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
@@ -396,12 +355,6 @@ int main(void) {
                }
            }
        }
-    
-//      _delay_us(100);
- //     wdt_reset();   // Only necessary if WDT is fused on
-      
-//      command=cmd_local_nop;
- //     usbPoll();
      
       idlePolls.w++;
       
@@ -410,24 +363,6 @@ int main(void) {
  
       LED_MACRO( idlePolls.b[1] );
 
-      // Wait for USB traffic to finish before a blocking event is executed
-      // All events will render the MCU unresponsive to USB traffic for a while.
-      /*
-      if (command!=cmd_local_nop) {
- // Make sure all USB activity has finished before running any blocking events
-           uint16_t n=1000;
-           while (--n)
-           {
-               if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
-               {
-                 // Vector interrupt manually
-                 USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-                 USB_INTR_VECTOR();
-                   n=1000;
-               }
-           }       
-        }
- */
       if (command==cmd_erase_application) 
         eraseApplication();
       else if (command==cmd_write_page) 
