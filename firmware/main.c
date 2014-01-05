@@ -52,6 +52,7 @@ enum {
   cmd_device_info=0,
   cmd_transfer_page=1,
   cmd_erase_application=2,
+  cmd_write_data=3,
   cmd_exit=4,
   cmd_write_page=64,  // internal commands start at 64
 };
@@ -66,8 +67,20 @@ static inline void eraseApplication(void);
 static void writeFlashPage(void);
 static void writeWordToPageBuffer(uint16_t data);
 static uint8_t usbFunctionSetup(uint8_t data[8]);
-static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length);
 static inline void leaveBootloader(void);
+
+// clear memory which stores data to be written by next writeFlashPage call
+#define __boot_page_fill_clear()             \
+(__extension__({                             \
+  __asm__ __volatile__                       \
+  (                                          \
+    "sts %0, %1\n\t"                         \
+    "spm\n\t"                                \
+    :                                        \
+    : "i" (_SFR_MEM_ADDR(__SPM_REG)),        \
+      "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))     \
+  );                                           \
+}))
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
 //  - Because flash can be erased once and programmed several times, we can write the bootloader
@@ -86,33 +99,23 @@ static inline void eraseApplication(void) {
     ptr -= SPM_PAGESIZE;        
     boot_page_erase(ptr);
   }
+ 
+  // clear page buffer as a precaution before filling the buffer in case
+  // a previous write operation failed and there is still something in the buffer.
+  __boot_page_fill_clear(); 
   
-  // Code size is increase if this stuff is removed?!?   
-	currentAddress.w = 0;
-  for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
-  writeFlashPage();  
+  // Write reset vector into first page.
+  currentAddress.w = 0; 
+  writeWordToPageBuffer(0xffff);
+  command=cmd_write_page;
   }
   
 
 // simply write currently stored page in to already erased flash memory
 static inline void writeFlashPage(void) {
-
-  boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
-
+  if (currentAddress.w<=BOOTLOADER_ADDRESS)
+    boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
 }
-
-// clear memory which stores data to be written by next writeFlashPage call
-#define __boot_page_fill_clear()             \
-(__extension__({                             \
-  __asm__ __volatile__                       \
-  (                                          \
-    "sts %0, %1\n\t"                         \
-    "spm\n\t"                                \
-    :                                        \
-    : "i" (_SFR_MEM_ADDR(__SPM_REG)),        \
-      "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))     \
-  );                                           \
-}))
 
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
@@ -121,10 +124,10 @@ static void writeWordToPageBuffer(uint16_t data) {
   // the device can not be bricked.
   // Saving user-reset-vector is done in the host tool, starting with
   // firmware V2
-  
-    if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
-      data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
-    }
+   
+  if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
+    data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
+  }
 
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
    if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
@@ -134,58 +137,41 @@ static void writeWordToPageBuffer(uint16_t data) {
   
   boot_page_fill(currentAddress.w, data);
   
-  // increment progmem address by one word
   currentAddress.w += 2;
 }
 
 // This function is never called, it is just here to suppress a compiler warning.
 USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; }
 
-/* ------------------------------------------------------------------------ */
-static uint8_t usbFunctionSetup(uint8_t data[8]) {
-  usbRequest_t *rq = (void *)data;
-
-  static uint8_t replyBuffer[4] = {
+  PROGMEM const uint8_t replyBuffer[4] = {
     (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
     ((uint16_t)PROGMEM_SIZE) & 0xff,
     SPM_PAGESIZE,
     MICRONUCLEUS_WRITE_SLEEP
-  };
+ };  
 
+
+/* ------------------------------------------------------------------------ */
+static uint8_t usbFunctionSetup(uint8_t data[8]) {
+  usbRequest_t *rq = (void *)data;
+ 
   idlePolls.b[1]=0; // reset idle polls when we get usb traffic
 
   if (rq->bRequest == cmd_device_info) { // get device info
-    usbMsgPtr = replyBuffer;
+    usbMsgPtr = (usbMsgPtr_t)replyBuffer;
     return 4;      
-  } else if (rq->bRequest == cmd_transfer_page) { // transfer page  
-    // clear page buffer as a precaution before filling the buffer in case 
-    // a previous write operation failed and there is still something in the buffer.
-    __boot_page_fill_clear();
-    currentAddress.w = rq->wIndex.word;        
-    return USB_NO_MSG; // hands off work to usbFunctionWrite
+  } else if (rq->bRequest == cmd_transfer_page) { // initialize write page
+      currentAddress.w = rq->wIndex.word;     
+    } else if (rq->bRequest == cmd_write_data) { // Write data
+      writeWordToPageBuffer(rq->wValue.word);
+      writeWordToPageBuffer(rq->wIndex.word);
+      if ((currentAddress.b[0] % SPM_PAGESIZE) == 0)
+          command=cmd_write_page; // ask runloop to write our page       
   } else {
     // Handle cmd_erase_application and cmd_exit
     command=rq->bRequest;
-    return 0;
   }
-}
-
-// read in a page over usb, and write it in to the flash write buffer
-static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
-  do {     
-    // make sure we don't write over the bootloader!
-    if (currentAddress.w >= BOOTLOADER_ADDRESS) break;
-    
-    writeWordToPageBuffer(*(uint16_t *) data);
-    data += 2; // advance data pointer
-    length -= 2;
-  } while(length);
-  
-  // if we have now reached another page boundary, we're done
-  uint8_t isLast = ((currentAddress.b[0] % SPM_PAGESIZE) == 0);
-  if (isLast) command=cmd_write_page; // ask runloop to write our page
-  
-  return isLast; // let V-USB know we're done with this request
+  return 0;
 }
 
 static void initHardware (void)
@@ -235,13 +221,12 @@ static inline void leaveBootloader(void) {
     }
   #endif
   
-  asm volatile ("rjmp __vectors - 2"); // jump to application reset vector at end of flash
+ asm volatile ("rjmp __vectors - 2"); // jump to application reset vector at end of flash
   
-  for (;;); // Make sure function does not return to help compiler optimize
+ for (;;); // Make sure function does not return to help compiler optimize
 }
 
 void USB_INTR_VECTOR(void);
-
 int main(void) {
   uint8_t ackSent=0;  
   bootLoaderInit();
@@ -263,73 +248,74 @@ int main(void) {
      
     USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
 
-  while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-           USB_INTR_VECTOR();
+    while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+    USB_INTR_VECTOR();
           
           
-  command=cmd_local_nop;     
-  PORTB|=_BV(PB1);
-  USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
-  usbPoll();
-  
-   // Test whether another interrupt occured during the processing of USBpoll.
-   // If yes, we missed a data packet on the bus. This is not a big issue, since
-   // USB seems to allow timeout of up the two packets. (On my machine an USB
-   // error is triggered after the third missed packet.) 
-   // The most critical situation occurs when a PID IN packet is missed due to
-   // it's short length. Each packet + timeout takes around 45µs, meaning that
-   // usbpoll must take less than 90µs or resyncing is not possible.
-   // To avoid synchronizing of the interrupt routine, we must not call it while
-   // a packet is transmitted. Therefore we have to wait until the bus is idle again.
-   //
-   // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
-   // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
-   // In that case we may resynch within a transmission, causing errors.
-   //
-   // A safer way is to wait until the bus was idle for the time it takes to send
-   // an ACK packet by the client (10.5µs on D+) but not as long as bus
-   // time out (12µs)
-   //
-   // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
+    command=cmd_local_nop;     
+    PORTB|=_BV(PB1);
+    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
+    usbPoll();
+    
+     // Test whether another interrupt occured during the processing of USBpoll.
+     // If yes, we missed a data packet on the bus. This is not a big issue, since
+     // USB seems to allow timeout of up the two packets. (On my machine an USB
+     // error is triggered after the third missed packet.) 
+     // The most critical situation occurs when a PID IN packet is missed due to
+     // it's short length. Each packet + timeout takes around 45µs, meaning that
+     // usbpoll must take less than 90µs or resyncing is not possible.
+     // To avoid synchronizing of the interrupt routine, we must not call it while
+     // a packet is transmitted. Therefore we have to wait until the bus is idle again.
+     //
+     // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
+     // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
+     // In that case we may resynch within a transmission, causing errors.
+     //
+     // A safer way is to wait until the bus was idle for the time it takes to send
+     // an ACK packet by the client (10.5µs on D+) but not as long as bus
+     // time out (12µs)
+     //
+     // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
+          
+     if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
+     {        
+       PORTB|=_BV(PB0);
+        uint8_t ctr;
+       
+        // loop takes 5 cycles
+        asm volatile(      
+        "         ldi  %0,%1 \n\t"        
+        "loop%=:  sbic %2,%3  \n\t"        
+        "         ldi  %0,%1  \n\t"
+        "         subi %0,1   \n\t"        
+        "         brne loop%= \n\t"   
+        : "=&d" (ctr)
+        :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
+        );       
+                  
+       PORTB&=~_BV(PB0);
+     }     
+    PORTB&=~_BV(PB1);
+
+    if (command == cmd_local_nop) continue;
+  /*  if (!ackSent) {ackSent=1;continue;}
+    ackSent=0;*/
+    
+    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+    while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+             USB_INTR_VECTOR();  
+
+        idlePolls.w++;
         
-   if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
-   {        
-     PORTB|=_BV(PB0);
-      uint8_t ctr;
-     
-      // loop takes 5 cycles
-      asm volatile(      
-      "         ldi  %0,%1 \n\t"        
-      "loop%=:  sbic %2,%3  \n\t"        
-      "         ldi  %0,%1  \n\t"
-      "         subi %0,1   \n\t"        
-      "         brne loop%= \n\t"   
-      : "=&d" (ctr)
-      :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
-      );       
-                
-     PORTB&=~_BV(PB0);
-   }     
-  PORTB&=~_BV(PB1);
-
-  if (command == cmd_local_nop) continue;
-/*  if (!ackSent) {ackSent=1;continue;}
-  ackSent=0;*/
-  
-  USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-  while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-           USB_INTR_VECTOR();  
-
-      idlePolls.w++;
-      
-      // Try to execute program if bootloader exit condition is met
-  //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
+        // Try to execute program if bootloader exit condition is met
+    //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
  
       LED_MACRO( idlePolls.b[1] );
 
       if (command==cmd_erase_application) 
         eraseApplication();
-      else if (command==cmd_write_page) 
+      // Attention: eraseApplication will set command=cmd_write_page!
+      if (command==cmd_write_page) 
         writeFlashPage();
        
       /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
