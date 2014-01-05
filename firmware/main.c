@@ -125,19 +125,21 @@ static void writeWordToPageBuffer(uint16_t data) {
       vectorTemp[0] = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
-    
+/*    
     if (currentAddress.w == USBPLUS_VECTOR_OFFSET * 2) {
       vectorTemp[1] = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
-    
+    */
   // at end of page just before bootloader, write in tinyVector table
   // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
   // for info on how the tiny vector table works
   if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
       data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
+/*      
   } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
       data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
+*/      
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
   } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
       data = OSCCAL;
@@ -286,7 +288,7 @@ static void wait_usb_interrupt( void )
                 USB_INTR_VECTOR();
                 
                 // Wait a little while longer in case another one comes
-                uchar n = 250; // about 90us timeout
+                uchar n = 50; // about 90us timeout
                 do {
                         if ( !--n )
                                 goto handled;
@@ -302,6 +304,8 @@ int main(void) {
     
   bootLoaderInit();
 	
+  DDRB|=3;
+  
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
     initHardware();        
@@ -314,7 +318,9 @@ int main(void) {
     }
     
     do {
- 
+//             USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; // <--
+
+/*             
        uint8_t n=200;
        while (--n)
        {
@@ -323,12 +329,58 @@ int main(void) {
              // Vector interrupt manually
              USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
              USB_INTR_VECTOR();
-             n=100;
+             n=50;  // 25µs
             }
        }
-  command=cmd_local_nop;     
-  usbPoll();
+       */
 
+
+  while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+           USB_INTR_VECTOR();
+          
+          
+  command=cmd_local_nop;     
+  PORTB|=_BV(PB1);
+  USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
+  usbPoll();
+  
+   // Test whether another interrupt occured during the processing of USBpoll.
+   // If yes, we missed a data packet on the bus. This is not a big issue, since
+   // USB seems to allow timeout of up the two packets. (On my machine an USB
+   // error is triggers after the third missed packet.) 
+   // The most critical situation occurs when a PID IN packet is missed due to
+   // it's short length. Each packet + timeout takes around 45µs, meaning that
+   // usbpoll must take less than 90µs or resyncing is not possible.
+   // To avoid synchronizing of the interrupt routine, we must not call it while
+   // a packet is transmitted. Therefore we have to wait until the bus is idle again.
+   //
+   // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
+   // as the host may have been sending a multi-packet transmisstion (eg. OUT, DATA0/1)
+   // Restarting at the DATA packet may lead to errors.
+   //
+   // A safer way is to wait until the bus was idle for the the host-timeout
+   // period (18 bit times = 12µs).
+        
+   if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll intersected with data packe
+   {        
+     PORTB|=_BV(PB0);
+     uint8_t tx;
+     uint8_t timeout=(uint8_t)(10.0f*(F_CPU/1.0e6f)/7.0f+0.5);
+     tx=timeout;
+     
+     // loop takes 9 cycles
+     while (--tx) {
+        uint8_t usbin=USBIN;
+        
+        if (usbin&(1<<USB_CFG_DPLUS_BIT)) {tx=timeout;}
+     //   if (!(usbin&USBMASK)) {t=2;}
+        
+      }
+     USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+     PORTB&=~_BV(PB0);
+   }     
+  PORTB&=~_BV(PB1);
+  
        if ( command != cmd_local_nop)
        {
            // Make sure all USB activity has finished before running any blocking events

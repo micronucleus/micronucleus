@@ -45,30 +45,13 @@ of CPU cycles, but even an exact number of cycles!
 
 USB_INTR_VECTOR:
 ;order of registers pushed: YL, SREG [sofError], r0, YH, shift, x1, x2, x3, x4, cnt
+    SBI     PORTB,0
+
     push    YL              ; push only what is necessary to sync with edge ASAP
     in      YL, SREG				; 
     push    YL						; 
 
-#if 0
-	cpi YL, 0xB0
-	brne cleanupAndJumpToApp
-
-	lds YL, RAMEND-1
-	cpi YL, 0x07
-	breq cleanupBootloaderIntStack
-
-cleanupAndJumpToApp:
-; magic word was not found, put registers back to where they were before this ISR ran, and jump to application ISR
-	pop YL
-	out      SREG, YL
-	pop YL
-	
-	rjmp __vectors - TINYVECTOR_USBPLUS_OFFSET
-
-cleanupBootloaderIntStack:
-; magic word was found, put registers 
-	CLR YL					; [-19] ensure we meet below requirements for YL < 0x80 
-#endif
+    
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------

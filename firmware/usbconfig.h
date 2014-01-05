@@ -112,10 +112,12 @@
 /* #define USB_RX_USER_HOOK(data, len)     if(usbRxToken == (uchar)USBPID_SETUP) blinkLED(); */
 
 // Check CRC of all received data
+/*
 #define USB_RX_USER_HOOK( data, len ) { \
 if ( usbCrc16( data, len + 2 ) != 0x4FFE )\
 return;\
 }
+*/
 /* This macro is a hook if you want to do unconventional things. If it is
  * defined, it's inserted at the beginning of received message processing.
  * If you eat the received message and don't want default processing to

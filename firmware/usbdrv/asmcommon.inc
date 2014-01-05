@@ -99,6 +99,8 @@ doReturn:
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
 sofError:
     POP_RETI                    ;macro call
+    
+    CBI   PORTB,0
 ;    reti
     ret
     
