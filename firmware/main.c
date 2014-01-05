@@ -196,7 +196,7 @@ static void initHardware (void)
   usbDeviceConnect();
   
   // Todo: timeout if no reset is found
-  calibrateOscillatorASM();
+ // calibrateOscillatorASM();
   usbInit();    // Initialize INT settings after reconnect
 }
 
@@ -248,21 +248,44 @@ int main(void) {
     } else {
       idlePolls.b[1]=0;
     }
-    
     do {
-           
-      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
-
-      while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-      USB_INTR_VECTOR();
-            
-            
-      command=cmd_local_nop;     
-      PORTB|=_BV(PB1);
-      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
-      usbPoll();
+      // 15 clockcycles per loop.     
+      // adjust fastctr for 1ms timeout
       
-       // Test whether another interrupt occured during the processing of USBpoll.
+      uint16_t fastctr=(uint16_t)(F_CPU/(1000.0f*15.0f));
+      uint8_t resetctr=20;
+  
+      do {        
+        if ((USBIN & USBMASK) !=0) resetctr=20;
+        
+        if (!--resetctr) { // reset encountered
+           usbNewDeviceAddr = 0;   // bits from the reset handling of usbpoll()
+           usbDeviceAddr = 0;
+           calibrateOscillatorASM();   
+        }
+        
+        if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) {
+          USB_INTR_VECTOR();  // clears INT_PENDING (See se0: in asmcommon.inc)
+          break;
+        }
+        
+      } while(--fastctr);     
+            
+      PORTB|=_BV(PB1);
+      command=cmd_local_nop;     
+ 
+      usbPoll();
+
+      idlePolls.w++;
+
+      // Try to execute program when bootlodaer times out      
+      if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS)) {
+         if (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)  break;
+      }
+      
+      LED_MACRO( idlePolls.b[1] );   
+
+     // Test whether another interrupt occured during the processing of USBpoll and commands.
        // If yes, we missed a data packet on the bus. This is not a big issue, since
        // USB seems to allow timeout of up the two packets. (On my machine an USB
        // error is triggered after the third missed packet.) 
@@ -280,8 +303,7 @@ int main(void) {
        // an ACK packet by the client (10.5µs on D+) but not as long as bus
        // time out (12µs)
        //
-       // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
-            
+       
        if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
        {        
          PORTB|=_BV(PB0);
@@ -297,25 +319,20 @@ int main(void) {
           : "=&d" (ctr)
           :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
           );       
-                    
+         USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;                   
          PORTB&=~_BV(PB0);
        }     
-      PORTB&=~_BV(PB1);
-
+      PORTB&=~_BV(PB1);       
+        
+  
       if (command == cmd_local_nop) continue;
-    /*  if (!ackSent) {ackSent=1;continue;}
-      ackSent=0;*/
       
       USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
       while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
                USB_INTR_VECTOR();  
 
-          idlePolls.w++;
           
-          // Try to execute program if bootloader exit condition is met
-      //    if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS*10L)) command=cmd_exit;
    
-        LED_MACRO( idlePolls.b[1] );
 
         if (command==cmd_erase_application) 
           eraseApplication();
@@ -324,7 +341,7 @@ int main(void) {
           writeFlashPage();
          
         /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
-    } while((command!=cmd_exit)||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
+    } while(command!=cmd_exit);  
 
     LED_EXIT();
   }
