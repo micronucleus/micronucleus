@@ -56,10 +56,11 @@
 	.global	__vectors
 	.global	__bad_interrupt
 	.func	__vectors
+
 __bad_interrupt:	
 __vectors:
 	XJMP	__init
-	vector	__vector_1
+;	vector	__vector_1
 ;	vector	__vector_2
 ;	vector	__vector_3
 	.endfunc
@@ -95,6 +96,9 @@ __init:
 	out		0x3d, r28
 	out		0x3e, r29
 	.section .init9,"ax",@progbits
+;  rcall main
+;  XJMP  __vectors-2
 	XJMP	main
+  
 ;	.endfunc
 
