@@ -13,10 +13,10 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 11
+#define MICRONUCLEUS_VERSION_MINOR 99
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define MICRONUCLEUS_WRITE_SLEEP 8
+#define MICRONUCLEUS_WRITE_SLEEP 5
 // Use the old delay routines without NOP padding. This saves memory.
 #define __DELAY_BACKWARD_COMPATIBLE__     
 
@@ -47,7 +47,7 @@ register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
   register uint8_t      osccal_default  asm("r2");
 #endif 
 
-static uint16_t vectorTemp[2]; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
+static uint16_t vectorTemp; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 
 enum {
   cmd_local_nop=0, // also: get device info
@@ -55,7 +55,7 @@ enum {
   cmd_transfer_page=1,
   cmd_erase_application=2,
   cmd_exit=4,
-  cmd_write_page=5,
+  cmd_write_page=64,  // internal commands start at 64
 };
 
 // Definition of sei and cli without memory barrier keyword to prevent reloading of memory variables
@@ -83,7 +83,6 @@ static inline void eraseApplication(void) {
   
   uint8_t i;
   uint16_t ptr = BOOTLOADER_ADDRESS;
-  cli();
 
   while (ptr) {
     ptr -= SPM_PAGESIZE;        
@@ -92,14 +91,15 @@ static inline void eraseApplication(void) {
     
 	currentAddress.w = 0;
   for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
-  writeFlashPage();  // enables interrupts
-}
+  writeFlashPage();  
+  }
+  
 
 // simply write currently stored page in to already erased flash memory
-static void writeFlashPage(void) {
- // cli();
+static inline void writeFlashPage(void) {
+
   boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
- // sei();
+
 }
 
 // clear memory which stores data to be written by next writeFlashPage call
@@ -117,29 +117,20 @@ static void writeFlashPage(void) {
 
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
-  uint8_t previous_sreg;
   
   // first two interrupt vectors get replaced with a jump to the bootloader's vector table
   // remember vectors or the tinyvector table 
     if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
-      vectorTemp[0] = data;
+      vectorTemp = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
-/*    
-    if (currentAddress.w == USBPLUS_VECTOR_OFFSET * 2) {
-      vectorTemp[1] = data;
-      data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
-    }
-    */
-  // at end of page just before bootloader, write in tinyVector table
+
+    // at end of page just before bootloader, write in tinyVector table
   // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
   // for info on how the tiny vector table works
   if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
-      data = vectorTemp[0] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
-/*      
-  } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_USBPLUS_OFFSET) {
-      data = vectorTemp[1] + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 1 + USBPLUS_VECTOR_OFFSET;
-*/      
+      data = vectorTemp + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
+
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
   } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
       data = OSCCAL;
@@ -206,17 +197,6 @@ static uint8_t usbFunctionWrite(uint8_t *data, uint8_t length) {
   return isLast; // let V-USB know we're done with this request
 }
 
-/* ------------------------------------------------------------------------ */
-void PushMagicWord (void) __attribute__ ((naked)) __attribute__ ((section (".init3")));
-
-// put the word "B007" at the bottom of the stack (RAMEND - RAMEND-1)
-void PushMagicWord (void) {
-  asm volatile("ldi r16, 0xB0"::);
-  asm volatile("push r16"::);
-  asm volatile("ldi r16, 0x07"::);
-  asm volatile("push r16"::);
-}
-
 static void initHardware (void)
 {
   // Disable watchdog and set timeout to maximum in case the WDT is fused on 
@@ -244,20 +224,18 @@ static void initHardware (void)
 // reset system to a normal state and launch user program
 static void leaveBootloader(void) __attribute__((__noreturn__));
 static inline void leaveBootloader(void) {
-  
+ 
   bootLoaderExit();
-  //cli();
+
+  _delay_ms(10); // Bus needs to see a few more SOFs before it can be disconnected
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
 
   USB_INTR_ENABLE = 0;
   USB_INTR_CFG = 0;       /* also reset config bits */
 
-  // clear magic word from bottom of stack before jumping to the app
-  *(uint8_t*)(RAMEND) = 0x00; // A single write is sufficient to invalidate magic word
-    
   #if OSCCAL_RESTORE
     OSCCAL=osccal_default;
-    nop();	// NOP to avoid CPU hickup during oscillator stabilization
+    nop(); // NOP to avoid CPU hickup during oscillator stabilization
   #elif OSCCAL_16_5MHz   
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
@@ -268,13 +246,15 @@ static inline void leaveBootloader(void) {
     }
   #endif
   
-  asm volatile ("rjmp __vectors - 4"); // jump to application reset vector at end of flash
+  asm volatile ("rjmp __vectors - 2"); // jump to application reset vector at end of flash
   
   for (;;); // Make sure function does not return to help compiler optimize
 }
 
+void USB_INTR_VECTOR(void);
+
 int main(void) {
-    
+  uint8_t ackSent=0;  
   bootLoaderInit();
 	
   DDRB|=3;
@@ -291,6 +271,8 @@ int main(void) {
     }
     
     do {
+     
+    USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT; 
 
   while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
            USB_INTR_VECTOR();
@@ -324,38 +306,42 @@ int main(void) {
    if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll intersected with data packe
    {        
      PORTB|=_BV(PB0);
-     uint8_t tx;
-     uint8_t timeout=(uint8_t)(10.0f*(F_CPU/1.0e6f)/7.0f+0.5);
-     tx=timeout;
+      uint8_t ctr;
+      uint8_t timeout=(uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5);
+     
+      // loop takes 5 cycles
+      asm volatile(      
+      "         ldi  %0,%1 \n\t"        
+      "loop%=:  sbic %2,%3  \n\t"        
+      "         ldi  %0,%1  \n\t"
+      "         subi %0,1   \n\t"        
+      "         brne loop%= \n\t"   
+      : "=&d" (ctr)
+      :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
+      );       
+            
      
      // loop takes 9 cycles
+     /*
      while (--tx) {
         uint8_t usbin=USBIN;
         
         if (usbin&(1<<USB_CFG_DPLUS_BIT)) {tx=timeout;}
         
       }
-     USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+      */
      PORTB&=~_BV(PB0);
    }     
   PORTB&=~_BV(PB1);
+
+  if (command == cmd_local_nop) continue;
+/*  if (!ackSent) {ackSent=1;continue;}
+  ackSent=0;*/
   
-       if ( command != cmd_local_nop)
-       {
-           // Make sure all USB activity has finished before running any blocking events
-           uint16_t n=1000;
-           while (--n)
-           {
-               if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))
-               {
-                 // Vector interrupt manually
-                 USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-                 USB_INTR_VECTOR();
-                   n=1000;
-               }
-           }
-       }
-     
+  USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
+  while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
+           USB_INTR_VECTOR();  
+
       idlePolls.w++;
       
       // Try to execute program if bootloader exit condition is met
@@ -373,7 +359,7 @@ int main(void) {
 
     LED_EXIT();
   }
-    
+   
   leaveBootloader();
 }
 /* ------------------------------------------------------------------------ */

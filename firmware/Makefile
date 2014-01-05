@@ -150,7 +150,7 @@ DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
 # Remove the -fno-* options when you use gcc 3, it does not understand them
 # 
 CFLAGS = -g2 -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -Wall -Os  -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop  -I. -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
-LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map,--section-start=.zerotable=0
+LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map
 
 
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
@@ -198,7 +198,7 @@ main.bin:	$(OBJECTS)
 
 main.hex:	main.bin
 	@rm -f main.hex main.eep.hex
-	@avr-objcopy -j .text -j .zerotable -j .data -O ihex main.bin main.hex
+	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
 	@avr-size main.bin
 
 disasm:	main.bin

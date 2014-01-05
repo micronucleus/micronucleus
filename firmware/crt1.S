@@ -60,8 +60,8 @@ __bad_interrupt:
 __vectors:
 	XJMP	__init
 	vector	__vector_1
-	vector	__vector_2
-	vector	__vector_3
+;	vector	__vector_2
+;	vector	__vector_3
 	.endfunc
 
 	/* Handle unexpected interrupts (enabled and no handler), which
@@ -98,10 +98,3 @@ __init:
 	XJMP	main
 ;	.endfunc
 
-
-	.section .zerotable,"ax",@progbits
-zerovectors:
-	XJMP	__init
-	XJMP	__vector_1
-	XJMP	__vector_2
-	XJMP	__vector_3

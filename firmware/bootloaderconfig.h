@@ -140,16 +140,14 @@ these macros are defined, the boot loader uses them.
 
 // Microcontroller vectortable entries in the flash
 #define RESET_VECTOR_OFFSET         0
-#define USBPLUS_VECTOR_OFFSET       2
 
 // number of bytes before the boot loader vectors to store the tiny application vector table
-#define TINYVECTOR_RESET_OFFSET     4
-#define TINYVECTOR_USBPLUS_OFFSET   2
+#define TINYVECTOR_RESET_OFFSET     2
 #define TINYVECTOR_OSCCAL_OFFSET    6
 
 /* ------------------------------------------------------------------------ */
 // postscript are the few bytes at the end of programmable memory which store tinyVectors
-#define POSTSCRIPT_SIZE 6
+#define POSTSCRIPT_SIZE 4
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 /* ------------------------------------------------------------------------- */
