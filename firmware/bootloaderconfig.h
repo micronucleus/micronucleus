@@ -143,7 +143,7 @@ these macros are defined, the boot loader uses them.
 
 // number of bytes before the boot loader vectors to store the tiny application vector table
 #define TINYVECTOR_RESET_OFFSET     2
-#define TINYVECTOR_OSCCAL_OFFSET    6
+#define TINYVECTOR_OSCCAL_OFFSET    4
 
 /* ------------------------------------------------------------------------ */
 // postscript are the few bytes at the end of programmable memory which store tinyVectors

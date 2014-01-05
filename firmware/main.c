@@ -1,10 +1,10 @@
 /* 
- * Project: Micronucleus -  v1.11
- * 
- * Original author               (c) 2012 Jenna Fox
+ * Project: Micronucleus -  v2.0
  *
- * Optimizations v1.10/v1.11     (c) 2013 Tim Bo"scke - cpldcpu@gmail.com
- *                     v1.11     (c) 2013 Shay Green
+ * Micronucleus             V2.0 (c) 2014 Tim Bo"scke - cpldcpu@gmail.com
+ *                          V2.0 (c) 2014 Shay Green
+ *
+ * Original Micronucleus         (c) 2012 Jenna Fox
  *
  * Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
  * Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
@@ -12,8 +12,8 @@
  * License: GNU GPL v2 (see License.txt)
  */
  
-#define MICRONUCLEUS_VERSION_MAJOR 1
-#define MICRONUCLEUS_VERSION_MINOR 99
+#define MICRONUCLEUS_VERSION_MAJOR 2
+#define MICRONUCLEUS_VERSION_MINOR 0
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 #define MICRONUCLEUS_WRITE_SLEEP 5
@@ -46,8 +46,6 @@ register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
 #if OSCCAL_RESTORE
   register uint8_t      osccal_default  asm("r2");
 #endif 
-
-static uint16_t vectorTemp; // remember data to create tinyVector table before BOOTLOADER_ADDRESS
 
 enum {
   cmd_local_nop=0, // also: get device info
@@ -88,7 +86,8 @@ static inline void eraseApplication(void) {
     ptr -= SPM_PAGESIZE;        
     boot_page_erase(ptr);
   }
-    
+  
+  // Code size is increase if this stuff is removed?!?   
 	currentAddress.w = 0;
   for (i=0; i<8; i++) writeWordToPageBuffer(0xFFFF);  // Write first 8 words to fill in vectors.
   writeFlashPage();  
@@ -118,33 +117,25 @@ static inline void writeFlashPage(void) {
 // write a word in to the page buffer, doing interrupt table modifications where they're required
 static void writeWordToPageBuffer(uint16_t data) {
   
-  // first two interrupt vectors get replaced with a jump to the bootloader's vector table
-  // remember vectors or the tinyvector table 
+  // Patch the bootloader reset vector into the main vectortable to ensure
+  // the device can not be bricked.
+  // Saving user-reset-vector is done in the host tool, starting with
+  // firmware V2
+  
     if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
-      vectorTemp = data;
       data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
     }
 
-    // at end of page just before bootloader, write in tinyVector table
-  // see http://embedded-creations.com/projects/attiny85-usb-bootloader-overview/avr-jtag-programmer/
-  // for info on how the tiny vector table works
-  if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET) {
-      data = vectorTemp + ((FLASHEND + 1) - BOOTLOADER_ADDRESS)/2 + 2 + RESET_VECTOR_OFFSET;
-
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
-  } else if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
+   if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
       data = OSCCAL;
-#endif		
-  }
-
- // previous_sreg=SREG;    
- // cli(); // ensure interrupts are disabled
+   }     
+#endif
   
   boot_page_fill(currentAddress.w, data);
   
   // increment progmem address by one word
   currentAddress.w += 2;
- // SREG=previous_sreg;
 }
 
 // This function is never called, it is just here to suppress a compiler warning.
@@ -216,8 +207,6 @@ static void initHardware (void)
   // Todo: timeout if no reset is found
   calibrateOscillatorASM();
   usbInit();    // Initialize INT settings after reconnect
-  
- // sei();        
 }
 
 /* ------------------------------------------------------------------------ */
@@ -301,13 +290,12 @@ int main(void) {
    // an ACK packet by the client (10.5µs on D+) but not as long as bus
    // time out (12µs)
    //
-   // TODO: Fix usb receiver to discard DATA1/0 packets without preceding OUT or SETUP
+   // TODO: Fix usb receiver to ignore DATA1/0 packets without preceding OUT or SETUP
         
-   if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll intersected with data packe
+   if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
    {        
      PORTB|=_BV(PB0);
       uint8_t ctr;
-      uint8_t timeout=(uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5);
      
       // loop takes 5 cycles
       asm volatile(      
@@ -319,17 +307,7 @@ int main(void) {
       : "=&d" (ctr)
       :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
       );       
-            
-     
-     // loop takes 9 cycles
-     /*
-     while (--tx) {
-        uint8_t usbin=USBIN;
-        
-        if (usbin&(1<<USB_CFG_DPLUS_BIT)) {tx=timeout;}
-        
-      }
-      */
+                
      PORTB&=~_BV(PB0);
    }     
   PORTB&=~_BV(PB1);
@@ -354,7 +332,7 @@ int main(void) {
       else if (command==cmd_write_page) 
         writeFlashPage();
        
-      /* main event loop runs as long as no problem is uploaded or existing program is not executed */                           
+      /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
     } while((command!=cmd_exit)||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff));  
 
     LED_EXIT();
