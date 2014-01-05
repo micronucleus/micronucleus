@@ -62,7 +62,7 @@ micronucleus* micronucleus_connect() {
 
         // get nucleus info
         unsigned char buffer[4];
-        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+        int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
         assert(res >= 4);
 
         nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -80,7 +80,7 @@ micronucleus* micronucleus_connect() {
 
 int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback progress) {
   int res;
-  res = usb_control_msg(deviceHandle->device, 0xC0, 2, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
+  res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 2, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
 
   // give microcontroller enough time to erase all writable pages and come back online
   float i = 0;
@@ -174,7 +174,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
 
 int micronucleus_startApp(micronucleus* deviceHandle) {
   int res;
-  res = usb_control_msg(deviceHandle->device, 0xC0, 4, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
+  res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 4, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
 
   if(res!=0)
     return -1;
