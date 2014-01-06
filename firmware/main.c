@@ -92,13 +92,15 @@ USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; 
 (__extension__({                             \
   __asm__ __volatile__                       \
   (                                          \
-    "sts %0, %1\n\t"                         \
+    "out %0, %1\n\t"                         \
     "spm\n\t"                                \
     :                                        \
-    : "i" (_SFR_MEM_ADDR(__SPM_REG)),        \
+    : "i" (_SFR_IO_ADDR(__SPM_REG)),        \
       "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))     \
   );                                           \
 }))
+//    : "i" (_SFR_MEM_ADDR(__SPM_REG)),        \
+
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
 //  - Because flash can be erased once and programmed several times, we can write the bootloader
@@ -109,8 +111,7 @@ static inline void eraseApplication(void) {
   // while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
   // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
   // during upload
-  
-  uint8_t i;
+
   uint16_t ptr = BOOTLOADER_ADDRESS;
 
   while (ptr) {
@@ -194,9 +195,7 @@ static void initHardware (void)
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(300);  
   usbDeviceConnect();
-  
-  // Todo: timeout if no reset is found
- // calibrateOscillatorASM();
+
   usbInit();    // Initialize INT settings after reconnect
 }
 
@@ -248,6 +247,7 @@ int main(void) {
     } else {
       idlePolls.b[1]=0;
     }
+    
     do {
       // 15 clockcycles per loop.     
       // adjust fastctr for 1ms timeout
@@ -274,18 +274,31 @@ int main(void) {
       PORTB|=_BV(PB1);
       command=cmd_local_nop;     
  
-      usbPoll();
-
+      {
+      // This is usbpoll() minus reset logic and double buffering
+        int8_t  len;
+        len = usbRxLen - 3;
+        if(len >= 0){
+            usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
+            usbRxLen = 0;       /* mark rx buffer as available */
+        }
+        if(usbTxLen & 0x10){    /* transmit system idle */
+            if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
+                usbBuildTxBlock();
+            }
+        }
+      }
+      
       idlePolls.w++;
 
-      // Try to execute program when bootlodaer times out      
+      // Try to execute program when bootloader times out      
       if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS)) {
          if (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)  break;
       }
       
       LED_MACRO( idlePolls.b[1] );   
 
-     // Test whether another interrupt occured during the processing of USBpoll and commands.
+       // Test whether another interrupt occured during the processing of USBpoll and commands.
        // If yes, we missed a data packet on the bus. This is not a big issue, since
        // USB seems to allow timeout of up the two packets. (On my machine an USB
        // error is triggered after the third missed packet.) 
@@ -304,7 +317,7 @@ int main(void) {
        // time out (12µs)
        //
        
-       if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() intersected with data packet
+       if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() collided with data packet
        {        
          PORTB|=_BV(PB0);
           uint8_t ctr;
@@ -323,24 +336,19 @@ int main(void) {
          PORTB&=~_BV(PB0);
        }     
       PORTB&=~_BV(PB1);       
-        
-  
+          
       if (command == cmd_local_nop) continue;
       
       USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
       while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
                USB_INTR_VECTOR();  
-
-          
-   
-
+        
         if (command==cmd_erase_application) 
           eraseApplication();
         // Attention: eraseApplication will set command=cmd_write_page!
         if (command==cmd_write_page) 
           writeFlashPage();
          
-        /* main event loop runs as long as no program is uploaded or existing program is not executed */                           
     } while(command!=cmd_exit);  
 
     LED_EXIT();

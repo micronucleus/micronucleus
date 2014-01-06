@@ -156,10 +156,13 @@ handleData:
 #endif
     sts     usbRxLen, cnt       ;[28] store received data, swap buffers
     sts     usbRxToken, shift   ;[30]
-    lds     x2, usbInputBufOffset;[32] swap buffers
-    ldi     cnt, USB_BUFSIZE    ;[34]
-    sub     cnt, x2             ;[35]
-    sts     usbInputBufOffset, cnt;[36] buffers now swapped
+    
+; Micronculeus v2 needs no double buffer due to in-order processing
+; TB 2014-01-04     
+;    lds     x2, usbInputBufOffset;[32] swap buffers
+;    ldi     cnt, USB_BUFSIZE    ;[34]
+;    sub     cnt, x2             ;[35]
+;    sts     usbInputBufOffset, cnt;[36] buffers now swapped
     rjmp    sendAckAndReti      ;[38] 40 + 17 = 57 until SOP
 
 handleIn:

@@ -255,7 +255,7 @@ these macros are defined, the boot loader uses them.
  *  comes with its own OSCCAL calibration or an external clock source is used.
  */
  
- #define OSCCAL_RESTORE 0
+ #define OSCCAL_RESTORE 1
  #define OSCCAL_16_5MHz 1
  
 /*  
