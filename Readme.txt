@@ -37,7 +37,8 @@ See release notes (/firmware/releases/release notes.txt) for details.
 ----------------------------------------------------------------------------------
 
 Special Thanks:
- • Shay Green for numerous optimization ideas.
+ • Shay Green/@glbargg for numerous optimization ideas.
+ • Aaron Stone/@sodabrew for building the OS X command line tool and various fixes.
  • Objective Development's great V-USB bitbanging usb driver
  • Embedded Creations' pioneering and inspiring USBaspLoader-tiny85
  • Digistump for motivation and contributing the VID/PID pair
