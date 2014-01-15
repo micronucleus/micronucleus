@@ -1,22 +1,22 @@
 Micronucleus Upgrade
 ====================
 
-**WARNING**: Upgrade requires more testing. Don't use it on chips you can't recover by other means. Consider it experimental for now.
+Upgrade is a virus-like payload you can upload via micronucleus (or other bootloaders!) to install a new version of micronucleus on the target chip. The upgrade program works by compiling the binary contents of a bootloader hex file in to a progmem array, then running on the chip bricking the device so it doesn't enter any existing bootloader anymore but instead runs the upgrade program exclusively. Next it erases and rewrites the bootloader in place at the same address the hex file specifies (BOOTLOADER_ADDRESS in the case of micronucleus). Once the bootloader has been rewritten, upgrade rewrites it's own interrupt vector table to point every interrupt including reset straight at the newly uploaded bootloader's interrupt vector table at whichever address it was installed.
 
-Upgrade is a virus-like payload you can upload via micronucleus (or other bootloaders) to install a new version of micronucleus on the target chip. The upgrade program works by copying the contents of a bootloader hex file in to a progmem array, then bricking the device so it doesn't enter the bootloader on reset but instead runs the upgrader program exclusively. Next it erases and rewrites the bootloader in place at the same address the hex file specifies (BOOTLOADER_ADDRESS in the case of micronucleus). Once the bootloader has been rewritten, upgrade rewrites it's own interrupt vector table to point every interrupt including reset straight at the newly uploaded bootloader's interrupt vector table at whichever address it was installed.
+The program then emits a beep if a piezo speaker is connected between PB0 and PB1. If you have no speaker, use an LED with positive on PB0 (requires resistor). Premade upgrades are included in releases/ for micronucleus builds. Just upload one in the usual way and wait for the beep. Once you hear the beep, the chip will automatically reboot and should enumerate over USB as a micronucleus device, ready to accept a new program.
 
-The program then emits a beep if a piezo speaker is connected between PB0 and PB1. If you have no speaker, use an LED with positive on PB0 (requires resistor). Premade upgraders are included in releases/ for micronucleus builds. Just upload one in the usual way and wait for the beep. Once you hear the beep, power down the device and turn it back on - it should launch your new bootloader!
+Upgrade has only been tested with micronucleus - use it to upload other bootloaders at your own risk!
 
 
-Creating an Upgrader
-====================
+Creating an Upgrade
+===================
 
-    ruby generate-data.rb my_bootloader.hex
+    ruby generate-data.rb my_new_bootloader.hex
     make clean; make
 
-Next upload the 'upgrade.hex' file generated, via whichever bootloader you're using. If you're using micronucleus and have the command line tool installed: micronucleus --run upgrade.hex
+Next upload the 'upgrade.hex' file generated in this folder, via whichever bootloader you're using, or an ISP or whatever - everything should work. If you're using micronucleus and have the command line tool installed: micronucleus --run upgrade.hex
 
-The ruby script requires ruby 1.9 be installed. On Mac OS this is best achieved via Mac Homebrew. The 1.8 version included wont do.
+The generate-data.rb script requires Ruby 1.9 or newer to be installed. If you're using an older version of Mac OS X (before Mavericks), use homebrew to install ruby with 'brew install ruby' to get a recent version. On linuxes you can usually find a package called ruby1.9 in whichever installing thingy. On windows you're on your own!
 
 
 License
