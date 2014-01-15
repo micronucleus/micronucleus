@@ -14,14 +14,19 @@ Changes
 This is release 1.11. Please use this at your own risk. The last official release for the DigiSpark is v1.06, which can be found here: https://github.com/micronucleus/micronucleus/tree/v1.06
 
 Changes compared to v1.10:
- • The size was reduced further to 1816 bytes, allowing 6380 bytes user space (320 bytes more than in v1.06).
- • The bootloader will always start and never quit if no user program was loaded. This allows for much easier driver installation. Use the new "--erase-only" function of the command line tool to create a clean device.
- • New entrymodes have been added. See firmware release notes and source code comments for details.
+ • The size was reduced further to 1816 bytes, allowing 6380 bytes user space. 
+   (320 bytes more than in v1.06)
+ • The bootloader will always start and never quit if no user program was loaded. 
+   This allows for much easier driver installation. Use the new "--erase-only" 
+   function of the command line tool to create a clean device.
+ • New entrymodes have been added. See firmware release notes and source code 
+   comments for details.
  • All incoming data is now CRC checked to improve robustness.
  
 Changes compared to v1.06:
  • Major size optimization and code reorganization.
- • The size was reduced to 1878 bytes, allowing 6314 bytes user space (256 bytes more than in v1.06).
+ • The size was reduced to 1878 bytes, allowing 6314 bytes user space 
+   (256 bytes more than in v1.06).
  • The bootloader will disconnect from USB on exit.
 
 See release notes (/firmware/releases/release notes.txt) for details.
