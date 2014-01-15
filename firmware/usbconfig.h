@@ -110,6 +110,12 @@
  * for long transfers increases the driver size.
  */
 /* #define USB_RX_USER_HOOK(data, len)     if(usbRxToken == (uchar)USBPID_SETUP) blinkLED(); */
+
+// Check CRC of all received data
+#define USB_RX_USER_HOOK( data, len ) { \
+if ( usbCrc16( data, len + 2 ) != 0x4FFE )\
+return;\
+}
 /* This macro is a hook if you want to do unconventional things. If it is
  * defined, it's inserted at the beginning of received message processing.
  * If you eat the received message and don't want default processing to
@@ -163,10 +169,15 @@
 
 #ifndef __ASSEMBLER__
 	void calibrateOscillatorASM(void);
-	extern uint16_t idlePolls;
-#	define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ ((uint8_t*)&idlePolls)[1]= 0;calibrateOscillatorASM();}
+  
+  #if AUTO_EXIT_NO_USB_MS>0
+    extern uint16_union_t idlePolls;
+    #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ idlePolls.b[1]=0; calibrateOscillatorASM();}
+  #else
+    #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ calibrateOscillatorASM();}
+  #endif
 
-#	define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
+  #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 
 

@@ -1,19 +1,25 @@
 # Makefile initially writen for Little-Wire by Omer Kilic <omerkilic@gmail.com>
-# Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application. 
+# Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application.
 
 CC=gcc
 
-# FIXME: Need to add OSX stuff
 ifeq ($(shell uname), Linux)
-	USBFLAGS = `libusb-config --cflags`
-	USBLIBS = `libusb-config --libs`
+	USBFLAGS=$(shell libusb-config --cflags)
+	USBLIBS=$(shell libusb-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)
-	USBFLAGS = `libusb-config --cflags`
-	USBLIBS = `libusb-config --libs`
+	USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
+	USBLIBS=$(shell libusb-config --libs || libusb-legacy-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D MAC_OS
+	# Uncomment these to create a static binary:
+	# USBLIBS = /opt/local/lib/libusb-legacy/libusb-legacy.a
+	# USBLIBS += -mmacosx-version-min=10.5
+	# USBLIBS += -framework CoreFoundation
+	# USBLIBS += -framework IOKit
+	# Uncomment these to create a dual architecture binary:
+	# OSFLAG += -arch x86_64 -arch i386
 else
 	USBFLAGS = -I C:\MinGW\include
 	USBLIBS = -L C:\MinGW\lib -lusb
@@ -36,11 +42,11 @@ library: $(LWLIBS)
 
 $(LWLIBS):
 	@echo Building library: $@...
-	$(CC) $(CFLAGS) -c library/$@.c 
+	$(CC) $(CFLAGS) -c library/$@.c
 
 $(EXAMPLES): $(addsuffix .o, $(LWLIBS))
-	@echo Building example: $@...
-	$(CC) $(CFLAGS) -o $@$(EXE_SUFFIX) examples/$@.c $^ $(LIBS)
+	@echo Building command line tool: $@...
+	$(CC) $(CFLAGS) -o $@$(EXE_SUFFIX) $@.c $^ $(LIBS)
 
 clean:
 	rm -f $(EXAMPLES)$(EXE_SUFFIX) *.o *.exe

@@ -50,17 +50,19 @@ micronucleus* micronucleus_connect() {
         nucleus->version.minor = dev->descriptor.bcdDevice & 0xFF;
 
         if (nucleus->version.major > MICRONUCLEUS_MAX_MAJOR_VERSION) {
-	        fprintf(stderr, "Warning: device with unknown new version of Micronucleus detected.\n");
-	        fprintf(stderr, "This tool doesn't know how to upload to this new device. Updates may be available.\n");
-	        fprintf(stderr, "Device reports version as: %d.%d\n", nucleus->version.major, nucleus->version.minor);
-	        return NULL;
+          fprintf(stderr,
+                  "Warning: device with unknown new version of Micronucleus detected.\n"
+                  "This tool doesn't know how to upload to this new device. Updates may be available.\n"
+                  "Device reports version as: %d.%d\n",
+                  nucleus->version.major, nucleus->version.minor);
+          return NULL;
         }
 
         nucleus->device = usb_open(dev);
 
         // get nucleus info
         unsigned char buffer[4];
-        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+        int res = usb_control_msg(nucleus->device, 0xC0, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
         assert(res >= 4);
 
         nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -102,7 +104,7 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
   if (res == -5 || res == -34 || res == -84) {
-    if (res = -34) {
+    if (res == -34) {
       usb_close(deviceHandle->device);
       deviceHandle->device = NULL;
     }
@@ -119,38 +121,49 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
   unsigned int  address; // overall flash memory address
   unsigned int  page_address; // address within this page when copying buffer
   unsigned int  res;
-
+  unsigned int  pagecontainsdata;
+  
   for (address = 0; address < deviceHandle->flash_size; address += deviceHandle->page_size) {
     // work around a bug in older bootloader versions
     if (deviceHandle->version.major == 1 && deviceHandle->version.minor <= 2
         && address / deviceHandle->page_size == deviceHandle->pages - 1) {
       page_length = deviceHandle->flash_size % deviceHandle->page_size;
     }
+    
+    pagecontainsdata=0; 
 
     // copy in bytes from user program
     for (page_address = 0; page_address < page_length; page_address += 1) {
       if (address + page_address > program_size) {
         page_buffer[page_address] = 0xFF; // pad out remainder with unprogrammed bytes
       } else {
+        pagecontainsdata=1; // page contains data and needs to be written
         page_buffer[page_address] = program[address + page_address]; // load from user program
       }
     }
 
+    // always write last page so bootloader can insert the tiny vector table
+    if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
+      pagecontainsdata = 1;
+  
     // ask microcontroller to write this page's data
-    res = usb_control_msg(deviceHandle->device,
-           USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
-           1,
-           page_length, address,
-           page_buffer, page_length,
-           MICRONUCLEUS_USB_TIMEOUT);
+    if (pagecontainsdata) {
+      res = usb_control_msg(deviceHandle->device,
+             USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
+             1,
+             page_length, address,
+             (char*)page_buffer, page_length,
+             MICRONUCLEUS_USB_TIMEOUT);
+             
+      if (res != page_length) return -1;
 
-    // call progress update callback if that's a thing
-    if (prog) prog(((float) address) / ((float) deviceHandle->flash_size));
-
-    // give microcontroller enough time to write this page and come back online
-    delay(deviceHandle->write_sleep);
+      // give microcontroller enough time to write this page and come back online
+      delay(deviceHandle->write_sleep);
+    }
     
-    if (res != page_length) return -1;
+  // call progress update callback if that's a thing
+  if (prog) prog(((float) address) / ((float) deviceHandle->flash_size));
+
   }
 
   // call progress update callback with completion status
