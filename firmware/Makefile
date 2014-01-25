@@ -190,7 +190,7 @@ read_fuses:
 	$(UISP) --rd_fuses
 
 clean:
-	@rm -f main.hex main.bin main.c.lst main.map *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
+	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
 
 # file targets:
 main.bin:	$(OBJECTS)
@@ -201,6 +201,14 @@ main.hex:	main.bin
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
 	@avr-size main.bin
 
+upgrade: main.bin
+	avr-objcopy -O binary main.bin main.raw
+	avr-objcopy -I binary -O elf32-avr \
+        --rename-section .data=.text \
+        --redefine-sym _binary_main_raw_start=loader \
+        --redefine-sym _binary_main_raw_end=loader_end \
+		main.raw bootloader_linkable.o	
+	
 disasm:	main.bin
 	@avr-objdump -d -S main.bin >main.lss
 
