@@ -4,9 +4,7 @@
  * Creation Date: 2007-04-22
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
- * Portions Copyright: (c) 2012 Louis Beaudoin
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
- * Revision: $Id: usbdrvasm165.inc 740 2009-04-13 18:23:31Z cs $
  */
 
 /* Do not link this file! Link usbdrvasm.S instead, which includes the
@@ -39,12 +37,9 @@ of CPU cycles, but even an exact number of cycles!
 
 USB_INTR_VECTOR:
 ;order of registers pushed: YL, SREG [sofError], r0, YH, shift, x1, x2, x3, x4, cnt
-    SBI     PORTB,0
-
-    push    YL              ; push only what is necessary to sync with edge ASAP
-    in      YL, SREG				; 
-    push    YL						; 
-    
+    push    YL                  ;[-23] push only what is necessary to sync with edge ASAP
+    in      YL, SREG            ;[-21]
+    push    YL                  ;[-20]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
@@ -54,9 +49,9 @@ USB_INTR_VECTOR:
 ;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
 ;waitForJ, ensure that this prerequisite is met.
 waitForJ:
-    inc     YL				; [-18]
-    sbis    USBIN, USBMINUS ; [-17]
-    brne    waitForJ        ; [-16] just make sure we have ANY timeout
+    inc     YL
+    sbis    USBIN, USBMINUS
+    brne    waitForJ        ; just make sure we have ANY timeout
 waitForK:
 ;The following code results in a sampling window of < 1/4 bit which meets the spec.
     sbis    USBIN, USBMINUS     ;[-15]
