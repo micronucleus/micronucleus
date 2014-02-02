@@ -93,7 +93,7 @@
 #endif
 #   define cnt16    cnt16L
 
-; extern void calibrateOscillatorASM(void);
+#if (OSCCAL_HAVE_XTAL == 0)
 
 .global calibrateOscillatorASM
 calibrateOscillatorASM:
@@ -171,6 +171,8 @@ usbCObinarysearch:
 	nop
   ret
 
+#endif //OSCCAL_HAVE_XTAL  
+  
 #undef i
 #undef opV
 #undef opD

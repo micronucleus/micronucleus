@@ -259,7 +259,9 @@ int main(void) {
         if (!--resetctr) { // reset encountered
            usbNewDeviceAddr = 0;   // bits from the reset handling of usbpoll()
            usbDeviceAddr = 0;
+#if (OSCCAL_HAVE_XTAL == 0)           
            calibrateOscillatorASM();   
+#endif           
         }
         
         if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) {

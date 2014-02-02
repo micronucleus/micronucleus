@@ -248,16 +248,21 @@ these macros are defined, the boot loader uses them.
  *                            This is the default behaviour of the Digispark.
  *                            Adds ~38 bytes.
  *
+ *  OSCCAL_HAVE_XTAL          Set this to '1' if you have an external crystal oscillator. In this case no attempt
+ *                            will be made to calibrate the oscillator. You should deactivate both options above
+ *                            if you use this to avoid redundant code.
+ *
  *  If both options are selected, OSCCAL_RESTORE takes precedence.
  *
  *  If no option is selected, OSCCAL will be left untouched and stay at either 16.0Mhz or 16.5Mhz depending
  *  on whether the bootloader was activated. This will take the least memory. You can use this if your program
- *  comes with its own OSCCAL calibration or an external clock source is used.
+ *  comes with its own OSCCAL calibration or an external clock source is used. 
  */
  
- #define OSCCAL_RESTORE 1
- #define OSCCAL_16_5MHz 1
- 
+#define OSCCAL_RESTORE 1
+#define OSCCAL_16_5MHz 0
+#define OSCCAL_HAVE_XTAL 0
+  
 /*  
  *  Defines handling of an indicator LED while the bootloader is active.  
  * 
