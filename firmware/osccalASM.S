@@ -123,6 +123,9 @@ usbCOloop:
 #elif (F_CPU == 16000000)
   ldi   cnt16L, lo8(3197)
   ldi   cnt16H, hi8(3197)  
+#elif (F_CPU == 15000000)
+  ldi   cnt16L, lo8(2998)
+  ldi   cnt16H, hi8(2998)  
 #else
 	#error "calibrateOscillatorASM: no delayvalues defined for this F_CPU setting"
 #endif

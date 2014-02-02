@@ -99,8 +99,6 @@ USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; 
       "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))     \
   );                                           \
 }))
-//    : "i" (_SFR_MEM_ADDR(__SPM_REG)),        \
-
 
 // erase any existing application and write in jumps for usb interrupt and reset to bootloader
 //  - Because flash can be erased once and programmed several times, we can write the bootloader
