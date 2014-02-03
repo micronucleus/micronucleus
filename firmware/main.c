@@ -204,7 +204,7 @@ static inline void leaveBootloader(void) {
  
   bootLoaderExit();
 
-  _delay_ms(10); // Bus needs to see a few more SOFs before it can be disconnected
+ // _delay_ms(10); // Bus needs to see a few more SOFs before it can be disconnected
 	usbDeviceDisconnect();  /* Disconnect micronucleus */
 
   USB_INTR_ENABLE = 0;
@@ -230,27 +230,26 @@ static inline void leaveBootloader(void) {
 
 void USB_INTR_VECTOR(void);
 int main(void) {
-  uint8_t ackSent=0;  
   bootLoaderInit();
-	
-  DDRB|=3;
-  
+	  
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
     initHardware();        
     LED_INIT();
 
     if (AUTO_EXIT_NO_USB_MS>0) {
-      idlePolls.b[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS) * 10UL)>>8;
+      idlePolls.b[1]=((AUTO_EXIT_MS-AUTO_EXIT_NO_USB_MS)/5)>>8;
     } else {
       idlePolls.b[1]=0;
     }
     
+    command=cmd_local_nop;     
+    
     do {
       // 15 clockcycles per loop.     
-      // adjust fastctr for 1ms timeout
+      // adjust fastctr for 5ms timeout
       
-      uint16_t fastctr=(uint16_t)(F_CPU/(1000.0f*15.0f));
+      uint16_t fastctr=(uint16_t)(F_CPU/(1000.0f*15.0f/5.0f));
       uint8_t resetctr=20;
   
       do {        
@@ -270,8 +269,15 @@ int main(void) {
         }
         
       } while(--fastctr);     
-            
-      PORTB|=_BV(PB1);
+ 
+      // commands are only evaluated after next USB transmission or after 5ms passed
+      if (command==cmd_exit) break;      
+      if (command==cmd_erase_application) 
+        eraseApplication();
+      // Attention: eraseApplication will set command=cmd_write_page!
+      if (command==cmd_write_page) 
+        writeFlashPage();
+          
       command=cmd_local_nop;     
  
       {
@@ -292,16 +298,15 @@ int main(void) {
       idlePolls.w++;
 
       // Try to execute program when bootloader times out      
-      if (AUTO_EXIT_MS&&(idlePolls.w==AUTO_EXIT_MS)) {
+      if (AUTO_EXIT_MS&&(idlePolls.w==(AUTO_EXIT_MS/5))) {
          if (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)  break;
       }
       
       LED_MACRO( idlePolls.b[1] );   
 
-       // Test whether another interrupt occured during the processing of USBpoll and commands.
+       // Test whether another interrupt occurred during the processing of USBpoll and commands.
        // If yes, we missed a data packet on the bus. This is not a big issue, since
-       // USB seems to allow timeout of up the two packets. (On my machine an USB
-       // error is triggered after the third missed packet.) 
+       // USB seems to allow time-out of up the two packets. 
        // The most critical situation occurs when a PID IN packet is missed due to
        // it's short length. Each packet + timeout takes around 45µs, meaning that
        // usbpoll must take less than 90µs or resyncing is not possible.
@@ -319,7 +324,6 @@ int main(void) {
        
        if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() collided with data packet
        {        
-         PORTB|=_BV(PB0);
           uint8_t ctr;
          
           // loop takes 5 cycles
@@ -333,23 +337,8 @@ int main(void) {
           :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
           );       
          USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;                   
-         PORTB&=~_BV(PB0);
-       }     
-      PORTB&=~_BV(PB1);       
-          
-      if (command == cmd_local_nop) continue;
-      
-      USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;
-      while ( !(USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) );
-               USB_INTR_VECTOR();  
-        
-        if (command==cmd_erase_application) 
-          eraseApplication();
-        // Attention: eraseApplication will set command=cmd_write_page!
-        if (command==cmd_write_page) 
-          writeFlashPage();
-         
-    } while(command!=cmd_exit);  
+       }                        
+    } while(1);  
 
     LED_EXIT();
   }
