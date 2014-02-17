@@ -21,7 +21,7 @@ LOCKOPT = -U lock:w:0x2f:m
 # app starts two pages in, so we can mess around with the first page for leet ISR hax
 APP_ADDRESS = 80
 
-PROGRAMMER = -c USBasp
+PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 FUSEOPT_8 = -U hfuse:w:0xc0:m -U lfuse:w:0x9f:m
