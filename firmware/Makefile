@@ -26,7 +26,7 @@ LOCKOPT = -U lock:w:0x2f:m
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
 BOOTLOADER_ADDRESS = 18C0
 
-PROGRAMMER = -c USBasp
+PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 FUSEOPT_8 = -U hfuse:w:0xc0:m -U lfuse:w:0x9f:m
