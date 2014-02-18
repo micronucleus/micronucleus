@@ -70,7 +70,11 @@ int main(int argc, char **argv) {
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--no-ansi] [--timeout integer] [--erase-only] filename";
+  #if defined(WIN)
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--no-ansi] [--timeout integer] [--erase-only] filename";
+  #else
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--erase-only] filename";
+  #endif 
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
