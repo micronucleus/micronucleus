@@ -223,7 +223,7 @@ static inline void leaveBootloader(void) {
     }
   #endif
   
- asm volatile ("rjmp __vectors - 2"); // jump to application reset vector at end of flash
+ asm volatile ("rjmp __vectors - 4"); // jump to application reset vector at end of flash
   
  for (;;); // Make sure function does not return to help compiler optimize
 }
