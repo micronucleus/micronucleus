@@ -375,6 +375,8 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
             len = usbFunctionDescriptor(rq);
         }
     SWITCH_END
+    
+    flags=flags;  // Make compiler shut up about unused variable
 #ifndef MNHACK_ONLY_FLASH_MSGPTR                
     usbMsgFlags = flags;
 #endif    
