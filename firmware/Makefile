@@ -199,7 +199,10 @@ main.bin:	$(OBJECTS)
 main.hex:	main.bin
 	@rm -f main.hex main.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
-	@avr-size main.bin
+	@echo Size of sections:
+	@avr-size main.bin	
+	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
+	@avr-size main.hex
 
 upgrade: main.bin
 	avr-objcopy -O binary main.bin main.raw
