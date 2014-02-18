@@ -153,19 +153,43 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
     // Reset vector patching is done in the host tool in micronucleus >=2    
     if (deviceHandle->version.major >=2)
     {
-       if ( address == 0 )
+      if ( address == 0 ) {
         // save user reset vector (bootloader will patch with its vector)
-        userReset = page_buffer [1] * 0x100 + page_buffer [0];
+        unsigned int word0,word1;
+        word0 = page_buffer [1] * 0x100 + page_buffer [0];
+        word1 = page_buffer [3] * 0x100 + page_buffer [2];
+        
+        if (word0==0x940c) {  // long jump
+          userReset = word1;          
+        } else if ((word0&0xf000)==0xc000) {  // rjmp
+          userReset = (word0 & 0x0fff) - 0 + 1;    
+        } else {
+          fprintf(stderr,
+                  "The reset vector of the user program does not contain a branch instruction,\n"
+                  "therefore the bootloader can not be inserted. Please rearrage your code.\n"
+                  );
+          return -1;         
+        }        
+      }
       
-      if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
-      {
+      if ( address >= deviceHandle->flash_size - deviceHandle->page_size ) {
         // move user reset vector to end of last page
         // The reset vector is always the last vector in the tinyvectortable
-        unsigned user_reset_addr = (deviceHandle->pages*deviceHandle->page_size)-2;
-        unsigned data = (userReset + 0x1000 - user_reset_addr/2) & ~0x1000;
+        unsigned int user_reset_addr = (deviceHandle->pages*deviceHandle->page_size) - 4;
         
-        page_buffer [user_reset_addr - address + 0] = data >> 0 & 0xff;
-        page_buffer [user_reset_addr - address + 1] = data >> 8 & 0xff;
+        if (user_reset_addr > 0x2000) {
+          //  jmp
+          unsigned data = 0x940c;
+          page_buffer [user_reset_addr - address + 0] = data >> 0 & 0xff;
+          page_buffer [user_reset_addr - address + 1] = data >> 8 & 0xff;
+          page_buffer [user_reset_addr - address + 2] = userReset >> 0 & 0xff;
+          page_buffer [user_reset_addr - address + 3] = userReset >> 8 & 0xff;        
+        } else {
+          // rjmp
+          unsigned data =  0xc000 | ((userReset - user_reset_addr/2 - 1) & 0x0fff);        
+          page_buffer [user_reset_addr - address + 0] = data >> 0 & 0xff;
+          page_buffer [user_reset_addr - address + 1] = data >> 8 & 0xff;
+        }
       }
     }   
     
