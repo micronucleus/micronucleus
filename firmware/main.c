@@ -124,6 +124,9 @@ static inline void eraseApplication(void) {
   // Write reset vector into first page.
   currentAddress.w = 0; 
   writeWordToPageBuffer(0xffff);
+#if BOOTLOADER_ADDRESS >= 8192 
+  writeWordToPageBuffer(0xffff);  // far jmp
+#endif
   command=cmd_write_page;
 }
 
@@ -140,10 +143,19 @@ static void writeWordToPageBuffer(uint16_t data) {
   // the device can not be bricked.
   // Saving user-reset-vector is done in the host tool, starting with
   // firmware V2
-   
+#if BOOTLOADER_ADDRESS < 8192
+  // rjmp
   if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
     data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
   }
+#else
+  // far jmp
+  if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
+    data = 0x940c;
+  } else if (currentAddress.w == (RESET_VECTOR_OFFSET +1 ) * 2) {
+    data = (BOOTLOADER_ADDRESS/2);
+  }    
+#endif
 
 #if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
    if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
