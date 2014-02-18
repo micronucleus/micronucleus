@@ -43,7 +43,12 @@
 #include <avr/io.h>
 //#include <avr/pgmspace.h>
 
+#ifdef __AVR_HAVE_JMP_CALL__
+  #define XJMP jmp
+#else
   #define XJMP rjmp
+#endif  
+
   #define XCALL rcall
   
 	.macro	vector name
