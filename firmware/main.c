@@ -314,7 +314,7 @@ int main(void) {
          if (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)  break;
       }
       
-      LED_MACRO( idlePolls.b[1] );   
+      LED_MACRO( idlePolls.b[0] );   
 
        // Test whether another interrupt occurred during the processing of USBpoll and commands.
        // If yes, we missed a data packet on the bus. This is not a big issue, since

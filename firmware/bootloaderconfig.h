@@ -278,16 +278,17 @@ these macros are defined, the boot loader uses them.
  *                            Use to define pattern.
  */ 
 
-#define	LED_PRESENT	    0
+#define	LED_PRESENT	    1
 
 #define	LED_DDR			DDRB
 #define LED_PORT		PORTB
 #define	LED_PIN			PB1
 
 #if LED_PRESENT
-  #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);
+//  #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);   // Use this with low active LED
+  #define LED_INIT(x)		LED_PORT  = _BV(LED_PIN);   // Use this with high active LED
   #define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
-  #define LED_MACRO(x)	if ( x & 0xd ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
+  #define LED_MACRO(x)	if ( x & 0xd0 ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
 #else
   #define LED_INIT(x)		
   #define LED_EXIT(x)		
