@@ -183,7 +183,7 @@ these macros are defined, the boot loader uses them.
  * 
  */
 
-#define ENTRYMODE ENTRY_ALWAYS
+#define ENTRYMODE ENTRY_EXT_RESET
 
 #define JUMPER_PIN    PB0
 #define JUMPER_PORT   PORTB 
@@ -288,7 +288,7 @@ these macros are defined, the boot loader uses them.
 //  #define LED_INIT(x)		LED_PORT &=~_BV(LED_PIN);   // Use this with low active LED
   #define LED_INIT(x)		LED_PORT  = _BV(LED_PIN);   // Use this with high active LED
   #define LED_EXIT(x)		LED_DDR  &=~_BV(LED_PIN);
-  #define LED_MACRO(x)	if ( x & 0xd0 ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
+  #define LED_MACRO(x)	if ( x & 0x58 ) {LED_DDR&=~_BV(LED_PIN);} else {LED_DDR|=_BV(LED_PIN);}
 #else
   #define LED_INIT(x)		
   #define LED_EXIT(x)		
