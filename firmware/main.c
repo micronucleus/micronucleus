@@ -233,7 +233,7 @@ static inline void leaveBootloader(void) {
     // adjust clock to previous calibration value, so user program always starts with same calibration
     // as when it was uploaded originally
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
-    if (stored_osc_calibration != 0xFF && stored_osc_calibration != 0x00) {
+    if (stored_osc_calibration != 0xFF) {
       OSCCAL=stored_osc_calibration;
       nop();
     }
