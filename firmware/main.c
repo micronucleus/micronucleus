@@ -282,15 +282,18 @@ int main(void) {
         
       } while(--fastctr);     
  
-      // commands are only evaluated after next USB transmission or after 5ms passed
-      if (command==cmd_exit) break;      
+      // commands are only evaluated after next USB transmission or after 5 ms passed
       if (command==cmd_erase_application) 
         eraseApplication();
       // Attention: eraseApplication will set command=cmd_write_page!
       if (command==cmd_write_page) 
         writeFlashPage();
           
-      command=cmd_local_nop;     
+      if (command==cmd_exit) {
+        if (!fastctr) break;  // Only exit after 5 ms timeout     
+      } else {
+        command=cmd_local_nop;     
+      }  
  
       {
       // This is usbpoll() minus reset logic and double buffering
