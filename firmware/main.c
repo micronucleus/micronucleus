@@ -50,6 +50,11 @@ PROGMEM const uint8_t configurationReply[4] = {
   MICRONUCLEUS_WRITE_SLEEP
 };  
 
+  typedef union {
+    uint16_t w;
+    uint8_t b[2];
+  } uint16_union_t;
+  
 #if OSCCAL_RESTORE
   register uint8_t      osccal_default  asm("r2");
 #endif 
@@ -59,7 +64,7 @@ register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
 
 // command system schedules functions to run in the main loop
 enum {
-  cmd_local_nop=0, // also: get device info
+  cmd_local_nop=0, 
   cmd_device_info=0,
   cmd_transfer_page=1,
   cmd_erase_application=2,
@@ -216,8 +221,7 @@ static inline void leaveBootloader(void) {
  
   bootLoaderExit();
 
- // _delay_ms(10); // Bus needs to see a few more SOFs before it can be disconnected
-	usbDeviceDisconnect();  /* Disconnect micronucleus */
+  usbDeviceDisconnect();  /* Disconnect micronucleus */
 
   USB_INTR_ENABLE = 0;
   USB_INTR_CFG = 0;       /* also reset config bits */
@@ -287,8 +291,7 @@ int main(void) {
         eraseApplication();
       // Attention: eraseApplication will set command=cmd_write_page!
       if (command==cmd_write_page) 
-        writeFlashPage();
-          
+        writeFlashPage();          
       if (command==cmd_exit) {
         if (!fastctr) break;  // Only exit after 5 ms timeout     
       } else {
