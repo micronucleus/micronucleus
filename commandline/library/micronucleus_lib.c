@@ -171,7 +171,23 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
                   "therefore the bootloader can not be inserted. Please rearrage your code.\n"
                   );
           return -1;         
-        }        
+        } 
+        
+        // Patch in jmp to bootloader. 
+        if (deviceHandle->bootloader_start > 0x2000) {
+          //  jmp
+          unsigned data = 0x940c;
+          page_buffer [ 0 ] = data >> 0 & 0xff;
+          page_buffer [ 1 ] = data >> 8 & 0xff;
+          page_buffer [ 2 ] = deviceHandle->bootloader_start >> 0 & 0xff;
+          page_buffer [ 3 ] = deviceHandle->bootloader_start >> 8 & 0xff;        
+        } else {
+          // rjmp
+          unsigned data =  0xc000 | ((deviceHandle->bootloader_start/2 - 1) & 0x0fff);        
+          page_buffer [ 0 ] = data >> 0 & 0xff;
+          page_buffer [ 1 ] = data >> 8 & 0xff;
+        }
+        
       }
       
       if ( address >= deviceHandle->bootloader_start - deviceHandle->page_size ) {
