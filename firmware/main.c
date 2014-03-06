@@ -176,8 +176,6 @@ static void writeWordToPageBuffer(uint16_t data) {
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
   usbRequest_t *rq = (void *)data;
  
-  idlePolls.b[1]=0; // reset idle polls when we get usb traffic
-
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = (usbMsgPtr_t)configurationReply;
     return sizeof(configurationReply);      
@@ -281,7 +279,8 @@ int main(void) {
         
         if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) {
           USB_INTR_VECTOR();  // clears INT_PENDING (See se0: in asmcommon.inc)
-          break;
+          idlePolls.b[1]=0; // reset idle polls when we get usb traffic
+         break;
         }
         
       } while(--fastctr);     
