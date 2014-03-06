@@ -70,6 +70,8 @@ micronucleus* micronucleus_connect(int fast_mode) {
         nucleus->pages = (nucleus->flash_size / nucleus->page_size);
         if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
         
+        nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+        
         if ((nucleus->version.major>=2)&&(!fast_mode)) {
           // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
           nucleus->write_sleep = buffer[3]+2;
@@ -172,7 +174,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
         }        
       }
       
-      if ( address >= deviceHandle->flash_size - deviceHandle->page_size ) {
+      if ( address >= deviceHandle->bootloader_start - deviceHandle->page_size ) {
         // move user reset vector to end of last page
         // The reset vector is always the last vector in the tinyvectortable
         unsigned int user_reset_addr = (deviceHandle->pages*deviceHandle->page_size) - 4;
@@ -195,7 +197,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
     
        
     // always write last page so bootloader can insert the tiny vector table
-    if ( address >= deviceHandle->flash_size - deviceHandle->page_size )
+    if ( address >= deviceHandle->bootloader_start - deviceHandle->page_size )
       pagecontainsdata = 1;
   
     // ask microcontroller to write this page's data

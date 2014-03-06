@@ -67,6 +67,7 @@ typedef struct _micronucleus {
   micronucleus_version version;
   unsigned int flash_size;  // programmable size (in bytes) of progmem
   unsigned int page_size;   // size (in bytes) of page
+  unsigned int bootloader_start; // Start of the bootloader
   unsigned int pages;       // total number of pages to program
   unsigned int write_sleep; // milliseconds
   unsigned int erase_sleep; // milliseconds
