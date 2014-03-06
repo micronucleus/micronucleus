@@ -59,6 +59,14 @@
 #define USB_INTR_VECTOR         PCINT0_vect
 
 /* ------------------------------------------------------------------------- */
+/*       Configuration relevant to the CPU the bootloader is running on      */
+/* ------------------------------------------------------------------------- */
+
+// how many milliseconds should host wait till it sends another erase or write?
+// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
+#define MICRONUCLEUS_WRITE_SLEEP 5
+
+
 /* ---------------------- feature / code size options ---------------------- */
 /*               Configure the behavior of the bootloader here               */
 /* ------------------------------------------------------------------------- */
@@ -175,8 +183,8 @@
  *  comes with its own OSCCAL calibration or an external clock source is used. 
  */
  
-#define OSCCAL_RESTORE 0
-#define OSCCAL_16_5MHz 1
+#define OSCCAL_RESTORE 1
+#define OSCCAL_16_5MHz 0
 #define OSCCAL_HAVE_XTAL 0
   
 /*  

@@ -23,10 +23,6 @@
 #include "bootloaderconfig.h"
 #include "usbdrv/usbdrv.c"
 
-// how many milliseconds should host wait till it sends another erase or write?
-// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-#define MICRONUCLEUS_WRITE_SLEEP 5
-
 // verify the bootloader address aligns with page size
 #if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
   #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
@@ -148,6 +144,7 @@ static void writeWordToPageBuffer(uint16_t data) {
   // the device can not be bricked.
   // Saving user-reset-vector is done in the host tool, starting with
   // firmware V2
+  
 #if BOOTLOADER_ADDRESS < 8192
   // rjmp
   if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
