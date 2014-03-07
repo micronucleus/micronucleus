@@ -88,47 +88,19 @@ static inline void leaveBootloader(void);
 // This function is never called, it is just here to suppress a compiler warning.
 USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) { return 0; }
 
-// clear memory which stores data to be written by next writeFlashPage call
-#define __boot_page_fill_clear()             \
-(__extension__({                             \
-  __asm__ __volatile__                       \
-  (                                          \
-    "out %0, %1\n\t"                         \
-    "spm\n\t"                                \
-    :                                        \
-    : "i" (_SFR_IO_ADDR(__SPM_REG)),        \
-      "r" ((uint8_t)(__BOOT_PAGE_FILL | (1 << CTPB)))     \
-  );                                           \
-}))
-
-// erase any existing application and write in jumps for usb interrupt and reset to bootloader
-//  - Because flash can be erased once and programmed several times, we can write the bootloader
-//  - vectors in now, and write in the application stuff around them later.
-//  - if vectors weren't written back in immediately, usb would fail.
+// erase all pages until bootloader, in reverse order (so our vectors stay in place for as long as possible)
+// to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
+// during upload
 static inline void eraseApplication(void) {
-  // erase all pages until bootloader, in reverse order (so our vectors stay in place for as long as possible)
-  // while the vectors don't matter for usb comms as interrupts are disabled during erase, it's important
-  // to minimise the chance of leaving the device in a state where the bootloader wont run, if there's power failure
-  // during upload
-
   uint16_t ptr = BOOTLOADER_ADDRESS;
 
   while (ptr) {
     ptr -= SPM_PAGESIZE;        
     boot_page_erase(ptr);
   }
- 
-  // clear page buffer as a precaution before filling the buffer in case
-  // a previous write operation failed and there is still something in the buffer.
-  __boot_page_fill_clear(); 
   
-  // Write reset vector into first page.
-  currentAddress.w = 0; 
-  writeWordToPageBuffer(0xffff);
-#if BOOTLOADER_ADDRESS >= 8192 
-  writeWordToPageBuffer(0xffff);  // far jmp
-#endif
-  command=cmd_write_page;
+  // Reset address to ensure the reset vector is written first.
+  currentAddress.w = 0;   
 }
 
 // simply write currently stored page in to already erased flash memory
@@ -137,14 +109,12 @@ static inline void writeFlashPage(void) {
       boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
 }
 
-// write a word into the page buffer, doing interrupt table modifications where they're required
+// Write a word into the page buffer.
+// Will patch the bootloader reset vector into the main vectortable to ensure
+// the device can not be bricked. Saving user-reset-vector is done in the host 
+// tool, starting with firmware V2
 static void writeWordToPageBuffer(uint16_t data) {
-  
-  // Patch the bootloader reset vector into the main vectortable to ensure
-  // the device can not be bricked.
-  // Saving user-reset-vector is done in the host tool, starting with
-  // firmware V2
-  
+    
 #if BOOTLOADER_ADDRESS < 8192
   // rjmp
   if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
@@ -176,8 +146,13 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = (usbMsgPtr_t)configurationReply;
     return sizeof(configurationReply);      
-  } else if (rq->bRequest == cmd_transfer_page) { // initialize write page
-      currentAddress.w = rq->wIndex.word;     
+  } else if (rq->bRequest == cmd_transfer_page) { 
+      // Set page address. Address zero always has to be written first to ensure reset vector patching.
+      // Mask to page boundary to prevent vulnerability to partial page write "attacks"
+        if ( currentAddress.w != 0 ) {
+            currentAddress.b[0]=rq->wIndex.bytes[0] & (~ (SPM_PAGESIZE-1));     
+            currentAddress.b[1]=rq->wIndex.bytes[1];     
+        }        
     } else if (rq->bRequest == cmd_write_data) { // Write data
       writeWordToPageBuffer(rq->wValue.word);
       writeWordToPageBuffer(rq->wIndex.word);
@@ -255,6 +230,7 @@ int main(void) {
     }
     
     command=cmd_local_nop;     
+    currentAddress.w = 0;
     
     do {
       // 15 clockcycles per loop.     
@@ -285,7 +261,6 @@ int main(void) {
       // commands are only evaluated after next USB transmission or after 5 ms passed
       if (command==cmd_erase_application) 
         eraseApplication();
-      // Attention: eraseApplication will set command=cmd_write_page!
       if (command==cmd_write_page) 
         writeFlashPage();          
       if (command==cmd_exit) {
