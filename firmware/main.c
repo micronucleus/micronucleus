@@ -74,6 +74,7 @@ register uint8_t        command         asm("r3");  // bind command to r3
 #define sei() asm volatile("sei")
 #define cli() asm volatile("cli")
 #define nop() asm volatile("nop")
+#define wdr() asm volatile("wdr")
 
 // Use the old delay routines without NOP padding. This saves memory.
 #define __DELAY_BACKWARD_COMPATIBLE__   
@@ -217,7 +218,7 @@ static inline void leaveBootloader(void) {
 void USB_INTR_VECTOR(void);
 int main(void) {
   bootLoaderInit();
-	  
+  
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
     initHardware();        
@@ -257,6 +258,8 @@ int main(void) {
         }
         
       } while(--fastctr);     
+ 
+      wdr();
  
       // commands are only evaluated after next USB transmission or after 5 ms passed
       if (command==cmd_erase_application) 
