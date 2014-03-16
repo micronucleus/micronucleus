@@ -4,8 +4,8 @@
  * according to the hardware.
  * 
  * Controller type: ATtiny 85
- * Configuration:   Digispark default configuration. 
- * Last Change:     Feb 21,2014
+ * Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
+ * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -183,7 +183,7 @@
  *  comes with its own OSCCAL calibration or an external clock source is used. 
  */
  
-#define OSCCAL_RESTORE 1
+#define OSCCAL_RESTORE 0
 #define OSCCAL_16_5MHz 0
 #define OSCCAL_HAVE_XTAL 0
   
@@ -200,7 +200,7 @@
  *
  */ 
 
-#define LED_MODE    ACTIVE_HIGH
+#define LED_MODE    NONE
 
 #define LED_DDR     DDRB
 #define LED_PORT    PORTB
