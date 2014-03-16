@@ -25,7 +25,7 @@ PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
-AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
+AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE) 
 CC = avr-gcc
 
 # Options:
@@ -58,16 +58,16 @@ flash:	all
 	$(AVRDUDE) -U flash:w:main.hex:i -B 10
 
 readflash:
-	$(AVRDUDE) -U flash:r:read.hex:i
+	$(AVRDUDE) -U flash:r:read.hex:i -B 10
 
 fuse:
-	$(AVRDUDE) $(FUSEOPT)
+	$(AVRDUDE) $(FUSEOPT) -B 10
 	
 disablereset:
-	$(AVRDUDE) $(FUSEOPT_DISABLERESET)
+	$(AVRDUDE) $(FUSEOPT_DISABLERESET) -B 10
 
 read_fuses:
-	$(UISP) --rd_fuses
+	$(UISP) --rd_fuses -B 10
 
 clean:
 	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
