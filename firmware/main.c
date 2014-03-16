@@ -37,13 +37,15 @@
 //   Byte 0:  User program memory size, high byte
 //   Byte 1:  User program memory size, low byte   
 //   Byte 2:  Flash Pagesize in bytes
-//   Byte 3:  Page write timing in ms
+//   Byte 3:  Page write timing in ms. 
+//    Bit 7 '0': Page erase time equals page write time
+//    Bit 7 '1': Page erase time equals page write time divided by 4
 
 PROGMEM const uint8_t configurationReply[4] = {
   (((uint16_t)PROGMEM_SIZE) >> 8) & 0xff,
   ((uint16_t)PROGMEM_SIZE) & 0xff,
   SPM_PAGESIZE,
-  MICRONUCLEUS_WRITE_SLEEP
+  MICRONUCLEUS_WRITE_SLEEP    
 };  
 
   typedef union {
