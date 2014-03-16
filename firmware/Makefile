@@ -6,8 +6,9 @@
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
-CONFIGURATION = t85_default
-#CONFIGURATION = t85_aggressive
+#CONFIG ?= t85_default
+#CONFIG ?= t85_aggressive
+CONFIG ?= t841_default
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -16,10 +17,10 @@ CONFIGURATION = t85_default
 #     make flash   			# to load the boot loader into flash
 #     make disablereset		# use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
 
-CONFIGPATH	  = configuration/$(CONFIGURATION)
+CONFIGPATH	  = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER = -c USBasp
+PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
@@ -27,18 +28,15 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
 # Options:
-DEFINES = -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) #-DDEBUG_LEVEL=2
-# Remove the -fno-* options when you use gcc 3, it does not understand them
-# 
-CFLAGS  = -I. -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) $(DEFINES)
-CFLAGS += -g2  -Wall -Os
+CFLAGS  = -I. -g2 -Wall -Os 
+CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),-Map=main.map
 
-
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
 OBJECTS += osccalASM.o
+
 # symbolic targets:
 all: main.hex
 
