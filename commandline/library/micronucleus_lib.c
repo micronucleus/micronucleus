@@ -76,18 +76,18 @@ micronucleus* micronucleus_connect(int fast_mode) {
         
         if ((nucleus->version.major>=2)&&(!fast_mode)) {
           // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
-          nucleus->write_sleep = (buffer[3] & 127) + 2;
-          if (buffer[3]&128) {
-              // if bit 7 of write sleep time is set, divide the erase time by four to 
-              // accomodate to the 4*page erase of the ATtiny841/441
-              nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;        
-          } else {
-              nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
-          }          
+          nucleus->write_sleep = (buffer[3] & 127) + 2;         
         } else {  
           nucleus->write_sleep = (buffer[3] & 127);
-          nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
         }      
+        
+       // if bit 7 of write sleep time is set, divide the erase time by four to 
+       // accomodate to the 4*page erase of the ATtiny841/441
+       if (buffer[3]&128) {
+            nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;        
+        } else {
+            nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
+        }          
       }
     }
   }
