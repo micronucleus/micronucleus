@@ -1,11 +1,18 @@
 /* Name: bootloaderconfig.h
  * Micronucleus configuration file. 
- * This file (together with some settings in Makefile) configures the boot loader
+ * This file (together with some settings in Makefile.inc) configures the boot loader
  * according to the hardware.
  * 
- * Controller type: ATtiny 85
- * Configuration:   Digispark default configuration. 
- * Last Change:     Feb 21,2014
+ * Controller type: ATtiny 841 - 12 MHz
+ * Configuration:   Default configuration
+ *       USB D- :   PB0
+ *       USB D+ :   PB1
+ *       Entry  :   Always
+ *       LED    :   PB2, Active Low
+ *       OSCCAL :   Revert to precalibrated value (8 MHz)
+ * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny841
+ *       Flash write time may be too 
+ * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */

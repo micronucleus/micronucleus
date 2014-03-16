@@ -1,15 +1,22 @@
-/* Name: bootloaderconfig.h
+ /* Name: bootloaderconfig.h
  * Micronucleus configuration file. 
- * This file (together with some settings in Makefile) configures the boot loader
+ * This file (together with some settings in Makefile.inc) configures the boot loader
  * according to the hardware.
  * 
- * Controller type: ATtiny 85
- * Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
+ * Controller type: ATtiny 85 - 16 MHz
+ * Configuration:   Aggresively size optimized configuration
+ *       USB D- :   PB3
+ *       USB D+ :   PB4
+ *       Entry  :   Always
+ *       LED    :   None
+ *       OSCCAL :   Stays at 16 MHz
+ * Note: Uses 16 MHz V-USB implementation. 
+ *       Worked reliable in all tests, but is possibly less stable then 16.5M Hz Implementation with PLL
  * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */
-
+ 
 #ifndef __bootloaderconfig_h_included__
 #define __bootloaderconfig_h_included__
 

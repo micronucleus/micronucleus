@@ -1,12 +1,12 @@
 # Name: Makefile
 # Project: Micronucleus
 # License: GNU GPL v2 (see License.txt)
-#
-# Controller type: ATtiny 85
-# Configuration:   Digispark default configuration. 
+
+# Controller type: ATtiny 85 - 16.5 MHz
+# Configuration:   Default
 # Last Change:     Mar 16,2014
  
-
+ 
 F_CPU = 16500000
 DEVICE = attiny85
 
