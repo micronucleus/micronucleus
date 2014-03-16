@@ -1,7 +1,9 @@
 /*
-  Created: September 2012
-  by ihsan Kehribar <ihsan@kehribar.me>
-
+Created: September 2012
+  (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
+  Changes for Micronucleus protocol version V2.x
+  (c) 2014 T. Bo"scke
+  
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to

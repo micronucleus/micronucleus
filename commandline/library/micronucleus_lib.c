@@ -1,8 +1,10 @@
 
 /*
   Created: September 2012
-  by ihsan Kehribar <ihsan@kehribar.me>
-
+  (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
+  Changes for Micronucleus protocol version V2.x
+  (c) 2014 T. Bo"scke
+  
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -74,10 +76,16 @@ micronucleus* micronucleus_connect(int fast_mode) {
         
         if ((nucleus->version.major>=2)&&(!fast_mode)) {
           // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
-          nucleus->write_sleep = buffer[3]+2;
-          nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
+          nucleus->write_sleep = (buffer[3] & 127) + 2;
+          if (buffer[3]&128) {
+              // if bit 7 of write sleep time is set, divide the erase time by four to 
+              // accomodate to the 4*page erase of the ATtiny841/441
+              nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;        
+          } else {
+              nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
+          }          
         } else {  
-          nucleus->write_sleep = buffer[3];
+          nucleus->write_sleep = (buffer[3] & 127);
           nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
         }      
       }
