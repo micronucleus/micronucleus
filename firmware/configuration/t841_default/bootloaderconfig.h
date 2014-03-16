@@ -65,9 +65,8 @@
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
 
-// ATtiny841 erases four pages at once
-#define MICRONUCLEUS_WRITE_SLEEP 5
-#define MICRONUCLEUS_ERASE_SLEEP 1
+// Set bit 7 to reduce wait time for page erase by factor of four
+#define MICRONUCLEUS_WRITE_SLEEP 128 + 5
 
 // ATtiny841 does not know OSCCAL
 #ifndef OSCCAL
