@@ -24,8 +24,14 @@
 #include "usbdrv/usbdrv.c"
 
 // verify the bootloader address aligns with page size
-#if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
-  #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+#if (defined __AVR_ATtiny841__)||(defined __AVR_ATtiny441__)  
+  #if BOOTLOADER_ADDRESS % ( SPM_PAGESIZE * 4 ) != 0
+    #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+  #endif
+#else
+  #if BOOTLOADER_ADDRESS % SPM_PAGESIZE != 0
+    #error "BOOTLOADER_ADDRESS in makefile must be a multiple of chip's pagesize"
+  #endif  
 #endif
 
 #if SPM_PAGESIZE>256
@@ -98,7 +104,11 @@ static inline void eraseApplication(void) {
   uint16_t ptr = BOOTLOADER_ADDRESS;
 
   while (ptr) {
+#if (defined __AVR_ATtiny841__)||(defined __AVR_ATtiny441__)    
+    ptr -= SPM_PAGESIZE * 4;        
+#else
     ptr -= SPM_PAGESIZE;        
+#endif    
     boot_page_erase(ptr);
   }
   
@@ -306,22 +316,8 @@ int main(void) {
       LED_MACRO( idlePolls.b[0] );   
 
        // Test whether another interrupt occurred during the processing of USBpoll and commands.
-       // If yes, we missed a data packet on the bus. This is not a big issue, since
-       // USB seems to allow time-out of up the two packets. 
-       // The most critical situation occurs when a PID IN packet is missed due to
-       // it's short length. Each packet + timeout takes around 45µs, meaning that
-       // usbpoll must take less than 90µs or resyncing is not possible.
-       // To avoid synchronizing of the interrupt routine, we must not call it while
-       // a packet is transmitted. Therefore we have to wait until the bus is idle again.
-       //
-       // Just waiting for EOP (SE0) or no activity for 6 bus cycles is not enough,
-       // as the host may have been sending a multi-packet transmission (eg. OUT or SETUP)
-       // In that case we may resynch within a transmission, causing errors.
-       //
-       // A safer way is to wait until the bus was idle for the time it takes to send
-       // an ACK packet by the client (10.5µs on D+) but not as long as bus
-       // time out (12µs)
-       //
+       // If yes, we missed a data packet on the bus. Wait until the bus was idle for 10µs to 
+       // allow synchronising to the next incoming packet.
        
        if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() collided with data packet
        {        
