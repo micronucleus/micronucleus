@@ -106,7 +106,11 @@ calibrateOscillatorASM:
 
 usbCOloop:
 
-  out		OSCCAL, try
+#if OSCCAL <64
+  out   OSCCAL, try
+#else
+  sts   OSCCAL, try
+#endif  
   nop
 
   ; Delay values = F_CPU * 999e-6 / 5 + 0.5
@@ -153,13 +157,17 @@ usbCOclocktoohigh:
                            ; stp = 2^x (x=0..6) during binary search, 
                            ; stp = 1 during neighbourhood search                          
                            
-	brne	usbCObinarysearch
-  ldi   stp, 64            ; stp=64 to initiate binary search. 
+    brne	usbCObinarysearch
+    ldi   stp, 64            ; stp=64 to initiate binary search. 
                            ; If we are in neighbourhood search (c=1), it is changed to 1 below
-  brcc  usbCObinarysearch
-	cp		opD, cnt16L
-	brcs	usbCOnoimprovement
-	in		opV, OSCCAL
+    brcc  usbCObinarysearch
+    cp		opD, cnt16L
+    brcs	usbCOnoimprovement
+#if OSCCAL <64
+    in		opV, OSCCAL
+#else
+    lds		opV, OSCCAL
+#endif      
 	mov		opD, cnt16L
 usbCOnoimprovement:
 	ldi		stp, 1             ; stp=1 to continue with neighbourhood search
@@ -167,8 +175,12 @@ usbCObinarysearch:
 	subi	i, 1
 	brne	usbCOloop
 
-	out		OSCCAL, opV
-	nop
+#if OSCCAL <64
+  out   OSCCAL, opV
+#else
+  sts   OSCCAL, opV
+#endif  
+  nop
   ret
 
 #endif //OSCCAL_HAVE_XTAL  

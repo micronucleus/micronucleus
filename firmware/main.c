@@ -169,9 +169,16 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
 static void initHardware (void)
 {
   // Disable watchdog and set timeout to maximum in case the WDT is fused on 
+#ifdef WDTCSR
+  // New ATtinies841/441 use a different unlock sequence and renamed registers
+  MCUSR=0;    
+  CCP = 0xD8; 
+  WDTCSR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
+#else
   MCUSR=0;    
   WDTCR = 1<<WDCE | 1<<WDE;
   WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
+#endif  
 
   /* initialize  */
   #if OSCCAL_RESTORE

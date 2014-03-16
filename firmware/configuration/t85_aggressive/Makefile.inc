@@ -9,8 +9,6 @@
 
 F_CPU = 16000000
 DEVICE = attiny85
-FUSEOPT = $(FUSEOPT_t85)
-LOCKOPT = -U lock:w:0x2f:m
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
 # - make clean; make main.hex; ### output will list data: 2124 (or something like that)
@@ -19,8 +17,8 @@ LOCKOPT = -U lock:w:0x2f:m
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
 BOOTLOADER_ADDRESS = 1A40
 
-FUSEOPT_t85 = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
-FUSEOPT_t85_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
+FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
+FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 
 #---------------------------------------------------------------------
 # ATtiny85
