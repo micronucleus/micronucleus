@@ -6,9 +6,10 @@
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
-#CONFIG ?= t85_default
+CONFIG ?= t85_default
 #CONFIG ?= t85_aggressive
-CONFIG ?= t841_default
+#CONFIG ?= t841_default
+#CONFIG ?= t167_default
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -28,7 +29,7 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
 # Options:
-CFLAGS  = -I. -g2 -Wall -Os 
+CFLAGS  = -I. -g2 -Os # -Wall
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 
@@ -76,6 +77,7 @@ main.bin:	$(OBJECTS)
 	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
 
 main.hex:	main.bin
+	@echo Building Micronucleus configuration: $(CONFIG)
 	@rm -f main.hex main.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
 	@echo Size of sections:
