@@ -73,6 +73,8 @@ typedef struct _micronucleus {
   unsigned int pages;       // total number of pages to program
   unsigned int write_sleep; // milliseconds
   unsigned int erase_sleep; // milliseconds
+  unsigned char signature1; // only used in protocol v2
+  unsigned char signature2; // only used in protocol v2
 } micronucleus;
 
 typedef void (*micronucleus_callback)(float progress);

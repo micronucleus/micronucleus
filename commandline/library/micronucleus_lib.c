@@ -62,32 +62,56 @@ micronucleus* micronucleus_connect(int fast_mode) {
 
         nucleus->device = usb_open(dev);
 
-        // get nucleus info
-        unsigned char buffer[4];
-        int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
-        assert(res >= 4);
+        if (nucleus->version.major>=2) {  // Version 2.x
+          // get nucleus info
+          unsigned char buffer[6];
+          int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
+          assert(res >= 4);
 
-        nucleus->flash_size = (buffer[0]<<8) + buffer[1];
-        nucleus->page_size = buffer[2];
-        nucleus->pages = (nucleus->flash_size / nucleus->page_size);
-        if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
-        
-        nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
-        
-        if ((nucleus->version.major>=2)&&(!fast_mode)) {
-          // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
-          nucleus->write_sleep = (buffer[3] & 127) + 2;         
-        } else {  
+          nucleus->flash_size = (buffer[0]<<8) + buffer[1];
+          nucleus->page_size = buffer[2];
+          nucleus->pages = (nucleus->flash_size / nucleus->page_size);
+          if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
+          
+          nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+          
+          if ((nucleus->version.major>=2)&&(!fast_mode)) {
+            // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
+            nucleus->write_sleep = (buffer[3] & 127) + 2;         
+          } else {  
+            nucleus->write_sleep = (buffer[3] & 127);
+          }      
+          
+          // if bit 7 of write sleep time is set, divide the erase time by four to 
+          // accomodate to the 4*page erase of the ATtiny841/441
+          if (buffer[3]&128) {
+               nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;        
+          } else {
+               nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
+          }                  
+          
+          nucleus->signature1 = buffer[4];
+          nucleus->signature2 = buffer[5];           
+          
+        } else {  // Version 1.x        
+          // get nucleus info
+          unsigned char buffer[4];
+          int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+          assert(res >= 4);
+
+          nucleus->flash_size = (buffer[0]<<8) + buffer[1];
+          nucleus->page_size = buffer[2];
+          nucleus->pages = (nucleus->flash_size / nucleus->page_size);
+          if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
+          
+          nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+          
           nucleus->write_sleep = (buffer[3] & 127);
-        }      
-        
-       // if bit 7 of write sleep time is set, divide the erase time by four to 
-       // accomodate to the 4*page erase of the ATtiny841/441
-       if (buffer[3]&128) {
-            nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;        
-        } else {
-            nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;        
-        }          
+          nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;       
+          
+          nucleus->signature1 = 0;
+          nucleus->signature2 = 0;           
+        }
       }
     }
   }
