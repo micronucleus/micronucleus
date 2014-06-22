@@ -177,7 +177,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
           command=cmd_write_page; // ask runloop to write our page       
   } else {
     // Handle cmd_erase_application and cmd_exit
-    command=rq->bRequest;
+    command=rq->bRequest&0x3f;
   }
   return 0;
 }
