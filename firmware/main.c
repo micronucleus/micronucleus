@@ -146,7 +146,7 @@ static void writeWordToPageBuffer(uint16_t data) {
   }    
 #endif
 
-#if (!OSCCAL_RESTORE) && OSCCAL_16_5MHz   
+#if OSCCAL_SAVE_CALIB
    if (currentAddress.w == BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET) {
       data = OSCCAL;
    }     
@@ -196,11 +196,21 @@ static void initHardware (void)
   WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
 #endif  
 
-  /* initialize  */
-  #if OSCCAL_RESTORE
-    osccal_default = OSCCAL;
-  #endif
-    
+
+  /* save default OSCCAL calibration  */
+#if OSCCAL_RESTORE_DEFAULT
+  osccal_default = OSCCAL;
+#endif
+  
+#if OSCCAL_SAVE_CALIB
+  // adjust clock to previous calibration value, so bootloader starts with proper clock calibration
+  unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
+  if (stored_osc_calibration != 0xFF) {
+    OSCCAL=stored_osc_calibration;
+    nop();
+  }
+#endif
+  
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(300);  
   usbDeviceConnect();
@@ -220,19 +230,11 @@ static inline void leaveBootloader(void) {
   USB_INTR_ENABLE = 0;
   USB_INTR_CFG = 0;       /* also reset config bits */
 
-  #if OSCCAL_RESTORE
-    OSCCAL=osccal_default;
-    nop(); // NOP to avoid CPU hickup during oscillator stabilization
-  #elif OSCCAL_16_5MHz   
-    // adjust clock to previous calibration value, so user program always starts with same calibration
-    // as when it was uploaded originally
-    unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
-    if (stored_osc_calibration != 0xFF) {
-      OSCCAL=stored_osc_calibration;
-      nop();
-    }
-  #endif
-  
+#if OSCCAL_RESTORE_DEFAULT
+  OSCCAL=osccal_default;
+  nop(); // NOP to avoid CPU hickup during oscillator stabilization
+#endif
+    
  asm volatile ("rjmp __vectors - 4"); // jump to application reset vector at end of flash
   
  for (;;); // Make sure function does not return to help compiler optimize
