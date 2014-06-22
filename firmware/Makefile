@@ -55,19 +55,19 @@ all: main.hex
 	@$(CC) $(CFLAGS) -S $< -o $@
 
 flash:	all
-	$(AVRDUDE) -U flash:w:main.hex:i -B 10
+	$(AVRDUDE) -U flash:w:main.hex:i -B 20
 
 readflash:
-	$(AVRDUDE) -U flash:r:read.hex:i -B 10
+	$(AVRDUDE) -U flash:r:read.hex:i -B 20
 
 fuse:
-	$(AVRDUDE) $(FUSEOPT) -B 10
+	$(AVRDUDE) $(FUSEOPT) -B 20
 	
 disablereset:
-	$(AVRDUDE) $(FUSEOPT_DISABLERESET) -B 10
+	$(AVRDUDE) $(FUSEOPT_DISABLERESET) -B 20
 
 read_fuses:
-	$(UISP) --rd_fuses -B 10
+	$(UISP) --rd_fuses -B 20
 
 clean:
 	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
