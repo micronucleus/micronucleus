@@ -175,29 +175,30 @@
  /*
  *  Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
  * 
- *  OSCCAL_RESTORE            Set this to '1' to revert to factory calibration, which is 16.0 MHZ +/-10%
+ *  OSCCAL_RESTORE_DEFAULT    Set this to '1' to revert to OSCCAL factore calibration after bootlaoder exit.
+ *                            This is 8 MHz +/-2% on most devices or 16 MHz on the ATtiny 85 with activated PLL.
  *                            Adds ~14 bytes.
  *
- *  OSCCAL_16.5MHz            Set this to '1' to use the same calibration as during program upload.
- *                            This value is 16.5Mhz +/-1% as calibrated from the USB timing. Please note
+ *  OSCCAL_SAVE_CALIB         Set this to '1' to save the OSCCAL calibration during program upload.
+ *                            This value will be reloaded after reset and will also be used for the user
+ *                            program unless "OSCCAL_RESTORE_DEFAULT" is active. This allows calibrate the internal
+ *                            RC oscillator to the F_CPU target frequency +/-1% from the USB timing. Please note
  *                            that only true if the ambient temperature does not change.
- *                            This is the default behaviour of the original Digispark and is not recommended
- *                            for use on devices other than the ATtiny85.
  *                            Adds ~38 bytes.
  *
  *  OSCCAL_HAVE_XTAL          Set this to '1' if you have an external crystal oscillator. In this case no attempt
  *                            will be made to calibrate the oscillator. You should deactivate both options above
  *                            if you use this to avoid redundant code.
  *
- *  If both options are selected, OSCCAL_RESTORE takes precedence.
+ *  If both options are selected, OSCCAL_RESTORE_DEFAULT takes precedence.
  *
- *  If no option is selected, OSCCAL will be left untouched and stays at either 16.0 Mhz or 16.5 Mhz depending
+ *  If no option is selected, OSCCAL will be left untouched and stays at either factory calibration or F_CPU depending
  *  on whether the bootloader was activated. This will take the least memory. You can use this if your program
  *  comes with its own OSCCAL calibration or an external clock source is used. 
  */
  
-#define OSCCAL_RESTORE 1
-#define OSCCAL_16_5MHz 0
+#define OSCCAL_RESTORE_DEFAULT 1
+#define OSCCAL_SAVE_CALIB 1
 #define OSCCAL_HAVE_XTAL 0
   
 /*  
