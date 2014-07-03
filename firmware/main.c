@@ -196,20 +196,6 @@ static void initHardware (void)
   WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
 #endif  
 
-
-  /* save default OSCCAL calibration  */
-#if OSCCAL_RESTORE_DEFAULT
-  osccal_default = OSCCAL;
-#endif
-  
-#if OSCCAL_SAVE_CALIB
-  // adjust clock to previous calibration value, so bootloader starts with proper clock calibration
-  unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
-  if (stored_osc_calibration != 0xFF) {
-    OSCCAL=stored_osc_calibration;
-    nop();
-  }
-#endif
   
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(300);  
@@ -243,6 +229,20 @@ static inline void leaveBootloader(void) {
 void USB_INTR_VECTOR(void);
 int main(void) {
   bootLoaderInit();
+
+  /* save default OSCCAL calibration  */
+#if OSCCAL_RESTORE_DEFAULT
+  osccal_default = OSCCAL;
+#endif
+  
+#if OSCCAL_SAVE_CALIB
+  // adjust clock to previous calibration value, so bootloader starts with proper clock calibration
+  unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
+  if (stored_osc_calibration != 0xFF) {
+    OSCCAL=stored_osc_calibration;
+    nop();
+  }
+#endif
   
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
   
