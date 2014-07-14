@@ -147,20 +147,20 @@ usbCOWaitLoop:
     sbic    USBIN, USBMINUS ;[2] 
     rjmp    usbCOWaitLoop   ;[3]
 
-	sbis    USBIN, USBPLUS	; ignore frame if data is present
-	rjmp    usbCOnotdata
+    sbis    USBIN, USBPLUS  ; ignore frame if data is present
+    rjmp    usbCOnotdata
 
 usbCOWaitNoData:
-	in		cnt16H, USBIN	; wait for SE0 state (both lines low)
-	andi	cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
-	brne	usbCOWaitNoData
-	in		cnt16H, USBIN	; be sure SE0 state wasn't a glitch
-	andi	cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
-	brne	usbCOWaitNoData
+    in      cnt16H, USBIN   ; wait for SE0 state (both lines low)
+    andi    cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
+    brne    usbCOWaitNoData
+    in      cnt16H, USBIN   ; be sure SE0 state wasn't a glitch
+    andi    cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
+    brne    usbCOWaitNoData
 usbCOWaitNoData2:
-    sbis    USBIN, USBMINUS	; wait for D- go to high
+    sbis    USBIN, USBMINUS ; wait for D- go to high
     rjmp    usbCOWaitNoData2
-	rjmp	usbCOLoopNoCal
+    rjmp    usbCOLoopNoCal
 
 usbCOnotdata:
 	sbrs	cnt16H, 7		;delay overflow?
