@@ -211,11 +211,6 @@ static inline void leaveBootloader(void) {
  
   bootLoaderExit();
 
-  usbDeviceDisconnect();  /* Disconnect micronucleus */
-
-  USB_INTR_ENABLE = 0;
-  USB_INTR_CFG = 0;       /* also reset config bits */
-
 #if OSCCAL_RESTORE_DEFAULT
   OSCCAL=osccal_default;
   nop(); // NOP to avoid CPU hickup during oscillator stabilization
@@ -344,6 +339,11 @@ int main(void) {
     } while(1);  
 
     LED_EXIT();
+    
+    usbDeviceDisconnect();  /* Disconnect micronucleus */
+    USB_INTR_ENABLE = 0;
+    USB_INTR_CFG = 0;       /* also reset config bits */
+ 
   }
    
   leaveBootloader();
