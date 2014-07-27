@@ -66,7 +66,7 @@ micronucleus* micronucleus_connect(int fast_mode) {
           // get nucleus info
           unsigned char buffer[6];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
-          assert(res >= 4);
+          assert(res >= 6);
 
           nucleus->flash_size = (buffer[0]<<8) + buffer[1];
           nucleus->page_size = buffer[2];
