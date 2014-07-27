@@ -189,16 +189,6 @@ int main(int argc, char **argv) {
     }
   }
   printProgress(1.0);
-  //my_device = micronucleus_connect();
-
-  // if (my_device->page_size == 64) {
-  //   printf("> Device looks like ATtiny85!\n");
-  // } else if (my_device->page_size == 32)  {
-  //   printf("> Device looks like ATtiny45!\n");
-  // } else {
-  //   printf("> Unsupported device!\n");
-  //   return EXIT_FAILURE;
-  // }
 
   printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
   if (my_device->signature1) printf("> Device signature: 0x1e%02x%02x \n",(int)my_device->signature1,(int)my_device->signature2);
