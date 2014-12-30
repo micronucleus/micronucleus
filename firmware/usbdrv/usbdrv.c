@@ -272,7 +272,7 @@ USB_PUBLIC void usbSetInterrupt3(uchar *data, uchar len)
 #   define SWITCH_START(cmd)       {uchar _cmd = cmd; if(0){
 #   define SWITCH_CASE(value)      }else if(_cmd == (value)){
 #   define SWITCH_CASE2(v1,v2)     }else if(_cmd == (v1) || _cmd == (v2)){
-#   define SWITCH_CASE3(v1,v2,v3)  }else if(_cmd == (v1) || _cmd == (v2) || (_cmd == v3)){
+#   define SWITCH_CASE3(v1,v2,v3)  }else if(_cmd == (v1) || _cmd == (v2) || _cmd == (v3)){
 #   define SWITCH_DEFAULT          }else{
 #   define SWITCH_END              }}
 #endif
