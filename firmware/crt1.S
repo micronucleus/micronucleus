@@ -95,7 +95,6 @@ __init:
 
 	.section .init2,"ax",@progbits
 	clr		R1
-	out		0x3f,r1
 	ldi		r28,lo8(__stack)
 	ldi		r29,hi8(__stack)
 	out		0x3d, r28
