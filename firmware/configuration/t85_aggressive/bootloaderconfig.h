@@ -12,7 +12,7 @@
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16 MHz V-USB implementation. 
  *       Worked reliable in all tests, but is possibly less stable then 16.5M Hz Implementation with PLL
- * Last Change:     Mar 16,2014
+ * Last Change:     Jan 11,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
