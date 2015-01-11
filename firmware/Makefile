@@ -18,6 +18,7 @@ CONFIG ?= t85_default
 #     make flash   			# to load the boot loader into flash
 #     make disablereset		# use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
 
+CFLAGS =
 CONFIGPATH	  = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
@@ -29,7 +30,7 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
 # Options:
-CFLAGS  = -I. -g2 -Os # -Wall
+CFLAGS += -I. -g2 -Os # -Wall
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 

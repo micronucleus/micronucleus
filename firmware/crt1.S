@@ -95,11 +95,14 @@ __init:
 
 	.section .init2,"ax",@progbits
 	clr		R1
+    
+#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
 	out		0x3f,r1
 	ldi		r28,lo8(__stack)
 	ldi		r29,hi8(__stack)
 	out		0x3d, r28
 	out		0x3e, r29
+#endif    
 	.section .init9,"ax",@progbits
 ;  rcall main
 ;  XJMP  __vectors-2

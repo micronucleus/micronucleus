@@ -131,19 +131,21 @@ static inline void writeFlashPage(void) {
 // the device can not be bricked. Saving user-reset-vector is done in the host 
 // tool, starting with firmware V2
 static void writeWordToPageBuffer(uint16_t data) {
-    
-#if BOOTLOADER_ADDRESS < 8192
+
+#ifndef ENABLE_UNSAFE_OPTIMIZATIONS     
+  #if BOOTLOADER_ADDRESS < 8192
   // rjmp
   if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
     data = 0xC000 + (BOOTLOADER_ADDRESS/2) - 1;
   }
-#else
+  #else
   // far jmp
   if (currentAddress.w == RESET_VECTOR_OFFSET * 2) {
     data = 0x940c;
   } else if (currentAddress.w == (RESET_VECTOR_OFFSET +1 ) * 2) {
     data = (BOOTLOADER_ADDRESS/2);
   }    
+  #endif
 #endif
 
 #if OSCCAL_SAVE_CALIB
@@ -177,7 +179,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
           command=cmd_write_page; // ask runloop to write our page       
   } else {
     // Handle cmd_erase_application and cmd_exit
-    command=rq->bRequest&0x3f;
+    command=rq->bRequest&0x3f;    
   }
   return 0;
 }
@@ -278,7 +280,7 @@ int main(void) {
         }
         
       } while(--fastctr);     
- 
+      
       wdr();
  
       // commands are only evaluated after next USB transmission or after 5 ms passed

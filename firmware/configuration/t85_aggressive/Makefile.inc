@@ -4,8 +4,16 @@
 
 # Controller type: ATtiny 85
 # Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
-# Last Change:     Mar 16,2014
- 
+# Last Change:     Jan 11,2015
+
+# Enable unsafe optimizions. This will disable several safety features in microncleus to save around 40 more bytes
+# 
+# Disabled features:
+#   * Stack pointer and SREG initialization in CRT
+#   * Client side reset vector patching
+#   * USB collision detection. Micronucleus will not work reliability with hubs if this is disabled.
+
+CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
 
 F_CPU = 16000000
 DEVICE = attiny85

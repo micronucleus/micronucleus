@@ -147,6 +147,9 @@ usbCOWaitLoop:
     sbic    USBIN, USBMINUS ;[2] 
     rjmp    usbCOWaitLoop   ;[3]
 
+    ; This section of code deals with traffic from other USB devices on the same hub.
+    ; If this code is excluded, micronucleus may only work when it is connected to a dedicated USB port
+#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
     sbis    USBIN, USBPLUS  ; ignore frame if data is present
     rjmp    usbCOnotdata
 
@@ -161,7 +164,8 @@ usbCOWaitNoData2:
     sbis    USBIN, USBMINUS ; wait for D- go to high
     rjmp    usbCOWaitNoData2
     rjmp    usbCOLoopNoCal
-
+#endif
+    
 usbCOnotdata:
 	sbrs	cnt16H, 7		;delay overflow?
 	rjmp	usbCOclocktoolow
