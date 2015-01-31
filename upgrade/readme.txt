@@ -7,6 +7,15 @@ The program then emits a beep if a piezo speaker is connected between PB0 and PB
 
 Upgrade has only been tested with micronucleus - use it to upload other bootloaders at your own risk!
 
+Prerequesits
+============
+
+You'll need a few dependencies to start with:
+
+    gem install libusb
+
+Also, you'll need avr-gcc. For OS X, it can be obtained from http://www.obdev.at/products/crosspack/download.html
+
 
 Creating an Upgrade
 ===================
