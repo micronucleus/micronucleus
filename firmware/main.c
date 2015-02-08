@@ -63,7 +63,7 @@ PROGMEM const uint8_t configurationReply[6] = {
     uint8_t b[2];
   } uint16_union_t;
   
-#if OSCCAL_RESTORE
+#if OSCCAL_RESTORE_DEFAULT
   register uint8_t      osccal_default  asm("r2");
 #endif 
 
