@@ -4,7 +4,7 @@
  * according to the hardware.
  * 
  * Controller type: ATtiny 841 - 12 MHz
- * Configuration:   Default configuration
+ * Configuration:   Nanite841
  *       USB D- :   PB0
  *       USB D+ :   PB1
  *       Entry  :   Always
@@ -12,7 +12,7 @@
  *       OSCCAL :   Revert to precalibrated value (8 MHz)
  * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny841
  *       Flash write time may be too 
- * Last Change:     Mar 16,2014
+ * Last Change:     February 8,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -197,7 +197,7 @@
  *  comes with its own OSCCAL calibration or an external clock source is used. 
  */
  
-#define OSCCAL_ENTRY_ALWAYS
+#define OSCCAL_RESTORE_DEFAULT 1
 #define OSCCAL_SAVE_CALIB 1
 #define OSCCAL_HAVE_XTAL 0
   
