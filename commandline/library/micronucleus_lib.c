@@ -66,6 +66,10 @@ micronucleus* micronucleus_connect(int fast_mode) {
           // get nucleus info
           unsigned char buffer[6];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
+
+          // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
+          if (res<0) return NULL;  
+          
           assert(res >= 6);
 
           nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -97,6 +101,10 @@ micronucleus* micronucleus_connect(int fast_mode) {
           // get nucleus info
           unsigned char buffer[4];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+          
+          // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
+          if (res<0) return NULL;  
+            
           assert(res >= 4);
 
           nucleus->flash_size = (buffer[0]<<8) + buffer[1];
