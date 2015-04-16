@@ -5,8 +5,8 @@ Firmware:
     entry condition.
   - The bootloader will not quit if no user program is loaded. This prevents periodic
     re-enumeration of the bootloader and should make driver installation much easier.
-    THhe new "--erase-only" function of the commandline tool can be used to erase the
-    user program and create a stable device for easier installiation.
+    The new "--erase-only" function of the commandline tool can be used to erase the
+    user program and create a stable device for easier installation.
   - New entry modes can be selected in "bootloader.h". Please read the comments for details.
     + ENTRY_ALWAYS    
     + ENTRY_WATCHDOG  
@@ -19,7 +19,7 @@ Firmware:
   - Further size optimizations (62 bytes gained, despite new features)
     + Changed event system into a directly mapped command system.
     + Introduce union types and forced global variables to registers.
-  - More sourcecode cleaning up.  
+  - More source code cleaning up.  
  o Size is now 1816 bytes, 6380 bytes user space. Note that avr-objcopy reports 8 bytes 
    more due to the zero vector table which is overwritten by the userprogram.
   
