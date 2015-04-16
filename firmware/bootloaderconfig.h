@@ -231,6 +231,7 @@ these macros are defined, the boot loader uses them.
  *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
  *                             from the host tool was received.
  *                             Set to 0 to disable
+ *                             (WARNING: values smaller than 1000 may break your device)
  *  
  *  All values are approx. in milliseconds
  */
