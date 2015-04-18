@@ -38,6 +38,10 @@
   #error "Micronucleus only supports pagesizes up to 256 bytes"
 #endif
 
+#if ((AUTO_EXIT_MS>0) && (AUTO_EXIT_MS<1000))
+  #error "Do not set AUTO_EXIT_MS to below 1s to allow Micronucleus to function properly"
+#endif
+
 // Device configuration reply
 // Length: 6 bytes
 //   Byte 0:  User program memory size, high byte
