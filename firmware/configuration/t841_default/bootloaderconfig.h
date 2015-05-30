@@ -11,7 +11,7 @@
  *       LED    :   PB2, Active Low
  *       OSCCAL :   Revert to precalibrated value (8 MHz)
  * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny841
- *       Flash write time may be too 
+ *       Flash write time may be too low.
  * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
