@@ -190,6 +190,10 @@
  *                            will be made to calibrate the oscillator. You should deactivate both options above
  *                            if you use this to avoid redundant code.
  *
+ *  OSCCAL_SLOW_PROGRAMMING   Setting this to '1' will set OSCCAL back to the factory calibration during programming to make
+ *                            sure correct timing is used for the flash writes. This is needed if the micronucleus clock 
+ *                            speed significantly deviated from the default clock. E.g. 12 Mhz on ATtiny841 vs. 8Mhz default.
+ *
  *  If both options are selected, OSCCAL_RESTORE_DEFAULT takes precedence.
  *
  *  If no option is selected, OSCCAL will be left untouched and stays at either factory calibration or F_CPU depending
@@ -200,6 +204,7 @@
 #define OSCCAL_RESTORE_DEFAULT 1
 #define OSCCAL_SAVE_CALIB 1
 #define OSCCAL_HAVE_XTAL 0
+#define OSCCAL_SLOW_PROGRAMMING 1
   
 /*  
  *  Defines handling of an indicator LED while the bootloader is active.  

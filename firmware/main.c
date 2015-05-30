@@ -229,6 +229,8 @@ static inline void leaveBootloader(void) {
 
 void USB_INTR_VECTOR(void);
 int main(void) {
+  uint8_t osccal_tmp;
+  
   bootLoaderInit();
 
   /* save default OSCCAL calibration  */
@@ -286,12 +288,22 @@ int main(void) {
       } while(--fastctr);     
       
       wdr();
- 
+      
+ #if OSCCAL_SLOW_PROGRAMMING
+      osccal_tmp  = OSCCAL;
+      OSCCAL      = osccal_default;
+ #endif
       // commands are only evaluated after next USB transmission or after 5 ms passed
       if (command==cmd_erase_application) 
         eraseApplication();
       if (command==cmd_write_page) 
         writeFlashPage();          
+ #if OSCCAL_SLOW_PROGRAMMING
+      OSCCAL      = osccal_tmp;
+ #endif
+        
+        
+        
       if (command==cmd_exit) {
         if (!fastctr) break;  // Only exit after 5 ms timeout     
       } else {
