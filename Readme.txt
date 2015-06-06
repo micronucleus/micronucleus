@@ -12,7 +12,7 @@ The V2.0 release is a complete rewrite of the firmware and offers significant im
  • Many robustness improvements, such as compatibility to USB hubs and 
    less erratic time out behavior.
  
-Due to the many changes, also the uploadtool had to be updated. The V2.0 upload tool is backwards compatible to the V1.X tool, though.
+Due to the many changes, also the upload tool had to be updated. The V2.0 upload tool is backwards compatible to the V1.X tool, though.
 
 The last release of the V1.x can be found here: https://github.com/micronucleus/micronucleus/tree/v1.11
 
@@ -20,23 +20,23 @@ The last release of the V1.x can be found here: https://github.com/micronucleus/
 Usage
 =====
 
-The bootloader allows uploading of new firmware via USB. In its usual configuration it is invoked at device reset and will identify to the host computer. If no comminucation is initiated by the host machine within a given time, the bootloader will time out and enter the user program, if one is present. 
+The bootloader allows uploading of new firmware via USB. In its usual configuration it is invoked at device reset and will identify to the host computer. If no communication is initiated by the host machine within a given time, the bootloader will time out and enter the user program, if one is present. 
 
-For proper timing, the commmand line tool should to be started on the host computer _before_ the bootloader is invoked.
+For proper timing, the command line tool should to be started on the host computer _before_ the bootloader is invoked.
 
-Windows machines will need to install the libusb drivers found in the /windows_drivers folder.  Clean Micronucleus devices without uploaded userprogram will not time out and allow suffucient time for proper driver installation. Linux and OS X do not require custom drivers.
+Windows machines will need to install the libusb drivers found in the /windows_drivers folder.  Clean Micronucleus devices without uploaded userprogram will not time out and allow sufficient time for proper driver installation. Linux and OS X do not require custom drivers.
 
-Please invoke the command line tool with "microcleus -help" for a list of available options.
+Please invoke the command line tool with "micronucleus -help" for a list of available options.
 
-The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user programm uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
+The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user program uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
 
 
 Compiling
 =========
 
-Micronucleus can be configured to support all devices of the ATtiny series, with the expection of the reduced core ATtiny 4/5/9/10/20/40.
+Micronucleus can be configured to support all devices of the ATtiny series, with the exception of the reduced core ATtiny 4/5/9/10/20/40.
 
-To allow maximum flexibility, micronucleus supports a configuration system. To compile micronucleus with a specific configuratiion, please invoke the AVR-GCC toolchain with:
+To allow maximum flexibility, micronucleus supports a configuration system. To compile micronucleus with a specific configuration, please invoke the AVR-GCC tool-chain with:
 
     make CONFIG=<config_name>
 
@@ -49,7 +49,7 @@ t85_aggressive  -   ATtiny85  smaller size - critical   -   1414 bytes
 t167_default    -   ATtiny167 default (uses xtal)       -   1390 bytes
 Nanite841       -   Nanite841 firmware                  -   1608 bytes
 
-You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "boorloaderconfig.h". The bootloader options are explaines in these files. Feel free to supply a pull request if you added and tested a previously unsupported device.
+You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "boorloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
 If changes to the configuration lead to an increase in bootloader size, it may be necessary to change the bootloader start address. Please consult "Makefile.inc" for details.
 
@@ -58,7 +58,7 @@ Other make options:
     make CONFIG=<config_name> fuse   	# Configure fuses
     make CONFIG=<config_name> flash  	# Uploade the bootloader using AVRDUDE
     
-There is also an option to disable the reset line and use it as an I/O. While it may seem tempting to use this feature to make available an additional I/O pin available on the ATtiny85, we strongly discourage from doing so, as it led to many issues in the past.
+There is also an option to disable the reset line and use it as an I/O. While it may seem tempting to use this feature to make an additional I/O pin available on the ATtiny85, we strongly discourage from doing so, as it led to many issues in the past.
 
 Please "make clean" when switching from one configuration to another.
 
@@ -83,7 +83,7 @@ In addition, we'd like you to consider these points if you intend to sell produc
  • Your documentation should mention Micronucleus and include a link to the 
    main repository (https://github.com/micronucleus/)
    
- • Please do not "rebrand" micronucleus.
+ • Please do not "rebrand" micronucleus by renaming the USB device.
  
  • Feel welcome to submit a pull request to include your product in the
    "Devices using Micronucleus"-list. 
@@ -94,6 +94,7 @@ Changes
 
 This pull request documents changes leading to V2.0: https://github.com/micronucleus/micronucleus/pull/43
 
+ • v2.0b  June 6th, 2015
 
 Credits
 =======
