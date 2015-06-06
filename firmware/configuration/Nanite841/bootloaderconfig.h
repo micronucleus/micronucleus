@@ -5,14 +5,13 @@
  * 
  * Controller type: ATtiny 841 - 12 MHz
  * Configuration:   Nanite841
- *       USB D- :   PB0
- *       USB D+ :   PB1
+ *       USB D- :   PB1
+ *       USB D+ :   PB0
  *       Entry  :   Always
  *       LED    :   PB2, Active Low
  *       OSCCAL :   Revert to precalibrated value (8 MHz)
  * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny841
- *       Flash write time may be too 
- * Last Change:     February 8,2015
+ * Last Change:     June 5,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
