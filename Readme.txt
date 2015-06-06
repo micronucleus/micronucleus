@@ -68,7 +68,7 @@ Devices using Micronucleus
 ==========================
 
 Micronucleus is widely installed on thousands of open source hardware devices. Please find an incomplete list here:
-https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
+https://github.com/micronucleus/micronucleus/blob/master/Devices_with_Micronucleus.md
 
  
 License
