@@ -6,10 +6,11 @@ The V2.0 release is a complete rewrite of the firmware and offers significant im
 
  • Support for the entire ATtiny family instead of only ATtiny85
  • Much smaller size. All configurations are below 2kb.
- • Interrupt free V-USB does not require patching of the user program INT-vector anymore.
+ • Interrupt free V-USB: no patching of the user program INT-vector anymore.
  • Faster uploads due to new protocol.
  • Far jmp also allows using ATtinies with more than 8kb flash.
- • Many robustness improvements, such as compatibility to USB hubs and less erratic time out behavior.
+ • Many robustness improvements, such as compatibility to USB hubs and 
+   less erratic time out behavior.
  
 Due to the many changes, also the uploadtool had to be updated. The V2.0 upload tool is backwards compatible to the V1.X tool, though.
 
@@ -52,8 +53,8 @@ If changes to the configuration lead to an increase in bootloader size, it may b
 
 Other make options:
 
-    make CONFIG=<config_name> fuse   	# to set the clock generator, boot section size etc.
-    make CONFIG=<config_name> flash  	# to load the boot loader into flash using avrdude
+    make CONFIG=<config_name> fuse   	# Configure fuses
+    make CONFIG=<config_name> flash  	# Uploade the bootloader using AVRDUDE
     
 There is also an option to disable the reset line and use it as an I/O. While it may seem tempting to use this feature to make available an additional I/O pin available on the ATtiny85, we strongly discourage from doing so, as it led to many issues in the past.
 
@@ -62,23 +63,27 @@ Please "make clean" when switching from one configuration to another.
 Devices using Micronucleus
 ==========================
 
-Micronucleus is widely installed on thousands of open source hardware devices. Please find an incomplete list here https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
+Micronucleus is widely installed on thousands of open source hardware devices. Please find an incomplete list here:
+ https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
 
 License
 =======
 
 This project is released under the GPLv2 license. Code uploaded via the bootloader is not subject to any license issues.
 
+In addition, we'd like you to consider these points as well if you intend to sell devices using micronucleus:
 
-
-
-
-
-Micronucleus adds a small amount of delay to the Pin Change interrupt in user applications, but  this latency is low enough to not interfere with V-USB applications. Once bootloaded, an ISP or HVSP programmer can disable the reset pin, offering an extra pin for GPIO and ADC use! After disabling the reset pin functionality, of course you will no longer be able to use ISP programmers with the chip, but that's okay because we made a neat 'upgrade' program. The Upgrade program takes a compiled bootloader hex file and packs it in to an AVR program. You upload the 'upgrade' program via an existing micronucleus installation, any other bootloader, or via ISP or HVSP programmer, and once uploaded the upgrade program runs and writes over the bootloader and then installs a trampoline over it's own interrupt vector table, then reboots, launching the new bootloader. In this way users can change their bootloader to have bugfixes or different configurations like the 'jumper' versions without needing any programming tools.
-
-tiny85 does not offer any hardware bootloading support, and does not protect the bootloader from being accidentally overwritten by a misbehaving app. We recommend great caution if using flash self programming inside an uploaded program due to the potential of bricking.
-
-Micronucleus is now widely installed on over 40,000 Digispark devices from Digistump - a tiny unofficial arduino device, so you can be confident that micronucleus will be well supported in the future. Micronucleus is now also the recommended bootloader for Ihsan Kehribar's wonderful LittleWire devices, and can be successfully installed on to existing LittleWire's by uploading the 'upgrade' program via the old serial bootloader, then uploading the littlewire firmware via the micronucleus command line upload tool.
+ • Please make your hardware open source. At least the schematic needs to be 
+   published according to the license inherited from V-USB.
+   
+ • Your documentation should mention Micronucleus and include a link to the 
+   main repository (https://github.com/micronucleus/)
+   
+ • Please do not "rebrand" micronucleus.
+ 
+ • Feel welcome to submit a pull request to include your product in the
+   "Devices using Micronucleus"-list.
+ 
 
 Changes 
 =======
