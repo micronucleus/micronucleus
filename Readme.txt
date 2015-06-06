@@ -1,5 +1,6 @@
 Micronucleus V2.0b
-=============
+==================
+
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
 
 The V2.0 release is a complete rewrite of the firmware and offers significant improvements over V1.x:
