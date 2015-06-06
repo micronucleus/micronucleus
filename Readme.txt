@@ -16,6 +16,7 @@ Due to the many changes, also the uploadtool had to be updated. The V2.0 upload 
 
 The last release of the V1.x can be found here: https://github.com/micronucleus/micronucleus/tree/v1.11
 
+
 Usage
 =====
 
@@ -28,6 +29,7 @@ Windows machines will need to install the libusb drivers found in the /windows_d
 Please invoke the command line tool with "microcleus -help" for a list of available options.
 
 The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user programm uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
+
 
 Compiling
 =========
@@ -60,18 +62,20 @@ There is also an option to disable the reset line and use it as an I/O. While it
 
 Please "make clean" when switching from one configuration to another.
 
+
 Devices using Micronucleus
 ==========================
 
 Micronucleus is widely installed on thousands of open source hardware devices. Please find an incomplete list here:
- https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
+https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
 
+ 
 License
 =======
 
 This project is released under the GPLv2 license. Code uploaded via the bootloader is not subject to any license issues.
 
-In addition, we'd like you to consider these points as well if you intend to sell devices using micronucleus:
+In addition, we'd like you to consider these points if you intend to sell products using micronucleus:
 
  • Please make your hardware open source. At least the schematic needs to be 
    published according to the license inherited from V-USB.
@@ -82,9 +86,9 @@ In addition, we'd like you to consider these points as well if you intend to sel
  • Please do not "rebrand" micronucleus.
  
  • Feel welcome to submit a pull request to include your product in the
-   "Devices using Micronucleus"-list.
- 
+   "Devices using Micronucleus"-list. 
 
+   
 Changes 
 =======
 
@@ -96,12 +100,12 @@ Credits
 
 Firmware:
 
-  • Micronucleus V2.0             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
-                                  (c) 2014 Shay Green
-  • Original Micronucleus         (c) 2012 Jenna Fox
+ • Micronucleus V2.0             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
+                                 (c) 2014 Shay Green
+ • Original Micronucleus         (c) 2012 Jenna Fox
  
-  • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
-  • Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
+ • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
+ • Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  
 Commandline tool:
  
