@@ -4,7 +4,7 @@ Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a min
 
 The V2.0 release is a complete rewrite of the firmware and offers significant improvements over V1.x:
 
- • Support for the entire ATtiny family instead of only ATtiny85
+ • Support for the entire ATtiny family instead of only ATtiny85.
  • Much smaller size. All configurations are below 2kb.
  • Interrupt free V-USB: no patching of the user program INT-vector anymore.
  • Faster uploads due to new protocol.
@@ -40,7 +40,7 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
     make CONFIG=<config_name>
 
-Currently the following configurations are included and tested. Please check /firmware/configurations/ for details. Hex files can be found in /releases.
+Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
 t84_default     -   ATtiny84A default configuration     -   1532 bytes
 t841_default    -   ATtiny841 default configuration     -   1584 bytes
@@ -49,7 +49,7 @@ t85_aggressive  -   ATtiny85  smaller size - critical   -   1414 bytes
 t167_default    -   ATtiny167 default (uses xtal)       -   1390 bytes
 Nanite841       -   Nanite841 firmware                  -   1608 bytes
 
-You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "boorloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
+You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
 If changes to the configuration lead to an increase in bootloader size, it may be necessary to change the bootloader start address. Please consult "Makefile.inc" for details.
 
@@ -73,7 +73,7 @@ https://github.com/micronucleus/micronucleus/Devices_with_Microncleus.md
 License
 =======
 
-This project is released under the GPLv2 license. Code uploaded via the bootloader is not subject to any license issues.
+This project is released under the GPLv2 license. Code uploaded via the bootloader is not subject to any license.
 
 In addition, we'd like you to consider these points if you intend to sell products using micronucleus:
 
