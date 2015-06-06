@@ -1,3 +1,6 @@
+*.o
+*.tmp
+*.raw
 firmware/*.bin
 commandline/littleWire_util.o
 commandline/micronucleus

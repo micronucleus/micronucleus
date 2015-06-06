@@ -43,7 +43,12 @@
 #include <avr/io.h>
 //#include <avr/pgmspace.h>
 
+#ifdef __AVR_HAVE_JMP_CALL__
+  #define XJMP jmp
+#else
   #define XJMP rjmp
+#endif  
+
   #define XCALL rcall
   
 	.macro	vector name
@@ -56,12 +61,13 @@
 	.global	__vectors
 	.global	__bad_interrupt
 	.func	__vectors
+
 __bad_interrupt:	
 __vectors:
 	XJMP	__init
-	vector	__vector_1
-	vector	__vector_2
-	vector	__vector_3
+;	vector	__vector_1
+;	vector	__vector_2
+;	vector	__vector_3
 	.endfunc
 
 	/* Handle unexpected interrupts (enabled and no handler), which
@@ -89,19 +95,18 @@ __init:
 
 	.section .init2,"ax",@progbits
 	clr		R1
+    
+#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
 	out		0x3f,r1
 	ldi		r28,lo8(__stack)
 	ldi		r29,hi8(__stack)
 	out		0x3d, r28
 	out		0x3e, r29
+#endif    
 	.section .init9,"ax",@progbits
+;  rcall main
+;  XJMP  __vectors-2
 	XJMP	main
+  
 ;	.endfunc
 
-
-	.section .zerotable,"ax",@progbits
-zerovectors:
-	XJMP	__init
-	XJMP	__vector_1
-	XJMP	__vector_2
-	XJMP	__vector_3

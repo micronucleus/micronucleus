@@ -5,6 +5,9 @@
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
+ *
+ * Modified to an interrupt-less driver for micronucleus V2. (c) 2014 T. Bo"scke
+ *
  */
 
 /* Do not link this file! Link usbdrvasm.S instead, which includes the
@@ -84,7 +87,20 @@ se0:
 ;Setup and Out are followed by a data packet two bit times (16 cycles) after
 ;the end of SE0. The sync code allows up to 40 cycles delay from the start of
 ;the sync pattern until the first bit is sampled. That's a total of 56 cycles.
+;
+;TB 2014-02-02 
+;The interrupt-less driver always has to wait for the next packet at this point 
+;or usbpoll() will get confused.
+
 handleSetupOrOut:               ;[32]
+    ldi     YL,10               ; Time out
+waitForData:
+    USB_LOAD_PENDING(x2)        ;[xx]
+    sbrc    x2, USB_INTR_PENDING_BIT;[xx] check whether data is already arriving
+    rjmp    storeTokenAndReturn
+    dec     YL
+    brne     waitForData
+
 #if USB_CFG_IMPLEMENT_FN_WRITEOUT   /* if we have data for endpoint != 0, set usbCurrentTok to address */
     andi    x3, 0xf             ;[32]
     breq    storeTokenAndReturn ;[33]
@@ -99,7 +115,9 @@ doReturn:
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
 sofError:
     POP_RETI                    ;macro call
-    reti
+    
+    ret                         ;02-02-2014 not called from INT in micronucleus.
+;    reti
 
 handleData:
 #if USB_CFG_CHECK_CRC
@@ -120,10 +138,13 @@ handleData:
 #endif
     sts     usbRxLen, cnt       ;[28] store received data, swap buffers
     sts     usbRxToken, shift   ;[30]
-    lds     x2, usbInputBufOffset;[32] swap buffers
-    ldi     cnt, USB_BUFSIZE    ;[34]
-    sub     cnt, x2             ;[35]
-    sts     usbInputBufOffset, cnt;[36] buffers now swapped
+    
+; Microncleus V2 does not need double buffering due to in-order processing of USB-rx
+; TB 2014-01-04
+;    lds     x2, usbInputBufOffset;[32] swap buffers
+;    ldi     cnt, USB_BUFSIZE    ;[34]
+;    sub     cnt, x2             ;[35]
+;    sts     usbInputBufOffset, cnt;[36] buffers now swapped
     rjmp    sendAckAndReti      ;[38] 40 + 17 = 57 until SOP
 
 handleIn:

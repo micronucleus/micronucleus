@@ -77,7 +77,7 @@
  * The value is in milliamperes. [It will be divided by two since USB
  * communicates power requirements in units of 2 mA.]
  */
-#define USB_CFG_IMPLEMENT_FN_WRITE      1
+#define USB_CFG_IMPLEMENT_FN_WRITE      0
 /* Set this to 1 if you want usbFunctionWrite() to be called for control-out
  * transfers. Set it to 0 if you don't need it and want to save a couple of
  * bytes.
@@ -112,10 +112,12 @@
 /* #define USB_RX_USER_HOOK(data, len)     if(usbRxToken == (uchar)USBPID_SETUP) blinkLED(); */
 
 // Check CRC of all received data
+/*
 #define USB_RX_USER_HOOK( data, len ) { \
 if ( usbCrc16( data, len + 2 ) != 0x4FFE )\
 return;\
 }
+*/
 /* This macro is a hook if you want to do unconventional things. If it is
  * defined, it's inserted at the beginning of received message processing.
  * If you eat the received message and don't want default processing to
@@ -163,20 +165,18 @@ return;\
  * usbFunctionWrite(). Use the global usbCurrentDataToken and a static variable
  * for each control- and out-endpoint to check for duplicate packets.
  */
-//#if USB_CFG_CLOCK_KHZ==16500
 
-//#include "osccal.h"
-
+ 
 #ifndef __ASSEMBLER__
 	void calibrateOscillatorASM(void);
-  
+/*  
   #if AUTO_EXIT_NO_USB_MS>0
     extern uint16_union_t idlePolls;
     #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ idlePolls.b[1]=0; calibrateOscillatorASM();}
   #else
     #define USB_RESET_HOOK(resetStarts)  if(!resetStarts){ calibrateOscillatorASM();}
   #endif
-
+*/
   #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 

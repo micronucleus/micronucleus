@@ -1,6 +1,8 @@
-/* Name: osccalASM.S
+/* Name: osccalASM.S   v1.1
  * Author: cpldcpu@gmail.com
  * Creation Date: 2013-11-3
+ * Update       : 2014-01-4
+ * 
  * Tabsize: 4
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
  */
@@ -11,28 +13,34 @@
  *
  *
  * Benefits:
- *	  - Codesize reduced by 90 bytes.
+ *    - Codesize reduced by 90 bytes.
  *    - Improved robustness due to removing timeout from frame length measurement and 
- *	    inserted NOP after OSCCAL writes.
+ *      inserted NOP after OSCCAL writes.
  *
  * Changes:
  *    - The new routine performs a combined binary and neighborhood search
  *      in a single loop.
  *      Note that the neighborhood search is necessary due to the quasi-monotonic 
  *      nature of OSCCAL. (See Atmel application note AVR054).
- *	  - Inserted NOP after writes to OSCCAL to avoid CPU errors during oscillator
+ *    - Inserted NOP after writes to OSCCAL to avoid CPU errors during oscillator
  *      stabilization. 
  *    - Implemented new routine to measure frame time "usbMeasureFrameLengthDecreasing".
- *		This routine takes the target time as a parameter and returns the deviation.
- *	  - usbMeasureFrameLengthDecreasing measures in multiples of 5 cycles and is thus
- *	    slighly more accurate.
- *	  - usbMeasureFrameLengthDecreasing does not support time out anymore. The original
- *	    implementation returned zero in case of time out, which would have caused the old
+ *      This routine takes the target time as a parameter and returns the deviation.
+ *    - usbMeasureFrameLengthDecreasing measures in multiples of 5 cycles and is thus
+ *      slighly more accurate.
+ *    - usbMeasureFrameLengthDecreasing does not support time out anymore. The original
+ *      implementation returned zero in case of time out, which would have caused the old
  *      calibrateOscillator() implementation to increase OSSCAL to 255, effictively
  *      overclocking and most likely crashing the CPU. The new implementation will enter
- *		an infinite loop when no USB activity is encountered. The user program should
+ *      an infinite loop when no USB activity is encountered. The user program should
  *      use the watchdog to escape from situations like this.
-  * 
+ * Update 2014-01-4
+ *    - Added an initial sync-state, which will discard the first delay measurement. 
+ *      This allows to call this routine before or during the SE0 bus reset without 
+ *      corrupting OSCCAL.
+ *     - Removed CLI/SEI to allow more flexibility.
+ * 
+ * 
  * This routine will work both on controllers with and without split OSCCAL range.
  * The first trial value is 128 which is the lowest value of the upper OSCCAL range
  * on Attiny85 and will effectively limit the search to the upper range, unless the
@@ -85,31 +93,45 @@
 #endif
 #   define cnt16    cnt16L
 
-; extern void calibrateOscillatorASM(void);
+#if (OSCCAL_HAVE_XTAL == 0)
 
 .global calibrateOscillatorASM
 calibrateOscillatorASM:
 
-	cli
-	ldi		opD, 255	
+  ldi   opD, 255
 
-	ldi		try, 128	; calibration start value
-	ldi		stp, 64		; initial step width
-	ldi		i, 10		; 10 iterations
+  ldi   try, 128    ; calibration start value
+  ldi   stp, 0      ; initial step width=0 for sync phase (first delay is discarded)
+  ldi   i, 11       ; 11 iterations (1x sync, 7x binary search, 3x neighbourhood)
 
 usbCOloop:
 
-	out		OSCCAL, try
-	nop
+#if OSCCAL <64
+  out   OSCCAL, try
+#else
+  sts   OSCCAL, try
+#endif  
+  nop
 
-	; Delay values = F_CPU * 999e-6 / 5 + 0.5
-	
+usbCOLoopNoCal:
+
+  ; Delay values = F_CPU * 999e-6 / 5 + 0.5
+  
 #if (F_CPU == 16500000)
-	ldi		cnt16L, lo8(3297)
-	ldi		cnt16H, hi8(3297)
+  ldi   cnt16L, lo8(3297)
+  ldi   cnt16H, hi8(3297)
 #elif (F_CPU == 12800000)
-	ldi		cnt16L, lo8(2557)
-	ldi		cnt16H, hi8(2557)
+  ldi   cnt16L, lo8(2557)
+  ldi   cnt16H, hi8(2557)
+#elif (F_CPU == 12000000)
+  ldi   cnt16L, lo8(2398)
+  ldi   cnt16H, hi8(2398)
+#elif (F_CPU == 16000000)
+  ldi   cnt16L, lo8(3197)
+  ldi   cnt16H, hi8(3197)  
+#elif (F_CPU == 15000000)
+  ldi   cnt16L, lo8(2998)
+  ldi   cnt16H, hi8(2998)  
 #else
 	#error "calibrateOscillatorASM: no delayvalues defined for this F_CPU setting"
 #endif
@@ -125,6 +147,26 @@ usbCOWaitLoop:
     sbic    USBIN, USBMINUS ;[2] 
     rjmp    usbCOWaitLoop   ;[3]
 
+    ; This section of code deals with traffic from other USB devices on the same hub.
+    ; If this code is excluded, micronucleus may only work when it is connected to a dedicated USB port
+#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
+    sbis    USBIN, USBPLUS  ; ignore frame if data is present
+    rjmp    usbCOnotdata
+
+usbCOWaitNoData:
+    in      cnt16H, USBIN   ; wait for SE0 state (both lines low)
+    andi    cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
+    brne    usbCOWaitNoData
+    in      cnt16H, USBIN   ; be sure SE0 state wasn't a glitch
+    andi    cnt16H, (1<<USBPLUS)|(1<<USBMINUS)
+    brne    usbCOWaitNoData
+usbCOWaitNoData2:
+    sbis    USBIN, USBMINUS ; wait for D- go to high
+    rjmp    usbCOWaitNoData2
+    rjmp    usbCOLoopNoCal
+#endif
+    
+usbCOnotdata:
 	sbrs	cnt16H, 7		;delay overflow?
 	rjmp	usbCOclocktoolow
 	sub		try, stp
@@ -133,23 +175,38 @@ usbCOWaitLoop:
 usbCOclocktoolow:
 	add		try, stp
 usbCOclocktoohigh:
-	lsr		stp
-	brne	usbCOnoneighborhoodsearch
-	cp		opD, cnt16L
-	brcs	usbCOnoimprovement
-	in		opV, OSCCAL
+	lsr		stp                ; stp = 0 in first iteration (sync)
+                           ; stp = 2^x (x=0..6) during binary search, 
+                           ; stp = 1 during neighbourhood search                          
+                           
+    brne	usbCObinarysearch
+    ldi   stp, 64            ; stp=64 to initiate binary search. 
+                           ; If we are in neighbourhood search (c=1), it is changed to 1 below
+    brcc  usbCObinarysearch
+    cp		opD, cnt16L
+    brcs	usbCOnoimprovement
+#if OSCCAL <64
+    in		opV, OSCCAL
+#else
+    lds		opV, OSCCAL
+#endif      
 	mov		opD, cnt16L
 usbCOnoimprovement:
-	ldi		stp, 1
-usbCOnoneighborhoodsearch:
+	ldi		stp, 1             ; stp=1 to continue with neighbourhood search
+usbCObinarysearch:  
 	subi	i, 1
 	brne	usbCOloop
 
-	out		OSCCAL, opV
-	nop
-	sei
-    ret
+#if OSCCAL <64
+  out   OSCCAL, opV
+#else
+  sts   OSCCAL, opV
+#endif  
+  nop
+  ret
 
+#endif //OSCCAL_HAVE_XTAL  
+  
 #undef i
 #undef opV
 #undef opD
@@ -221,8 +278,6 @@ void    calibrateOscillator(void)
 	}
 
 	OSCCAL = optimumValue;
-	asm volatile(" NOP");
-	
-	sei(); // enable interrupts
+	asm volatile(" NOP");	
 }
 #endif

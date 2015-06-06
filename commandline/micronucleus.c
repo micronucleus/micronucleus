@@ -1,7 +1,9 @@
 /*
-  Created: September 2012
-  by ihsan Kehribar <ihsan@kehribar.me>
-
+Created: September 2012
+  (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
+  Changes for Micronucleus protocol version V2.x
+  (c) 2014 T. Bo"scke
+  
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -54,6 +56,7 @@ static char* progress_friendly_name; // name of progress section
 static int dump_progress = 0; // output computer friendly progress info
 static int use_ansi = 0; // output ansi control character stuff
 static int erase_only = 0; // only erase, dont't write file
+static int fast_mode = 0; // normal mode adds 2ms to page writing times and waits longer for connect.
 static int timeout = 0;
 /*****************************************************************************/
 
@@ -69,17 +72,22 @@ int main(int argc, char **argv) {
   int run = 0;
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
-  char* usage = "usage: micronucleus [--run] [--dump-progress] [--type intel-hex|raw] [--no-ansi] [--timeout integer] [--erase-only] filename";
+  #if defined(WIN)
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--erase-only] filename";
+  #else
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--erase-only] filename [--no-ansi]";
+  #endif 
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
   erase_only = 0;
+  fast_mode=0;
   timeout = 0; // no timeout by default
-  //#if defined(WIN)
-  //  use_ansi = 0;
-  //#else
+  #if defined(WIN)
+    use_ansi = 0;
+  #else
     use_ansi = 1;
-  //#endif
+  #endif
 
   while (arg_pointer < argc) {
     if (strcmp(argv[arg_pointer], "--run") == 0) {
@@ -104,19 +112,25 @@ int main(int argc, char **argv) {
       puts("                           for driving GUIs");
       puts("             --erase-only: Erase the device without programming. Fills the");
       puts("                           program memory with 0xFFFF. Any files are ignored.");
+      puts("              --fast-mode: Speed up the timing of micronucleus. Do not use if");
+      puts("                           you encounter USB errors. ");
       puts("                    --run: Ask bootloader to run the program when finished");
       puts("                           uploading provided program");
-      //#ifndef WIN
+      #ifndef WIN
       puts("                --no-ansi: Don't use ANSI in terminal output");
-      //#endif
+      #endif
       puts("      --timeout [integer]: Timeout after waiting specified number of seconds");
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
+      puts("");
+      puts(MICRONUCLEUS_COMMANDLINE_VERSION);
       return EXIT_SUCCESS;
     } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
       dump_progress = 1;
     } else if (strcmp(argv[arg_pointer], "--no-ansi") == 0) {
       use_ansi = 0;
+    } else if (strcmp(argv[arg_pointer], "--fast-mode") == 0) {
+      fast_mode = 1;
     } else if (strcmp(argv[arg_pointer], "--erase-only") == 0) {
       erase_only = 1;
       progress_total_steps -= 1;
@@ -149,7 +163,7 @@ int main(int argc, char **argv) {
 
   while (my_device == NULL) {
     delay(100);
-    my_device = micronucleus_connect();
+    my_device = micronucleus_connect(fast_mode);
 
     time(&current_time);
     if (timeout && start_time + timeout < current_time) {
@@ -164,28 +178,20 @@ int main(int argc, char **argv) {
 
   printf("> Device is found!\n");
 
-  // wait for CONNECT_WAIT milliseconds with progress output
-  float wait = 0.0f;
-  setProgressData("connecting", 2);
-  while (wait < CONNECT_WAIT) {
-    printProgress((wait / ((float) CONNECT_WAIT)) * 0.9f);
-    wait += 50.0f;
-    delay(50);
+  if (!fast_mode) {
+    // wait for CONNECT_WAIT milliseconds with progress output
+    float wait = 0.0f;
+    setProgressData("connecting", 2);
+    while (wait < CONNECT_WAIT) {
+      printProgress((wait / ((float) CONNECT_WAIT)) * 0.9f);
+      wait += 50.0f;
+      delay(50);
+    }
   }
-
-  //my_device = micronucleus_connect();
   printProgress(1.0);
 
-  // if (my_device->page_size == 64) {
-  //   printf("> Device looks like ATtiny85!\n");
-  // } else if (my_device->page_size == 32)  {
-  //   printf("> Device looks like ATtiny45!\n");
-  // } else {
-  //   printf("> Unsupported device!\n");
-  //   return EXIT_FAILURE;
-  // }
-
   printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
+  if (my_device->signature1) printf("> Device signature: 0x1e%02x%02x \n",(int)my_device->signature1,(int)my_device->signature2);
   printf("> Available space for user applications: %d bytes\n", my_device->flash_size);
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
   printf("> Whole page count: %d  page size: %d\n", my_device->pages,my_device->page_size);
@@ -239,7 +245,7 @@ int main(int argc, char **argv) {
     int deciseconds_till_reconnect_notice = 50; // notice after 5 seconds
     while (my_device == NULL) {
       delay(100);
-      my_device = micronucleus_connect();
+      my_device = micronucleus_connect(fast_mode);
       deciseconds_till_reconnect_notice -= 1;
 
       if (deciseconds_till_reconnect_notice == 0) {

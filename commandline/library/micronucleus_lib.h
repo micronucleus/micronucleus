@@ -3,7 +3,9 @@
 
 /*
   Created: September 2012
-  by ihsan Kehribar <ihsan@kehribar.me>
+  (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
+  Changes for Micronucleus protocol version V2.x
+  (c) 2014 T. Bo"scke
   
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
@@ -44,11 +46,12 @@
 #define MICRONUCLEUS_VENDOR_ID   0x16D0
 #define MICRONUCLEUS_PRODUCT_ID  0x0753
 #define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
-#define MICRONUCLEUS_MAX_MAJOR_VERSION 1
+#define MICRONUCLEUS_MAX_MAJOR_VERSION 2
+
 /*******************************************************************************/
 
 /********************************************************************************
-* Declearations
+* Declarations
 ********************************************************************************/
 //typedef usb_dev_handle micronucleus;
 // representing version number of micronucleus device
@@ -57,6 +60,8 @@ typedef struct _micronucleus_version {
   unsigned char minor;
 } micronucleus_version;
 
+#define MICRONUCLEUS_COMMANDLINE_VERSION "Commandline tool version: 2.0a5"
+
 // handle representing one micronucleus device
 typedef struct _micronucleus {
   usb_dev_handle *device;
@@ -64,9 +69,12 @@ typedef struct _micronucleus {
   micronucleus_version version;
   unsigned int flash_size;  // programmable size (in bytes) of progmem
   unsigned int page_size;   // size (in bytes) of page
+  unsigned int bootloader_start; // Start of the bootloader
   unsigned int pages;       // total number of pages to program
   unsigned int write_sleep; // milliseconds
   unsigned int erase_sleep; // milliseconds
+  unsigned char signature1; // only used in protocol v2
+  unsigned char signature2; // only used in protocol v2
 } micronucleus;
 
 typedef void (*micronucleus_callback)(float progress);
@@ -77,7 +85,7 @@ typedef void (*micronucleus_callback)(float progress);
 * Try to connect to the device
 *     Returns: device handle for success, NULL for fail
 ********************************************************************************/
-micronucleus* micronucleus_connect();
+micronucleus* micronucleus_connect(int fast_mode);
 /*******************************************************************************/
 
 /********************************************************************************
