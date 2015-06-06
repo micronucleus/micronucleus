@@ -19,6 +19,12 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [BBtech ATtiny85 board](https://www.tindie.com/products/BBTech/attiny85-usb-development-tool-board/) - Well designed ATtiny85 board in Trinket form factor. Discontinued(?)
 
+- [Iteadduino Tiny](http://imall.iteadstudio.com/im130615003.html) by Itead
+
+- [Pro Nano 85](http://www.jayconsystems.com/pro-nano-50v-attiny85.html) by Jaconsystems
+
+- [Paperduino](http://paperduino.eu/doku.php) - Mini Arduino board on paper
+
 ## ATtiny 841 ##
 
 
