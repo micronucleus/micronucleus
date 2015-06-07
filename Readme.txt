@@ -101,23 +101,20 @@ Credits
 =======
 
 Firmware:
-
  • Micronucleus V2.0             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
  • Original Micronucleus         (c) 2012 Jenna Fox
- 
  • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
  • Based on USBaspLoader         (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  
 Commandline tool:
- 
-  • Original commandline tool     (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
-  • Updates for V2.x              (c) 2014 T. Bo"scke
-  
-Special Thanks:
+ • Original commandline tool     (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
+                                 (c) 2012 Jenna Fox
+ • Updates for V2.x              (c) 2014 T. Bo"scke
 
+Special Thanks:
  • Aaron Stone/@sodabrew for building the OS X command line tool and various fixes.
  • Objective Development's great V-USB bitbanging usb driver
  • Embedded Creations' pioneering and inspiring USBaspLoader-tiny85
  • Digistump for motivation and contributing the VID/PID pair
- 
+ • Numerous supporters for smaller bug fixes and improvements.
