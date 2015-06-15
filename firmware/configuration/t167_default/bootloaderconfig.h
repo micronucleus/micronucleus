@@ -4,14 +4,14 @@
  * according to the hardware.
  * 
  * Controller type: ATtiny 167 - 16 MHz with crystal
- * Configuration:   Standard configuration
+ * Configuration:   Standard configuration - Follows Digispark Pro defaults
  *       USB D- :   PB3
- *       USB D+ :   PB4
+ *       USB D+ :   PB6
  *       Entry  :   Always
- *       LED    :   None
+ *       LED    :   Active High on PB1
  *       OSCCAL :   No change due to external crystal
  * Note: Uses 16 MHz V-USB implementation. 
- * Last Change:     Mar 16,2014
+ * Last Change:     JUn 15,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -33,7 +33,7 @@
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  */
-#define USB_CFG_DPLUS_BIT       4
+#define USB_CFG_DPLUS_BIT       6
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
@@ -222,7 +222,7 @@
  *
  */ 
 
-#define LED_MODE    NONE
+#define LED_MODE    ACTIVE_HIGH
 
 #define LED_DDR     DDRB
 #define LED_PORT    PORTB
