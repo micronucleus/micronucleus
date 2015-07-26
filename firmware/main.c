@@ -1,7 +1,7 @@
 /* 
- * Project: Micronucleus -  v2.0
+ * Project: Micronucleus -  v2.1
  *
- * Micronucleus V2.0             (c) 2014 Tim Bo"scke - cpldcpu@gmail.com
+ * Micronucleus V2.1             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
  *                               (c) 2014 Shay Green
  * Original Micronucleus         (c) 2012 Jenna Fox
  *
@@ -12,7 +12,7 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 0
+#define MICRONUCLEUS_VERSION_MINOR 1
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -232,7 +232,7 @@ int main(void) {
   uint8_t osccal_tmp;
   
   bootLoaderInit();
-
+  
   /* save default OSCCAL calibration  */
 #if OSCCAL_RESTORE_DEFAULT
   osccal_default = OSCCAL;
@@ -266,10 +266,10 @@ int main(void) {
       // adjust fastctr for 5ms timeout
       
       uint16_t fastctr=(uint16_t)(F_CPU/(1000.0f*15.0f/5.0f));
-      uint8_t resetctr=20;
+      uint8_t resetctr=100;
   
       do {        
-        if ((USBIN & USBMASK) !=0) resetctr=20;
+        if ((USBIN & USBMASK) !=0) resetctr=100;
         
         if (!--resetctr) { // reset encountered
            usbNewDeviceAddr = 0;   // bits from the reset handling of usbpoll()
@@ -280,7 +280,8 @@ int main(void) {
         }
         
         if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) {
-          USB_INTR_VECTOR();  // clears INT_PENDING (See se0: in asmcommon.inc)
+          USB_INTR_VECTOR();  
+          USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;  // Clear int pending, in case timeout occured during SYNC                     
           idlePolls.b[1]=0; // reset idle polls when we get usb traffic
          break;
         }
@@ -335,8 +336,8 @@ int main(void) {
       LED_MACRO( idlePolls.b[0] );   
 
        // Test whether another interrupt occurred during the processing of USBpoll and commands.
-       // If yes, we missed a data packet on the bus. Wait until the bus was idle for 10µs to 
-       // allow synchronising to the next incoming packet.
+       // If yes, we missed a data packet on the bus. Wait until the bus was idle for 8.8µs to 
+       // allow synchronising to the next incoming packet. 
        
        if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT))  // Usbpoll() collided with data packet
        {        
@@ -345,12 +346,12 @@ int main(void) {
           // loop takes 5 cycles
           asm volatile(      
           "         ldi  %0,%1 \n\t"        
-          "loop%=:  sbic %2,%3  \n\t"        
+          "loop%=:  sbis %2,%3  \n\t"        
           "         ldi  %0,%1  \n\t"
           "         subi %0,1   \n\t"        
           "         brne loop%= \n\t"   
           : "=&d" (ctr)
-          :  "M" ((uint8_t)(10.0f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DPLUS_BIT)
+          :  "M" ((uint8_t)(8.8f*(F_CPU/1.0e6f)/5.0f+0.5)), "I" (_SFR_IO_ADDR(USBIN)), "M" (USB_CFG_DMINUS_BIT)
           );       
          USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;                   
        }                        
