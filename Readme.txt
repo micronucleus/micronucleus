@@ -1,4 +1,4 @@
-Micronucleus V2.0b
+Micronucleus V2.1
 ==================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
@@ -31,7 +31,6 @@ Please invoke the command line tool with "micronucleus -help" for a list of avai
 
 The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user program uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
 
-
 Compiling
 =========
 
@@ -43,12 +42,12 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1532 bytes
-t841_default    -   ATtiny841 default configuration     -   1584 bytes
-t85_default     -   ATtiny85  default configuration     -   1606 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1414 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1390 bytes
-Nanite841       -   Nanite841 firmware                  -   1608 bytes
+t84_default     -   ATtiny84A default configuration     -   1556 bytes
+t841_default    -   ATtiny841 default configuration     -   1608 bytes
+t85_default     -   ATtiny85  default configuration     -   1610 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1418 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1414 bytes
+Nanite841       -   Nanite841 firmware                  -   1632 bytes
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
@@ -93,15 +92,20 @@ In addition, we'd like you to consider these points if you intend to sell produc
 Changes 
 =======
 
-This pull request documents changes leading to V2.0: https://github.com/micronucleus/micronucleus/pull/43
 
  • v2.0b  June 6th, 2015
-
+    This pull request documents changes leading to V2.0: https://github.com/micronucleus/micronucleus/pull/43
+ 
+ • v2.1  July 26th, 2015
+    This pull request documents changes leading to V2.1: https://github.com/micronucleus/micronucleus/pull/66
+    - Fixed "unknown USB device" issue when devices with <16MHz CPU clock were connected to a USB3.0 port.
+    - Fixed one bug that could lead to a deadlock if no USB was connected while the bootloader was active and noise was injected into the floating D+ input.
+    
 Credits
 =======
 
 Firmware:
- • Micronucleus V2.0             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
+ • Micronucleus V2.1             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
  • Original Micronucleus         (c) 2012 Jenna Fox
  • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
