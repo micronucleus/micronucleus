@@ -98,8 +98,10 @@ Changes
  
  • v2.01 July 26th, 2015
     This pull request documents changes leading to V2.1: https://github.com/micronucleus/micronucleus/pull/66
-    - Fixes "unknown USB device" issue when devices with <16MHz CPU clock were connected to a USB3.0 port.
-    - Fixes one bug that could lead to a deadlock if no USB was connected while the bootloader was active and noise was injected into the floating D+ input.
+    - Fixes "unknown USB device" issue when devices with <16MHz CPU clock were connected 
+      to a USB3.0 port.
+    - Fixes one bug that could lead to a deadlock if no USB was connected 
+      while the bootloader was active and noise was injected into the floating D+ input.
     
 Credits
 =======
