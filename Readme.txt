@@ -1,4 +1,4 @@
-Micronucleus V2.1
+Micronucleus V2.01
 ==================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
@@ -96,16 +96,16 @@ Changes
  • v2.0b  June 6th, 2015
     This pull request documents changes leading to V2.0: https://github.com/micronucleus/micronucleus/pull/43
  
- • v2.1  July 26th, 2015
+ • v2.01 July 26th, 2015
     This pull request documents changes leading to V2.1: https://github.com/micronucleus/micronucleus/pull/66
-    - Fixed "unknown USB device" issue when devices with <16MHz CPU clock were connected to a USB3.0 port.
-    - Fixed one bug that could lead to a deadlock if no USB was connected while the bootloader was active and noise was injected into the floating D+ input.
+    - Fixes "unknown USB device" issue when devices with <16MHz CPU clock were connected to a USB3.0 port.
+    - Fixes one bug that could lead to a deadlock if no USB was connected while the bootloader was active and noise was injected into the floating D+ input.
     
 Credits
 =======
 
 Firmware:
- • Micronucleus V2.1             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
+ • Micronucleus V2.01            (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
  • Original Micronucleus         (c) 2012 Jenna Fox
  • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
