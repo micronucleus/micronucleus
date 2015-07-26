@@ -184,7 +184,18 @@ return;\
 /* define this macro to 1 if you want the function usbMeasureFrameLength()
  * compiled in. This function can be used to calibrate the AVR's RC oscillator.
  */
-#define USB_USE_FAST_CRC                0
+ 
+
+#if USB_CFG_CLOCK_KHZ<16000
+    #define USB_USE_FAST_CRC 1
+#else
+    #define USB_USE_FAST_CRC 0
+#endif
+
+/* If the CPU clock is below 16Mhz you have to use the faster CRC routines.
+ * otherwise time outs may occur on USB3.0 ports. This adds 20 bytes.
+ */ 
+ 
 /* The assembler module has two implementations for the CRC algorithm. One is
  * faster, the other is smaller. This CRC routine is only used for transmitted
  * messages where timing is not critical. The faster routine needs 31 cycles

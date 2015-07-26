@@ -4,7 +4,7 @@
  * according to the hardware.
  * 
  * Controller type: ATtiny 167 - 16 MHz with crystal
- * Configuration:   Standard configuration - Follows Digispark Pro defaults
+ * Configuration:   Standard configuration - Follows Digispark Pro defaults. Needs 16Mhz XTAL.
  *       USB D- :   PB3
  *       USB D+ :   PB6
  *       Entry  :   Always

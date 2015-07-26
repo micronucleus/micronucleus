@@ -142,10 +142,14 @@ RTMODEL "__rt_version", "3"
 
 #endif
 
+
 #if USB_USE_FAST_CRC
 
 ; This implementation is faster, but has bigger code size
-; Thanks to Slawomir Fras (BoskiDialer) for this code!
+; This version has been optimized in size compared to the original
+; fast CRC by Shay Green, January 2014.
+
+; Thanks to Slawomir Fras (BoskiDialer) for the original contribution.
 ; It implements the following C pseudo-code:
 ; unsigned table(unsigned char x)
 ; {
@@ -174,36 +178,31 @@ RTMODEL "__rt_version", "3"
 ;   scratch r23
 ;   resCrc  r24+r25 / r16+r17
 ;   ptr     X / Z
+
 usbCrc16:
-    mov     ptrL, argPtrL
-    mov     ptrH, argPtrH
+    movw    ptrL, argPtrL
     ldi     resCrcL, 0xFF
     ldi     resCrcH, 0xFF
+    clr     bitCnt          ; zero
     rjmp    usbCrc16LoopTest
 usbCrc16ByteLoop:
     ld      byte, ptr+
-    eor     resCrcL, byte   ; resCrcL is now 'x' in table()
-    mov     byte, resCrcL   ; compute parity of 'x'
+    eor     byte, resCrcL   ; scratch is now 'x' in table()
+    mov     scratch, byte   ; compute parity of 'x'
     swap    byte
-    eor     byte, resCrcL
-    mov     scratch, byte
-    lsr     byte
-    lsr     byte
     eor     byte, scratch
-    inc     byte
+    mov     resCrcL, byte
     lsr     byte
-    andi    byte, 1         ; byte is now parity(x)
-    mov     scratch, resCrcL
-    mov     resCrcL, resCrcH
-    eor     resCrcL, byte   ; low byte of if(parity(x)) value ^= 0xc001;
-    neg     byte
-    andi    byte, 0xc0
-    mov     resCrcH, byte   ; high byte of if(parity(x)) value ^= 0xc001;
-    clr     byte
-    lsr     scratch
-    ror     byte
-    eor     resCrcH, scratch
-    eor     resCrcL, byte
+    lsr     byte
+    eor     byte, resCrcL
+    inc     byte
+    andi    byte, 2        ; byte is now parity(x) << 1
+    cp      bitCnt, byte   ; c = (byte != 0), then put in high bit
+    ror     scratch        ; so that after xoring, shifting, and xoring, it gives
+    ror     byte           ; the desired 0xC0 with resCrcH
+    mov     resCrcL, byte
+    eor     resCrcL, resCrcH
+    mov     resCrcH, scratch
     lsr     scratch
     ror     byte
     eor     resCrcH, scratch
@@ -214,8 +213,8 @@ usbCrc16LoopTest:
     com     resCrcL
     com     resCrcH
     ret
-
-#else   /* USB_USE_FAST_CRC */
+    
+#else   // USB_USE_FAST_CRC 
 
 ; This implementation is slower, but has less code size
 ;
@@ -258,7 +257,7 @@ usbCrcReady:
     ret
 ; Thanks to Reimar Doeffinger for optimizing this CRC routine!
 
-#endif /* USB_USE_FAST_CRC */
+#endif // USB_USE_FAST_CRC 
 
 ; extern unsigned usbCrc16Append(unsigned char *data, unsigned char len);
 usbCrc16Append:
