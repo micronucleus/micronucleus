@@ -266,7 +266,7 @@ int main(void) {
       // adjust fastctr for 5ms timeout
       
       uint16_t fastctr=(uint16_t)(F_CPU/(1000.0f*15.0f/5.0f));
-      uint8_t resetctr=100;
+      uint8_t  resetctr=100;
   
       do {        
         if ((USBIN & USBMASK) !=0) resetctr=100;
@@ -303,8 +303,6 @@ int main(void) {
       OSCCAL      = osccal_tmp;
  #endif
         
-        
-        
       if (command==cmd_exit) {
         if (!fastctr) break;  // Only exit after 5 ms timeout     
       } else {
@@ -315,10 +313,12 @@ int main(void) {
       // This is usbpoll() minus reset logic and double buffering
         int8_t  len;
         len = usbRxLen - 3;
+        
         if(len >= 0){
             usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
             usbRxLen = 0;       /* mark rx buffer as available */
         }
+        
         if(usbTxLen & 0x10){    /* transmit system idle */
             if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
                 usbBuildTxBlock();
@@ -359,7 +359,8 @@ int main(void) {
 
     LED_EXIT();
     
-    usbDeviceDisconnect();  /* Disconnect micronucleus */
+    initHardware();  /* Disconnect micronucleus */    
+    
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
  
