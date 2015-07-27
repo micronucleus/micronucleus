@@ -42,12 +42,12 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1556 bytes
-t841_default    -   ATtiny841 default configuration     -   1608 bytes
-t85_default     -   ATtiny85  default configuration     -   1610 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1418 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1414 bytes
-Nanite841       -   Nanite841 firmware                  -   1632 bytes
+t84_default     -   ATtiny84A default configuration     -   1560 bytes
+t841_default    -   ATtiny841 default configuration     -   1612 bytes
+t85_default     -   ATtiny85  default configuration     -   1614 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1422 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1418 bytes
+Nanite841       -   Nanite841 firmware                  -   1634 bytes
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
@@ -102,6 +102,10 @@ Changes
       connected to a USB3.0 port.
     - Fixes one bug that could lead to a deadlock if no USB was connected 
       while the bootloader was active and noise was injected into the floating D+ input.
+    - D- line is released before the user program is started, instead of pulling it down. 
+      This solves various issues where Micronucleus was not recognized after a reset. 
+      Att: This may lead to a "Unknown device" pop-up in Windows, if the user program does 
+      not have USB functionality itself.
     
 Credits
 =======
