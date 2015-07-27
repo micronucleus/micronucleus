@@ -102,10 +102,11 @@ Changes
       connected to a USB3.0 port.
     - Fixes one bug that could lead to a deadlock if no USB was connected 
       while the bootloader was active and noise was injected into the floating D+ input.
-    - D- line is released before the user program is started, instead of pulling it down. 
-      This solves various issues where Micronucleus was not recognized after a reset. 
-      Att: This may lead to a "Unknown device" pop-up in Windows, if the user program does 
-      not have USB functionality itself.
+    - D- line is released before the user program is started, instead of pulling it 
+      down. This solves various issues where Micronucleus was not recognized after a 
+      reset depending on the duration of the reset button activation. Att: This may 
+      lead to a "Unknown device" pop-up in Windows, if the user program does not have 
+      USB functionality itself. 
     
 Credits
 =======
