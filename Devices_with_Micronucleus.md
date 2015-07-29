@@ -25,8 +25,11 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [Paperduino](http://paperduino.eu/doku.php) - Mini Arduino board on paper
 
+- [LaborTageBadge2013](http://www.das-labor.org/wiki/LaborTageBadge2013) - Badge with ATtiny85
+
 ## ATtiny 841 ##
 
+- [Wattuino Nanite 841](http://www.watterott.com/de/Wattuino-Nanite841) - Extremely small devboard with ATtiny841. Approximates the form factor of a DIP package.
 
 ## ATtiny 167 ##
 
