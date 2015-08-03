@@ -1,4 +1,4 @@
-Micronucleus V2.01
+Micronucleus V2.02
 ==================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
@@ -42,12 +42,12 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1560 bytes
-t841_default    -   ATtiny841 default configuration     -   1612 bytes
-t85_default     -   ATtiny85  default configuration     -   1614 bytes
+t84_default     -   ATtiny84A default configuration     -   1538 bytes
+t841_default    -   ATtiny841 default configuration     -   1590 bytes
+t85_default     -   ATtiny85  default configuration     -   1592 bytes
 t85_aggressive  -   ATtiny85  smaller size - critical   -   1422 bytes
 t167_default    -   ATtiny167 default (uses xtal)       -   1418 bytes
-Nanite841       -   Nanite841 firmware                  -   1634 bytes
+Nanite841       -   Nanite841 firmware                  -   1614 bytes
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
@@ -107,7 +107,12 @@ Changes
       reset depending on the duration of the reset button activation. Att: This may 
       lead to a "Unknown device" pop-up in Windows, if the user program does not have 
       USB functionality itself. 
-    
+• v2.02 August 3rd, 2015
+    - Fixes timing bug with Windows 10 USB drivers. Some Win 10 drivers reduce the
+      delay between reset and the first data packet to 20 µs. This led to an issue 
+      with osccalASM.S, which did not terminate correctly.
+  
+ 
 Credits
 =======
 
