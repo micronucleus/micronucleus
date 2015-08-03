@@ -102,7 +102,7 @@ calibrateOscillatorASM:
 
   ldi   try, 128    ; calibration start value
   ldi   stp, 0      ; initial step width=0 for sync phase (first delay is discarded)
-  ldi   i, 11       ; 11 iterations (1x sync, 7x binary search, 3x neighbourhood)
+  ldi   i, 10       ; 10 iterations (1x sync, 7x binary search, 2x neighbourhood)
 
 usbCOloop:
 
@@ -147,8 +147,14 @@ usbCOWaitLoop:
     sbic    USBIN, USBMINUS ;[2] 
     rjmp    usbCOWaitLoop   ;[3]
 
-    ; This section of code deals with traffic from other USB devices on the same hub.
+/*
+
+    ; This section of code deals with traffic from other USB devices on the same hub on USB1.1 hubs.
     ; If this code is excluded, micronucleus may only work when it is connected to a dedicated USB port
+    
+    ; Disabled due to issues with some Win10 USB drivers, which shorten the time between reset and
+    ; first datapacket to less than 20ms.
+   
 #ifndef ENABLE_UNSAFE_OPTIMIZATIONS
     sbis    USBIN, USBPLUS  ; ignore frame if data is present
     rjmp    usbCOnotdata
@@ -165,6 +171,8 @@ usbCOWaitNoData2:
     rjmp    usbCOWaitNoData2
     rjmp    usbCOLoopNoCal
 #endif
+
+*/
     
 usbCOnotdata:
 	sbrs	cnt16H, 7		;delay overflow?
