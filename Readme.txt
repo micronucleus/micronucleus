@@ -109,7 +109,7 @@ Changes
       USB functionality itself. 
 • v2.02 August 3rd, 2015
     - Fixes timing bug with Windows 10 USB drivers. Some Win 10 drivers reduce the
-      delay between reset and the first data packet to 20 µs. This led to an issue 
+      delay between reset and the first data packet to 20 ms. This led to an issue 
       with osccalASM.S, which did not terminate correctly.
   
  
