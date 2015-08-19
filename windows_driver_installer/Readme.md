@@ -1,6 +1,6 @@
 # Windows driver installation with Zadig #
 
-Zadig is an automated windows driver installer for libusb devices. It will automatically create a driver signature which prevents issues with unsigned driver on Windows 10 and earlier. The latest version of Zadig can be found here: [http://zadig.akeo.ie/](http://zadig.akeo.ie/). For convenience a copy is provided in this folder.
+Zadig is an automated windows driver installer for libusb devices. It will automatically create a driver signature which prevents issues with unsigned drivers on Windows 10 and earlier. The latest version of Zadig can be found here: [http://zadig.akeo.ie/](http://zadig.akeo.ie/). For convenience a copy is provided in this folder.
 
 Please proceed as follows to install the Micronucleus driver:
 
