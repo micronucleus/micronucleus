@@ -27,6 +27,8 @@ For proper timing, the command line tool should to be started on the host comput
 
 Windows machines will need to install the libusb drivers found in the /windows_drivers folder.  Clean Micronucleus devices without uploaded userprogram will not time out and allow sufficient time for proper driver installation. Linux and OS X do not require custom drivers.
 
+Windows 10: Installing unsigned drivers became more difficult in Windows 10. Please use the Zadig driver installer as provided in the /windows_driver_installer folder.
+
 Please invoke the command line tool with "micronucleus -help" for a list of available options.
 
 The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user program uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
@@ -107,6 +109,7 @@ Changes
       reset depending on the duration of the reset button activation. Att: This may 
       lead to a "Unknown device" pop-up in Windows, if the user program does not have 
       USB functionality itself. 
+      
 • v2.02 August 3rd, 2015
     - Fixes timing bug with Windows 10 USB drivers. Some Win 10 drivers reduce the
       delay between reset and the first data packet to 20 ms. This led to an issue 
