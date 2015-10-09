@@ -5,6 +5,9 @@ make clean
 make CONFIG=t85_default
 cp main.hex releases/t85_default.hex
 make clean
+make CONFIG=t45_default
+cp main.hex releases/t45_default.hex
+make clean
 make CONFIG=t85_aggressive
 cp main.hex releases/t85_aggressive.hex
 make clean
