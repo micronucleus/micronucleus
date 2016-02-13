@@ -1,7 +1,7 @@
 /* 
- * Project: Micronucleus -  v2.1
+ * Project: Micronucleus -  v2.3
  *
- * Micronucleus V2.1             (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
+ * Micronucleus V2.3             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  *                               (c) 2014 Shay Green
  * Original Micronucleus         (c) 2012 Jenna Fox
  *
@@ -12,7 +12,7 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 2
+#define MICRONUCLEUS_VERSION_MINOR 3
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -175,6 +175,12 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
         if ( currentAddress.w != 0 ) {
             currentAddress.b[0]=rq->wIndex.bytes[0] & (~ (SPM_PAGESIZE-1));     
             currentAddress.b[1]=rq->wIndex.bytes[1];     
+            
+            // clear page buffer as a precaution before filling the buffer in case 
+            // a previous write operation failed and there is still something in the buffer.         
+            __SPM_REG=(_BV(CTPB)|_BV(__SPM_ENABLE));
+            asm volatile("spm");
+            
         }        
     } else if (rq->bRequest == cmd_write_data) { // Write data
       writeWordToPageBuffer(rq->wValue.word);

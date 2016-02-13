@@ -1,4 +1,4 @@
-Micronucleus V2.02
+Micronucleus V2.03
 ==================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
@@ -44,12 +44,12 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1538 bytes
-t841_default    -   ATtiny841 default configuration     -   1590 bytes
-t85_default     -   ATtiny85  default configuration     -   1592 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1422 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1418 bytes
-Nanite841       -   Nanite841 firmware                  -   1614 bytes
+t84_default     -   ATtiny84A default configuration     -   1544 bytes
+t841_default    -   ATtiny841 default configuration     -   1596 bytes
+t85_default     -   ATtiny85  default configuration     -   1598 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1428 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1424 bytes
+Nanite841       -   Nanite841 firmware                  -   1620 bytes
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
@@ -114,13 +114,17 @@ Changes
     - Fixes timing bug with Windows 10 USB drivers. Some Win 10 drivers reduce the
       delay between reset and the first data packet to 20 ms. This led to an issue 
       with osccalASM.S, which did not terminate correctly.
-  
+
+• v2.03 February 13th, 2016
+    - Added page buffer clearing if a new block transfer is initiated. This fixes a 
+      critical, but extremely rare bug that could lead to bricking of the
+      device if micronucleus is restarted after an USB error.       
  
 Credits
 =======
 
 Firmware:
- • Micronucleus V2.01            (c) 2015 Tim Bo"scke - cpldcpu@gmail.com
+ • Micronucleus V2.03            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
  • Original Micronucleus         (c) 2012 Jenna Fox
  • Based on USBaspLoader-tiny85  (c) 2012 Louis Beaudoin
