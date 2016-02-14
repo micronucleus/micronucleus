@@ -119,6 +119,8 @@ Changes
     - Added page buffer clearing if a new block transfer is initiated. This fixes a 
       critical, but extremely rare bug that could lead to bricking of the
       device if micronucleus is restarted after an USB error.       
+    - #74 Fixed LED_INIT macro so it only modifies the DDR register bit of the LED.
+      (Thanks @russdill)
  
 Credits
 =======
