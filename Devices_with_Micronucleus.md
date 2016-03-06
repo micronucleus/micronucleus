@@ -34,3 +34,6 @@ Please note that Micronucleus is a completely independent project and is not afi
 ## ATtiny 167 ##
 
 - [Digispark Pro](http://digistump.com/products/109) by [Digistump](digistump.com) - Digispark successor with more I/O and memory
+
+## ATtiny 84 ##
+- [Shinewave](https://github.com/GGreenwood/Shinewave) by [Electric Exploits](http://electricexploits.net/) - USB mods for GameCube controllers
