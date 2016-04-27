@@ -44,12 +44,12 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1544 bytes
-t841_default    -   ATtiny841 default configuration     -   1596 bytes
-t85_default     -   ATtiny85  default configuration     -   1598 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1428 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1424 bytes
-Nanite841       -   Nanite841 firmware                  -   1620 bytes
+t84_default     -   ATtiny84A default configuration     -   1542 bytes
+t841_default    -   ATtiny841 default configuration     -   1594 bytes
+t85_default     -   ATtiny85  default configuration     -   1596 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1426 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1422 bytes
+Nanite841       -   Nanite841 firmware                  -   1618 bytes
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
