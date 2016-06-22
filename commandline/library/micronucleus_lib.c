@@ -148,17 +148,12 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    is disconnecting and reconnecting.  Under Windows, micronucleus can see this
    and automatically reconnects prior to uploading the program.  To get the
    the same functionality, we must flag this state (the "-84" error result) by
-   converting the return to -2 for the upper layer.
+   converting the return to 1 for the upper layer.
 
    On Mac OS a common error is -34 = epipe, but adding it to this list causes:
    Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
   if (res == -5 || res == -34 || res == -84) {
-    if (res == -34) {
-      libusb_close(deviceHandle->device);
-      deviceHandle->device = NULL;
-    }
-
     return 1; // recoverable errors
   } else {
     return res;
@@ -318,4 +313,10 @@ int micronucleus_startApp(micronucleus* deviceHandle) {
     return -1;
   else
     return 0;
+}
+
+void micronucleus_disconnect(micronucleus* deviceHandle) {
+  libusb_close(deviceHandle->device);
+  libusb_exit(NULL);
+  free(deviceHandle);
 }

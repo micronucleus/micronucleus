@@ -107,4 +107,10 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_len
 int micronucleus_startApp(micronucleus* deviceHandle);
 /*******************************************************************************/
 
+/********************************************************************************
+* Disconnects from the device and deinitializes libusb
+********************************************************************************/
+void micronucleus_disconnect(micronucleus* deviceHandle);
+/*******************************************************************************/
+
 #endif
