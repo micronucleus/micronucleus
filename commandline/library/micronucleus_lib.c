@@ -31,96 +31,99 @@
 #include "littleWire_util.h"
 
 micronucleus* micronucleus_connect(int fast_mode) {
+  micronucleus *nucleus = NULL;
+  libusb_device **devs, **dev;
+
   // intialise usb and find micronucleus device
-  if (libusb_init(NULL) < 0) return NULL;
+  if (libusb_init(NULL) < 0 || libusb_get_device_list(NULL, &devs) < 0) return NULL;
 
-  micronucleus *nucleus = malloc(sizeof(micronucleus));
-
-  nucleus->device = libusb_open_device_with_vid_pid(NULL, MICRONUCLEUS_VENDOR_ID, MICRONUCLEUS_PRODUCT_ID);
-
-  if (nucleus->device) {
-    libusb_device* dev = libusb_get_device(nucleus->device);
+  for (dev = devs; *dev; dev++) {
     struct libusb_device_descriptor desc;
 
-    if (libusb_get_device_descriptor(dev, &desc) < 0) {
-      fprintf(stderr, "failed to get device descriptor");
-			return NULL;
-    }
+    // skip device if we cannot get its descriptor
+    if (libusb_get_device_descriptor(*dev, &desc) < 0) continue;
 
-    nucleus->version.major = (desc.bcdDevice >> 8) & 0xFF;
-    nucleus->version.minor = desc.bcdDevice & 0xFF;
+    if (desc.idVendor == MICRONUCLEUS_VENDOR_ID && desc.idProduct == MICRONUCLEUS_PRODUCT_ID) {
+      nucleus = malloc(sizeof(micronucleus));
+      nucleus->version.major = (desc.bcdDevice >> 8) & 0xFF;
+      nucleus->version.minor = desc.bcdDevice & 0xFF;
 
-    if (nucleus->version.major > MICRONUCLEUS_MAX_MAJOR_VERSION) {
-      fprintf(stderr,
-              "Warning: device with unknown new version of Micronucleus detected.\n"
-              "This tool doesn't know how to upload to this new device. Updates may be available.\n"
-              "Device reports version as: %d.%d\n",
-              nucleus->version.major, nucleus->version.minor);
-      return NULL;
-    }
+      if (nucleus->version.major > MICRONUCLEUS_MAX_MAJOR_VERSION) {
+        fprintf(stderr,
+                "Warning: device with unknown new version of Micronucleus detected.\n"
+                "This tool doesn't know how to upload to this new device. Updates may be available.\n"
+                "Device reports version as: %d.%d\n",
+                nucleus->version.major, nucleus->version.minor);
+        return NULL;
+      }
 
-    if (nucleus->version.major>=2) {  // Version 2.x
-      // get nucleus info
-      unsigned char buffer[6];
-      int res = libusb_control_transfer(nucleus->device, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_VENDOR|LIBUSB_RECIPIENT_DEVICE, 0, 0, 0, buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
+      if (libusb_open(*dev, &nucleus->device) < 0) return NULL;
 
-      // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-      if (res<0) return NULL;
+      if (nucleus->version.major>=2) {  // Version 2.x
+        // get nucleus info
+        unsigned char buffer[6];
+        int res = libusb_control_transfer(nucleus->device, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_VENDOR|LIBUSB_RECIPIENT_DEVICE, 0, 0, 0, buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
 
-      assert(res >= 6);
+        // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
+        if (res<0) return NULL;
 
-      nucleus->flash_size = (buffer[0]<<8) + buffer[1];
-      nucleus->page_size = buffer[2];
-      nucleus->pages = (nucleus->flash_size / nucleus->page_size);
-      if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
+        assert(res >= 6);
 
-      nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+        nucleus->flash_size = (buffer[0]<<8) + buffer[1];
+        nucleus->page_size = buffer[2];
+        nucleus->pages = (nucleus->flash_size / nucleus->page_size);
+        if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
 
-      if ((nucleus->version.major>=2)&&(!fast_mode)) {
-        // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
-        nucleus->write_sleep = (buffer[3] & 127) + 2;
-      } else {
+        nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+
+        if ((nucleus->version.major>=2)&&(!fast_mode)) {
+          // firmware v2 reports more aggressive write times. Add 2ms if fast mode is not used.
+          nucleus->write_sleep = (buffer[3] & 127) + 2;
+        } else {
+          nucleus->write_sleep = (buffer[3] & 127);
+        }
+
+        // if bit 7 of write sleep time is set, divide the erase time by four to
+        // accomodate to the 4*page erase of the ATtiny841/441
+        if (buffer[3]&128) {
+             nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;
+        } else {
+             nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
+        }
+
+        nucleus->signature1 = buffer[4];
+        nucleus->signature2 = buffer[5];
+
+      } else {  // Version 1.x
+        // get nucleus info
+        unsigned char buffer[4];
+        int res = libusb_control_transfer(nucleus->device, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_VENDOR |LIBUSB_RECIPIENT_DEVICE, 0, 0, 0, buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
+
+        // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
+        if (res<0) return NULL;
+
+        assert(res >= 4);
+
+        nucleus->flash_size = (buffer[0]<<8) + buffer[1];
+        nucleus->page_size = buffer[2];
+        nucleus->pages = (nucleus->flash_size / nucleus->page_size);
+        if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
+
+        nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
+
         nucleus->write_sleep = (buffer[3] & 127);
+        nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
+
+        nucleus->signature1 = 0;
+        nucleus->signature2 = 0;
       }
 
-      // if bit 7 of write sleep time is set, divide the erase time by four to
-      // accomodate to the 4*page erase of the ATtiny841/441
-      if (buffer[3]&128) {
-           nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages / 4;
-      } else {
-           nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
-      }
-
-      nucleus->signature1 = buffer[4];
-      nucleus->signature2 = buffer[5];
-
-    } else {  // Version 1.x
-      // get nucleus info
-      unsigned char buffer[4];
-      int res = libusb_control_transfer(nucleus->device, LIBUSB_ENDPOINT_IN|LIBUSB_REQUEST_TYPE_VENDOR |LIBUSB_RECIPIENT_DEVICE, 0, 0, 0, buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
-
-      // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-      if (res<0) return NULL;
-
-      assert(res >= 4);
-
-      nucleus->flash_size = (buffer[0]<<8) + buffer[1];
-      nucleus->page_size = buffer[2];
-      nucleus->pages = (nucleus->flash_size / nucleus->page_size);
-      if (nucleus->pages * nucleus->page_size < nucleus->flash_size) nucleus->pages += 1;
-
-      nucleus->bootloader_start = nucleus->pages*nucleus->page_size;
-
-      nucleus->write_sleep = (buffer[3] & 127);
-      nucleus->erase_sleep = nucleus->write_sleep * nucleus->pages;
-
-      nucleus->signature1 = 0;
-      nucleus->signature2 = 0;
+      // we've found the device; there's no sense in checking everything else
+      break;
     }
-  } else {
-    free(nucleus);
-    nucleus = NULL;
   }
+
+  libusb_free_device_list(devs, 1);
 
   return nucleus;
 }
