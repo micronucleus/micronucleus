@@ -9,6 +9,8 @@
 
 F_CPU = 12000000
 DEVICE = attiny84
+SPM_PAGESIZE = 64
+FLASHEND = 8191
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
 # - make clean; make main.hex; ### output will list data: 2124 (or something like that)
