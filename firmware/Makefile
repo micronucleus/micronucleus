@@ -85,6 +85,12 @@ main.hex:	main.bin
 	@avr-size main.bin	
 	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
 	@avr-size main.hex
+ifdef SPM_PAGESIZE
+	@echo -n "BOOTLOADER_ADDRESS configured: $(BOOTLOADER_ADDRESS), calculated: " ;\
+	avr-size $@ | tail -n 1 | ( read dummy0 size dummy1 ; echo "obase=16; scale=0; \
+	(address = ($(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE))); \
+	\"padding (decimal): \" ; obase=10; $(FLASHEND)+1 - address - $$size") | bc
+endif
 
 upgrade: main.bin
 	avr-objcopy -O binary main.bin main.raw

@@ -17,6 +17,8 @@ CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
 
 F_CPU = 16000000
 DEVICE = attiny85
+SPM_PAGESIZE = 64
+FLASHEND = 8191
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
 # - make clean; make main.hex; ### output will list data: 2124 (or something like that)
