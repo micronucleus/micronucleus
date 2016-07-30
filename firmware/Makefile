@@ -91,6 +91,16 @@ ifdef SPM_PAGESIZE
 	(address = ($(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE))); \
 	\"padding (decimal): \" ; obase=10; $(FLASHEND)+1 - address - $$size") | bc
 endif
+ifdef SERIAL
+	@sed -i '$$ d' $@
+	@echo "\":02\" ; obase=16; scale=0; d=$(FLASHEND)-1; \
+	d / 4096 % 16; d / 256 % 16; d / 16 % 16; d % 16; \"00\" ;\
+	d=$(SERIAL); (d2 = d / 16 % 16); (d3 = d % 16); \
+	(d0 = d / 4096 % 16); (d1 = d / 256 % 16); \
+	(5*256 - (31 + d / 256 + d % 256)) % 256" | bc | tr -d '\n' >> $@
+	@echo >> $@
+	@echo :00000001FF >> $@
+endif
 
 upgrade: main.bin
 	avr-objcopy -O binary main.bin main.raw
