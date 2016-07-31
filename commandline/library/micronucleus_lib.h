@@ -6,7 +6,7 @@
   (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
   Changes for Micronucleus protocol version V2.x
   (c) 2014 T. Bo"scke
-
+  
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -23,14 +23,14 @@
   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.
+  SOFTWARE.  
 */
 
 /********************************************************************************
 * Header files
 ********************************************************************************/
 #if defined WIN
-  #include <libusb.h>     // this is libusb, see http://libusb.sourceforge.net/
+  #include <lusb0_usb.h>    // this is libusb, see http://libusb.sourceforge.net/
 #else
   #include <usb.h>        // this is libusb, see http://libusb.sourceforge.net/
 #endif
@@ -64,7 +64,7 @@ typedef struct _micronucleus_version {
 
 // handle representing one micronucleus device
 typedef struct _micronucleus {
-  libusb_device_handle *device;
+  usb_dev_handle *device;
   // general information about device
   micronucleus_version version;
   unsigned int flash_size;  // programmable size (in bytes) of progmem
@@ -105,12 +105,6 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_len
 * Starts the user application
 ********************************************************************************/
 int micronucleus_startApp(micronucleus* deviceHandle);
-/*******************************************************************************/
-
-/********************************************************************************
-* Disconnects from the device and deinitializes libusb
-********************************************************************************/
-void micronucleus_disconnect(micronucleus* deviceHandle);
 /*******************************************************************************/
 
 #endif
