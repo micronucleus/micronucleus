@@ -32,7 +32,7 @@
 #if defined WIN
   #include <libusb.h>     // this is libusb, see http://libusb.sourceforge.net/
 #else
-  #include <usb.h>        // this is libusb, see http://libusb.sourceforge.net/
+  #include <libusb-1.0/libusb.h> // apt-get install libusb-1.0-0-dev
 #endif
 //#include "opendevice.h"      // common code moved to separate module
 #include <assert.h>
