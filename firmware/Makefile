@@ -32,7 +32,13 @@ CC = avr-gcc
 
 # Options:
 CFLAGS += -I. -g2 -Os # -Wall
-CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
+CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
+ifeq ($(BOOTLOADER_ADDRESS),0)
+  # the codesize turns out wrong if we leave BOOTLOADER_ADDRESS == 0
+  CFLAGS += -DBOOTLOADER_ADDRESS=0x100
+else
+  CFLAGS += -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS)
+endif
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,-Map=main.map
@@ -88,6 +94,13 @@ clean:
 # file targets:
 main.bin:	$(OBJECTS)
 	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
+ifeq ($(BOOTLOADER_ADDRESS),0)
+	# now that we know the size of the bootloader, we can build
+	# it with the correct address by second pass
+	@rm main.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
+	avr-size $@ | tail -n 1 | ( read size dummy ; echo "obase=16; scale=0; \
+	$(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE)") | bc)
+endif
 
 main.hex:	main.bin
 	@echo Building Micronucleus configuration: $(CONFIG)

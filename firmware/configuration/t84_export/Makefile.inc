@@ -14,7 +14,7 @@ SPM_PAGESIZE = 64
 FLASHEND = 8191
 
 # makefile calculates this
-BOOTLOADER_ADDRESS = 1880
+BOOTLOADER_ADDRESS = 0
 
 FUSEOPT = -U lfuse:w:0xe2:m -U hfuse:w:0xd5:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET =  # TODO
