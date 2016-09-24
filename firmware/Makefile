@@ -61,11 +61,12 @@ flash:	all $(if $(SERIAL),serial.hex)
 .PHONY: serial.hex
 .INTERMEDIATE: serial.hex
 serial.hex:
-	@(echo "\":02\" ; obase=16; scale=0; d=$(FLASHEND)-1; \
-	d / 4096 % 16; d / 256 % 16; d / 16 % 16; d % 16; \"00\" ;\
+	@(echo "\":02\" ; obase=16; scale=0; a=$(FLASHEND)-1; \
+	a / 4096 % 16; a / 256 % 16; a / 16 % 16; a % 16; \"00\" ;\
 	d=$(SERIAL); (d2 = d / 16 % 16); (d3 = d % 16); \
 	(d0 = d / 4096 % 16); (d1 = d / 256 % 16); \
-	(5*256 - (31 + d / 256 + d % 256)) % 256" | bc | tr -d '\n' ; \
+	(c = (8*256 - 2 - a / 256 - a % 256 - d / 256 - d % 256) % 256) / 16; \
+	c % 16" | bc | tr -d '\n' ; \
 	echo ; echo :00000001FF) > $@
 
 readflash:
