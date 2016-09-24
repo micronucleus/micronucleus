@@ -6,10 +6,11 @@
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
-CONFIG ?= t85_default
+#CONFIG ?= t85_default
 #CONFIG ?= t85_aggressive
 #CONFIG ?= t841_default
 #CONFIG ?= t167_default
+CONFIG ?= t84_export
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -22,7 +23,7 @@ CFLAGS =
 CONFIGPATH	  = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER ?= -c USBasp
+PROGRAMMER ?= -c usbtiny
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
