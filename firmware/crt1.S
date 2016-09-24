@@ -83,7 +83,11 @@ __vectors:
 __init:
 
 	.weak	__stack
+#ifdef BOOTLOADER_DATA
+	.set	__stack, BOOTLOADER_DATA-1
+#else
 	.set	__stack, RAMEND
+#endif
 	/* By default, malloc() uses the current value of the stack pointer
 	   minus __malloc_margin as the highest available address.
 
@@ -96,7 +100,7 @@ __init:
 	.section .init2,"ax",@progbits
 	clr		R1
     
-#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
+#if (defined BOOTLOADER_DATA) || (!defined ENABLE_UNSAFE_OPTIMIZATIONS)
 	out		0x3f,r1
 	ldi		r28,lo8(__stack)
 	ldi		r29,hi8(__stack)

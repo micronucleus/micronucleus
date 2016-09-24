@@ -42,6 +42,11 @@ endif
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,-Map=main.map
+ifdef BOOTLOADER_DATA
+  # place the data above the stack
+  CFLAGS += -DBOOTLOADER_DATA=0x$(BOOTLOADER_DATA)
+  LDFLAGS += -Wl,--section-start=.data=0x$(shell echo "obase=16; ibase=16; scale=0; $(BOOTLOADER_DATA)+800000" | bc)
+endif
 
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
 OBJECTS += osccalASM.o
@@ -95,11 +100,13 @@ clean:
 main.bin:	$(OBJECTS)
 	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
 ifeq ($(BOOTLOADER_ADDRESS),0)
-	# now that we know the size of the bootloader, we can build
-	# it with the correct address by second pass
-	@rm main.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
+# now that we know the size of the bootloader, we can build
+# it with the correct address by second pass
+	@rm main.o crt1.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
 	avr-size $@ | tail -n 1 | ( read size dummy ; echo "obase=16; scale=0; \
-	$(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE)") | bc)
+	$(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE)") | bc) \
+	BOOTLOADER_DATA=$$(avr-size $@ | tail -n 1 | ( read dummy0 size0 size1 dummy1 ; \
+	echo "obase=16; scale=0; $(RAMEND)+1 - $$size0 - $$size1") | bc)
 endif
 
 main.hex:	main.bin
