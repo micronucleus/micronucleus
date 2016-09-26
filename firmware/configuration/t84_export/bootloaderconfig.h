@@ -244,6 +244,27 @@
   #define LED_MACRO(x)
 #endif
 
+/*
+ *  Define bootloader export strategy.
+ *
+ *  In order for the bootloader to export entrypoints to the client program, BOOTLOADER_ADDRESS must be
+ *  set to 0 by the configuration Makefile.inc. Then the firmware makefile will calculate the proper address
+ *  for bootloader code (BOOTLOADER_ADDRESS) as well as data (BOOTLOADER_DATA) and place global data
+ *  above the stack. When the client stack matches (EXPORT_STACK), the client may utilize functionality
+ *  in the bootloader even after the bootloader exits.
+ *
+ *  EXPORT_STACK               The bootloader will export its stack pointer so that the client can
+ *                             avoid clobbering global data. The client must not initialize its
+ *                             stack pointer (.init2) for this to work.
+ *
+ *  EXPORT_NOTRESET            The bootloader will not reset usb hardware so that the client can
+ *                             continue using it.
+ *
+ */
+
+#define EXPORT_STACK           1
+#define EXPORT_NOTRESET        1
+
 /* --------------------------------------------------------------------------- */
 /* Micronucleus internal configuration. Do not change anything below this line */
 /* --------------------------------------------------------------------------- */

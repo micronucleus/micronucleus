@@ -218,7 +218,9 @@ static void initHardware (void)
 
 /* ------------------------------------------------------------------------ */
 // reset system to a normal state and launch user program
+#if !EXPORT_STACK
 static void leaveBootloader(void) __attribute__((__noreturn__));
+#endif
 static inline void leaveBootloader(void) {
  
   bootLoaderExit();
@@ -228,13 +230,14 @@ static inline void leaveBootloader(void) {
   nop(); // NOP to avoid CPU hickup during oscillator stabilization
 #endif
     
+#if !EXPORT_STACK
  asm volatile ("rjmp __vectors - 4"); // jump to application reset vector at end of flash
-  
  for (;;); // Make sure function does not return to help compiler optimize
+#endif
 }
 
 void USB_INTR_VECTOR(void);
-int main(void) {
+void main(void) {
   uint8_t osccal_tmp;
   
   bootLoaderInit();
@@ -364,12 +367,12 @@ int main(void) {
     } while(1);  
 
     LED_EXIT();
-    
+
+#if !EXPORT_NOTRESET
     initHardware();  /* Disconnect micronucleus */    
-    
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
- 
+#endif
   }
    
   leaveBootloader();
