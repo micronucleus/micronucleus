@@ -3,16 +3,21 @@
 # License: GNU GPL v2 (see License.txt)
 #
 # Controller type: ATtiny 84
-# Configuration:   Aggressive configuration - 12.8 Mhz RC oscillator
+# Configuration:   Export configuration - 12.8 Mhz RC oscillator
  
 F_CPU = 12800000
 DEVICE = attiny84
+
+# makefile needs this to calculate loader offsets
 SPM_PAGESIZE = 64
 FLASHEND = 8191
 RAMEND = 607
 
-# makefile calculates this
+# makefile will calculate this
 BOOTLOADER_ADDRESS = 0
+
+# defining this enables exports
+BOOTLOADER_DATA = 0
 
 FUSEOPT = -U lfuse:w:0xe2:m -U hfuse:w:0xd5:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET =  # TODO

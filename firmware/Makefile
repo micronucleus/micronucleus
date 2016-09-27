@@ -30,6 +30,17 @@ PROGRAMMER ?= -c usbtiny
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE) 
 CC = avr-gcc
 
+# single pass: BOOTLOADER_ADDRESS initialized to a valid address
+# the bootloader starts at that address, export table not generated
+#
+# two pass: BOOTLOADER_ADDRESS initialized to 0
+# optimal BOOTLOADER_ADDRESS calculated in pass 1, applied in pass 2
+# export table not generated
+#
+# export table generation: BOOTLOADER_DATA initialized to 0
+# BOOTLOADER_DATA calculated in pass 1, used to place global data above stack in pass 2
+# BOOTLOADER_EXPORTS calculated in pass 1, used to place export table at FLASHEND in pass 2
+
 # Options:
 CFLAGS += -I. -g2 -Os # -Wall
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
@@ -43,9 +54,17 @@ CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-i
 
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,-Map=main.map
 ifdef BOOTLOADER_DATA
-  # place the data above the stack
+  # prepare global data to enable exports
   CFLAGS += -DBOOTLOADER_DATA=0x$(BOOTLOADER_DATA)
-  LDFLAGS += -Wl,--section-start=.data=0x$(shell echo "obase=16; ibase=16; scale=0; $(BOOTLOADER_DATA)+800000" | bc)
+  LDFLAGS += -Wl,--undefined=__exports
+  ifneq ($(BOOTLOADER_DATA),0)
+    # place the data above the stack
+    LDFLAGS += -Wl,--section-start=.data=0x$(shell echo "obase=16; ibase=16; scale=0; $(BOOTLOADER_DATA)+800000" | bc)
+  endif
+endif
+ifdef BOOTLOADER_EXPORTS
+  # place the exports at end of flash
+  LDFLAGS += -Wl,--section-start=.exports=$(BOOTLOADER_EXPORTS)
 endif
 
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
@@ -105,14 +124,16 @@ ifeq ($(BOOTLOADER_ADDRESS),0)
 	@rm main.o crt1.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
 	avr-size $@ | tail -n 1 | ( read size dummy ; echo "obase=16; scale=0; \
 	$(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE)") | bc) \
-	BOOTLOADER_DATA=$$(avr-size $@ | tail -n 1 | ( read dummy0 size0 size1 dummy1 ; \
-	echo "obase=16; scale=0; $(RAMEND)+1 - $$size0 - $$size1") | bc)
+	$(if $(BOOTLOADER_DATA), BOOTLOADER_DATA=$$(avr-size $@ | tail -n 1 | ( read dummy0 size0 size1 dummy1 ; \
+	echo "obase=16; scale=0; $(RAMEND)+1 - $$size0 - $$size1") | bc)) \
+	$(if $(BOOTLOADER_DATA), BOOTLOADER_EXPORTS=$$(avr-size -A $@ | grep ^.exports | ( read section size dummy ; \
+	echo "obase=16; scale=0; $(FLASHEND)+1 - $$size") | bc))
 endif
 
 main.hex:	main.bin
 	@echo Building Micronucleus configuration: $(CONFIG)
 	@rm -f main.hex main.eep.hex
-	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
+	@avr-objcopy -j .text -j .exports -O ihex main.bin main.hex
 	@echo Size of sections:
 	@avr-size main.bin	
 	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:

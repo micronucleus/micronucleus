@@ -237,7 +237,7 @@ static inline void leaveBootloader(void) {
 }
 
 void USB_INTR_VECTOR(void);
-void main(void) {
+__attribute__((naked, section(".init9"))) void main(void) {
   uint8_t osccal_tmp;
   
   bootLoaderInit();
@@ -376,5 +376,9 @@ void main(void) {
   }
    
   leaveBootloader();
+
+#if EXPORT_STACK
+  asm volatile ("rjmp __vectors - 4");
+#endif
 }
 /* ------------------------------------------------------------------------ */

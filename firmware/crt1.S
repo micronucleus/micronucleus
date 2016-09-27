@@ -59,14 +59,10 @@
 __bad_interrupt:	
 __vectors:
 	XJMP	__init
-;	vector	__vector_1
-;	vector	__vector_2
-;	vector	__vector_3
 	.endfunc
 
 	.section .init0,"ax",@progbits
 	.weak	__init
-;	.func	__init
 __init:
 
 	.weak	__stack
@@ -80,7 +76,6 @@ __init:
 
 	.section .init2,"ax",@progbits
 	clr		R1
-    
 #if (defined BOOTLOADER_DATA) || (!defined ENABLE_UNSAFE_OPTIMIZATIONS)
 	out		0x3f,r1
 	ldi		r28,lo8(__stack)
@@ -88,12 +83,11 @@ __init:
 	out		0x3d, r28
 	out		0x3e, r29
 #endif    
-	.section .init9,"ax",@progbits
-#if BOOTLOADER_DATA
-	rcall main
-	XJMP  __vectors - 4
-#else
-	XJMP	main
-#endif
-;	.endfunc
 
+#ifdef BOOTLOADER_DATA
+	.section .exports,"ax",@progbits
+	.global	__exports
+	.func	__exports
+__exports:
+	XJMP	__vector_3
+#endif
