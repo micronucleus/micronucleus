@@ -67,7 +67,7 @@ ifdef BOOTLOADER_EXPORTS
   LDFLAGS += -Wl,--section-start=.exports=$(BOOTLOADER_EXPORTS)
 endif
 
-OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
+OBJECTS = usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
 OBJECTS += osccalASM.o
 
 # symbolic targets:

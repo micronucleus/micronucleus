@@ -236,6 +236,30 @@ static inline void leaveBootloader(void) {
 #endif
 }
 
+__attribute__((naked, section(".vectors"))) void __vectors(void) {
+  asm volatile(" rjmp __init");
+}
+__attribute__((naked, section(".init0"))) void __init(void) {
+}
+__attribute__((naked, section(".init2"))) void __init2(void) {
+  asm volatile(" clr r1");
+#if (defined BOOTLOADER_DATA) || (!defined ENABLE_UNSAFE_OPTIMIZATIONS)
+
+#define INIT2XS(s) INIT2S(s)
+#define INIT2S(s) \
+  " out 0x3f,r1       \n\t" \
+  " ldi r28,lo8("#s") \n\t" \
+  " ldi r29,hi8("#s") \n\t" \
+  " out 0x3d,r28      \n\t" \
+  " out 0x3e,r29      \n\t"
+#ifdef BOOTLOADER_DATA
+  asm volatile(INIT2XS(BOOTLOADER_DATA-1));
+#else
+  asm volatile(INIT2XS(RAMEND));
+#endif
+
+#endif
+}
 void USB_INTR_VECTOR(void);
 __attribute__((naked, section(".init9"))) void main(void) {
   uint8_t osccal_tmp;
@@ -382,3 +406,10 @@ __attribute__((naked, section(".init9"))) void main(void) {
 #endif
 }
 /* ------------------------------------------------------------------------ */
+#ifdef BOOTLOADER_DATA
+__attribute__((naked, section(".exports"))) void __exports(void) {
+  asm volatile(
+  " rjmp __vector_3 \n\t"
+  );
+}
+#endif
