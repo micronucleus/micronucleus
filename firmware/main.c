@@ -194,6 +194,28 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
   return 0;
 }
 
+#if EXPORT_USB
+void usbPollLite(void)
+#else
+static inline void usbPollLite(void)
+#endif
+      {
+      // This is usbpoll() minus reset logic and double buffering
+        int8_t  len;
+        len = usbRxLen - 3;
+
+        if(len >= 0){
+            usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
+            usbRxLen = 0;       /* mark rx buffer as available */
+        }
+
+        if(usbTxLen & 0x10){    /* transmit system idle */
+            if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
+                usbBuildTxBlock();
+            }
+        }
+      }
+
 static void initHardware (void)
 {
   // Disable watchdog and set timeout to maximum in case the WDT is fused on 
@@ -215,6 +237,18 @@ static void initHardware (void)
 
   usbInit();    // Initialize INT settings after reconnect
 }
+
+#ifdef BOOTLOADER_DATA
+__attribute__((naked, section(".exports"))) void __exports(void) {
+#if EXPORT_USB
+  asm volatile(
+  " rcall __vector_3 \n\t"
+  " reti             \n\t"
+  " rjmp usbPollLite \n\t"
+  );
+#endif
+}
+#endif
 
 /* ------------------------------------------------------------------------ */
 // reset system to a normal state and launch user program
@@ -342,23 +376,8 @@ __attribute__((naked, section(".init9"))) void main(void) {
         command=cmd_local_nop;     
       }  
  
-      {
-      // This is usbpoll() minus reset logic and double buffering
-        int8_t  len;
-        len = usbRxLen - 3;
-        
-        if(len >= 0){
-            usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
-            usbRxLen = 0;       /* mark rx buffer as available */
-        }
-        
-        if(usbTxLen & 0x10){    /* transmit system idle */
-            if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
-                usbBuildTxBlock();
-            }
-        }
-      }
-      
+      usbPollLite();
+
       idlePolls.w++;
 
       // Try to execute program when bootloader times out      
@@ -406,10 +425,3 @@ __attribute__((naked, section(".init9"))) void main(void) {
 #endif
 }
 /* ------------------------------------------------------------------------ */
-#ifdef BOOTLOADER_DATA
-__attribute__((naked, section(".exports"))) void __exports(void) {
-  asm volatile(
-  " rjmp __vector_3 \n\t"
-  );
-}
-#endif

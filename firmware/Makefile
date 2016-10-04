@@ -46,7 +46,7 @@ CFLAGS += -I. -g2 -Os # -Wall
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU)
 ifeq ($(BOOTLOADER_ADDRESS),0)
   # the codesize turns out wrong if we leave BOOTLOADER_ADDRESS == 0
-  CFLAGS += -DBOOTLOADER_ADDRESS=0x100
+  CFLAGS += -DBOOTLOADER_ADDRESS=0x200
 else
   CFLAGS += -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS)
 endif
@@ -121,7 +121,7 @@ main.bin:	$(OBJECTS)
 ifeq ($(BOOTLOADER_ADDRESS),0)
 # now that we know the size of the bootloader, we can build
 # it with the correct address by second pass
-	@rm main.o crt1.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
+	@rm main.o ; $(MAKE) $@ BOOTLOADER_ADDRESS=$$( \
 	avr-size $@ | tail -n 1 | ( read size dummy ; echo "obase=16; scale=0; \
 	$(FLASHEND)+1 - ($$size + $(SPM_PAGESIZE)-1) / $(SPM_PAGESIZE) * $(SPM_PAGESIZE)") | bc) \
 	$(if $(BOOTLOADER_DATA), BOOTLOADER_DATA=$$(avr-size $@ | tail -n 1 | ( read dummy0 size0 size1 dummy1 ; \
