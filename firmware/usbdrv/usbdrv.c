@@ -449,7 +449,11 @@ skipMsgPtrAssignment:
  * routine. It distinguishes between SETUP and DATA packets and processes
  * them accordingly.
  */
-static inline void usbProcessRx(uchar *data, uchar len)
+static inline void usbProcessRx(uchar *data, uchar len
+#if EXPORT_USB
+,uint8_t (*usbFunctionSetup)(uint8_t data[8])
+#endif
+)
 {
 usbRequest_t    *rq = (void *)data;
 
@@ -536,7 +540,15 @@ static uchar usbDeviceRead(uchar *data, uchar len)
             if(usbMsgFlags & USB_FLG_MSGPTR_IS_ROM){    /* ROM data */
 #endif          
                 do{
+#if EXPORT_USB
+		    uchar c;
+		    if ((uint16_t)r < BOOTLOADER_ADDRESS)
+			c = *((uchar *)r);
+		    else
+			c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
+#else
                     uchar c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
+#endif
                     *data++ = c;
                     r++;
                 }while(--i);
@@ -615,7 +627,11 @@ uchar   i;
  * retries must be handled on application level.
  * unsigned crc = usbCrc16(buffer + 1, usbRxLen - 3);
  */
-        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len);
+        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len
+#if EXPORT_USB
+	    ,usbFunctionSetup
+#endif
+	);
 #if USB_CFG_HAVE_FLOWCONTROL
         if(usbRxLen > 0)    /* only mark as available if not inactivated */
             usbRxLen = 0;

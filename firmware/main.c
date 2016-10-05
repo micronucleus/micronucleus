@@ -195,7 +195,7 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
 }
 
 #if EXPORT_USB
-void usbPollLite(void)
+void usbPollLite(uint8_t (*usbFunctionSetup)(uint8_t data[8]))
 #else
 static inline void usbPollLite(void)
 #endif
@@ -205,7 +205,14 @@ static inline void usbPollLite(void)
         len = usbRxLen - 3;
 
         if(len >= 0){
-            usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
+#if EXPORT_USB
+            usbMsgPtr = (usbMsgPtr_t)(usbRxBuf + 11);
+#endif
+            usbProcessRx(usbRxBuf + 1, len
+#if EXPORT_USB
+		,usbFunctionSetup
+#endif
+	    ); // only single buffer due to in-order processing
             usbRxLen = 0;       /* mark rx buffer as available */
         }
 
@@ -375,9 +382,11 @@ __attribute__((naked, section(".init9"))) void main(void) {
       } else {
         command=cmd_local_nop;     
       }  
- 
+#if EXPORT_USB
+      usbPollLite(usbFunctionSetup);
+#else
       usbPollLite();
-
+#endif
       idlePolls.w++;
 
       // Try to execute program when bootloader times out      

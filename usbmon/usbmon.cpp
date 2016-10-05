@@ -87,7 +87,7 @@ bool LuXact::Send(const char* data)
 {
 	while (*data) try
 	{
-		Xfer(0, (uint8_t)*data++, nullptr, 0, true);
+		Xfer(137, (uint8_t)*data++, nullptr, 0, true);
 	} catch(...) {
 		return true;
 	}
@@ -98,7 +98,7 @@ bool LuXact::Recv(char* data, uint8_t size)
 {
 	if (size < 4) throw Exception(__PRETTY_FUNCTION__);
 	try {
-		data[Xfer(0, 0, data, size)] = '\0';
+		data[Xfer(137, 0, data, size)] = '\0';
 	} catch(...) {
 		return true;
 	}
@@ -114,11 +114,10 @@ void monitor()
 	time_t last = time(nullptr);
 	for (;;)
 	{
-		unsigned char data[6] = { 0x23, 0x24, 0x53, 0x27, 0xa3, 0xb7, };
-		if (!luXact.Recv((char*)data, sizeof(data)))
+		char data[9];
+		if (!luXact.Recv(data, sizeof(data)-1) && data[0])
 		{
-//			std::cout << data << std::flush;
-			printf("%02hhx %02hhx %02hhx %02hhx %02hhx %02hhx\n", data[0], data[1], data[2], data[3], data[4], data[5]);
+			std::cout << data << std::flush;
 			continue;
 		}
 		if (SysKbFull())
@@ -126,7 +125,7 @@ void monitor()
 			int c = SysKbRead();
 			if (c < 0) continue;
 			data[0] = c; data[1] = '\0';
-//			luXact.Send(data);
+			luXact.Send(data);
 			continue;
 		}
 
