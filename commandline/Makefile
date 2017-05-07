@@ -25,6 +25,11 @@ else ifeq ($(shell uname), OpenBSD)
 	USBLIBS=$(shell libusb-config --libs || libusb-legacy-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D OPENBSD
+else ifeq ($(shell uname), FreeBSD)
+	USBFLAGS=
+	USBLIBS= -lusb
+	EXE_SUFFIX =
+	OSFLAG = -D OPENBSD
 else
 	USBFLAGS = -I C:\MinGW\include
 	USBLIBS = -L C:\MinGW\lib -lusb
