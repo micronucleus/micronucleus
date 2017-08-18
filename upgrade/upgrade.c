@@ -152,9 +152,9 @@ void beep(void) {
   byte i = 0;
   while (i < 250) {
     delay(1);
-    pinOn(pin(0));
+    pinOn(1);
     delay(1);
-    pinOff(pin(0));
+    pinOff(1);
     i++;
   }
 }
