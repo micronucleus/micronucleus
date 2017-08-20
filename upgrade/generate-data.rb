@@ -2,7 +2,7 @@ require_relative "./hexprogram.rb"
 
 data = HexProgram.new(open ARGV.first)
 
-puts data.instance_variable_get(:@bytes).inspect
+#puts data.instance_variable_get(:@bytes).inspect
 
 data = data.bytes
 
@@ -19,8 +19,10 @@ start_address.times { data.shift }
 # if data is an odd number of bytes make it even
 data.push 0xFF while (data.length % 2) != 0
 
-puts "Length: #{data.length}"
-puts "Start address: #{start_address}"
+#puts "Length: #{data.length}"
+#puts "Start address: #{start_address}"
+puts "const uint16_t bootloader_data[#{data.length / 2}] PROGMEM = {...};"
+puts "uint16_t bootloader_address = #{start_address};"
 
 File.open "bootloader_data.c", "w" do |file|
   file.puts "// This file contains the bootloader data itself and the address to"
