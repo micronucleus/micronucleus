@@ -31,15 +31,15 @@ else ifeq ($(shell uname), FreeBSD)
 	EXE_SUFFIX =
 	OSFLAG = -D OPENBSD
 else
-	USBFLAGS = -I C:\MinGW\include
-	USBLIBS = -L C:\MinGW\lib -lusb
+	USBFLAGS =
+	USBLIBS = -lusb
 	EXE_SUFFIX = .exe
 	OSFLAG = -D WIN
 endif
 
 LIBS    = $(USBLIBS)
 INCLUDE = library
-CFLAGS  = $(USBFLAGS) $(LIBS) -I$(INCLUDE) -O -g $(OSFLAG)
+CFLAGS  = $(USBFLAGS) -I$(INCLUDE) -O -g $(OSFLAG)
 
 LWLIBS = micronucleus_lib littleWire_util
 EXAMPLES = micronucleus
@@ -47,6 +47,7 @@ EXAMPLES = micronucleus
 .PHONY:	clean library
 
 all: library $(EXAMPLES)
+	rm -f *.o
 
 library: $(LWLIBS)
 

@@ -6,7 +6,7 @@
   (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
   Changes for Micronucleus protocol version V2.x
   (c) 2014 T. Bo"scke
-  
+
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -23,17 +23,13 @@
   AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
   LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
   OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-  SOFTWARE.  
+  SOFTWARE.
 */
 
 /********************************************************************************
 * Header files
 ********************************************************************************/
-#if defined WIN
-  #include <lusb0_usb.h>    // this is libusb, see http://libusb.sourceforge.net/
-#else
-  #include <usb.h>        // this is libusb, see http://libusb.sourceforge.net/
-#endif
+#include <usb.h>
 //#include "opendevice.h"      // common code moved to separate module
 #include <assert.h>
 #include <stdio.h>
