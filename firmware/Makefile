@@ -74,6 +74,10 @@ clean:
 	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s main.lss
 	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map main.s upgrade.lss
 
+distclean: clean
+	@rm *~
+
+
 # file targets:
 main.bin:	$(OBJECTS)
 	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
@@ -116,7 +120,7 @@ upgrade.hex:	upgrade.bin
 	@avr-size upgrade.hex
 
 
-bootloader.raw: ../firmware/releases/$(CONFIG).hex
+bootloader.raw: main.hex
 	@avr-objcopy -I ihex -O binary $< $@
 
 
