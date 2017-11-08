@@ -177,8 +177,12 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
             currentAddress.b[1]=rq->wIndex.bytes[1];     
             
             // clear page buffer as a precaution before filling the buffer in case 
-            // a previous write operation failed and there is still something in the buffer.         
+            // a previous write operation failed and there is still something in the buffer.
+            #ifdef CTPB
             __SPM_REG=(_BV(CTPB)|_BV(__SPM_ENABLE));
+            #else
+            __SPM_REG=_BV(__SPM_ENABLE);
+            #endif
             asm volatile("spm");
             
         }        
@@ -202,12 +206,16 @@ static void initHardware (void)
   MCUSR=0;    
   CCP = 0xD8; 
   WDTCSR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
-#else
+#elif defined(WDTCR)
   MCUSR=0;    
   WDTCR = 1<<WDCE | 1<<WDE;
-  WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
-#endif  
-
+  WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0;
+#else
+  wdt_reset();
+  MCUSR=0;
+  WDTCSR|=_BV(WDCE) | _BV(WDE);
+  WDTCSR=0;
+#endif
   
   usbDeviceDisconnect();  /* do this while interrupts are disabled */
   _delay_ms(300);  
