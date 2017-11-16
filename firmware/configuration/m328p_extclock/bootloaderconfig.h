@@ -164,7 +164,7 @@
  */
 
 #define AUTO_EXIT_NO_USB_MS    0
-#define AUTO_EXIT_MS           6000
+#define AUTO_EXIT_MS           1000
 
  /*
  *  Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
@@ -213,7 +213,7 @@
 
 #define LED_DDR     DDRD
 #define LED_PORT    PORTD
-#define LED_PIN     PD0
+#define LED_PIN     PD1
 
 /*
  *  This is the implementation of the LED code. Change the configuration above unless you want to 
