@@ -6,10 +6,10 @@
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
-CONFIG ?= t85_default
+#CONFIG ?= m328p_aggressive
+CONFIG ?= m328p_extclock
+#CONFIG ?= t85_default
 #CONFIG ?= t85_aggressive
-#CONFIG ?= t841_default
-#CONFIG ?= t167_default
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -22,7 +22,7 @@ CFLAGS =
 CONFIGPATH	  = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER ?= -c USBasp
+PROGRAMMER ?= -P /dev/ttyACM0 -b 19200 -c avrisp 
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
 # Tools:
@@ -63,7 +63,7 @@ readflash:
 
 fuse:
 	$(AVRDUDE) $(FUSEOPT) -B 20
-	
+
 disablereset:
 	$(AVRDUDE) $(FUSEOPT_DISABLERESET) -B 20
 

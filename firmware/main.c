@@ -118,6 +118,10 @@ static inline void eraseApplication(void) {
     ptr -= SPM_PAGESIZE;        
 #endif    
     boot_page_erase(ptr);
+#if (defined __AVR_ATmega328P__)
+    // the ATmega328p doesn't halt the CPU when writing to RWW flash, so we need to wait here
+    boot_spm_busy_wait();
+#endif    
   }
   
   // Reset address to ensure the reset vector is written first.
@@ -126,8 +130,13 @@ static inline void eraseApplication(void) {
 
 // simply write currently stored page in to already erased flash memory
 static inline void writeFlashPage(void) {
-  if (currentAddress.w - 2 <BOOTLOADER_ADDRESS)
-      boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
+  if (currentAddress.w - 2 <BOOTLOADER_ADDRESS) {
+    boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
+#if (defined __AVR_ATmega328P__)
+    // the ATmega328p doesn't halt the CPU when writing to RWW flash
+    boot_spm_busy_wait();
+#endif
+  }
 }
 
 // Write a word into the page buffer.
@@ -165,32 +174,32 @@ static void writeWordToPageBuffer(uint16_t data) {
 /* ------------------------------------------------------------------------ */
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
   usbRequest_t *rq = (void *)data;
- 
+  
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = (usbMsgPtr_t)configurationReply;
     return sizeof(configurationReply);      
   } else if (rq->bRequest == cmd_transfer_page) { 
-      // Set page address. Address zero always has to be written first to ensure reset vector patching.
-      // Mask to page boundary to prevent vulnerability to partial page write "attacks"
-        if ( currentAddress.w != 0 ) {
-            currentAddress.b[0]=rq->wIndex.bytes[0] & (~ (SPM_PAGESIZE-1));     
-            currentAddress.b[1]=rq->wIndex.bytes[1];     
-            
-            // clear page buffer as a precaution before filling the buffer in case 
-            // a previous write operation failed and there is still something in the buffer.
-            #ifdef CTPB
-            __SPM_REG=(_BV(CTPB)|_BV(__SPM_ENABLE));
-            #else
-            __SPM_REG=_BV(__SPM_ENABLE);
-            #endif
-            asm volatile("spm");
-            
-        }        
-    } else if (rq->bRequest == cmd_write_data) { // Write data
-      writeWordToPageBuffer(rq->wValue.word);
-      writeWordToPageBuffer(rq->wIndex.word);
-      if ((currentAddress.b[0] % SPM_PAGESIZE) == 0)
-          command=cmd_write_page; // ask runloop to write our page       
+    // Set page address. Address zero always has to be written first to ensure reset vector patching.
+    // Mask to page boundary to prevent vulnerability to partial page write "attacks"
+    if ( currentAddress.w != 0 ) {
+      currentAddress.b[0]=rq->wIndex.bytes[0] & (~ (SPM_PAGESIZE-1));     
+      currentAddress.b[1]=rq->wIndex.bytes[1];     
+      
+      // clear page buffer as a precaution before filling the buffer in case 
+      // a previous write operation failed and there is still something in the buffer.
+#ifdef CTPB
+      __SPM_REG=(_BV(CTPB)|_BV(__SPM_ENABLE));
+#else
+      __SPM_REG=_BV(__SPM_ENABLE);
+#endif
+      asm volatile("spm");
+      
+    }        
+  } else if (rq->bRequest == cmd_write_data) { // Write data
+    writeWordToPageBuffer(rq->wValue.word);
+    writeWordToPageBuffer(rq->wIndex.word);
+    if ((currentAddress.b[0] % SPM_PAGESIZE) == 0)
+      command=cmd_write_page; // ask runloop to write our page       
   } else {
     // Handle cmd_erase_application and cmd_exit
     command=rq->bRequest&0x3f;    
@@ -235,7 +244,12 @@ static inline void leaveBootloader(void) {
   OSCCAL=osccal_default;
   nop(); // NOP to avoid CPU hickup during oscillator stabilization
 #endif
-    
+
+#if (defined __AVR_ATmega328P__)
+  // Tell the system that we want to read from the RWW memory again.
+  boot_rww_enable();
+#endif
+  
  asm volatile ("rjmp __vectors - 4"); // jump to application reset vector at end of flash
   
  for (;;); // Make sure function does not return to help compiler optimize
