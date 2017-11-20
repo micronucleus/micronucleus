@@ -174,6 +174,7 @@ static void writeWordToPageBuffer(uint16_t data) {
 static uint8_t usbFunctionSetup(uint8_t data[8]) {
   usbRequest_t *rq = (void *)data;
   
+  idlePolls.b[1]=0; // reset idle polls when we get usb traffic
   if (rq->bRequest == cmd_device_info) { // get device info
     usbMsgPtr = (usbMsgPtr_t)configurationReply;
     return sizeof(configurationReply);      
@@ -313,7 +314,6 @@ int main(void) {
         if (USB_INTR_PENDING & (1<<USB_INTR_PENDING_BIT)) {
           USB_INTR_VECTOR();  
           USB_INTR_PENDING = 1<<USB_INTR_PENDING_BIT;  // Clear int pending, in case timeout occured during SYNC                     
-          idlePolls.b[1]=0; // reset idle polls when we get usb traffic
          break;
         }
         
