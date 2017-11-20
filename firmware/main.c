@@ -166,7 +166,6 @@ static void writeWordToPageBuffer(uint16_t data) {
       data = OSCCAL;
    }     
 #endif
-  
   boot_page_fill(currentAddress.w, data);
   currentAddress.w += 2;
 }
@@ -184,13 +183,17 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
     if ( currentAddress.w != 0 ) {
       currentAddress.b[0]=rq->wIndex.bytes[0] & (~ (SPM_PAGESIZE-1));     
       currentAddress.b[1]=rq->wIndex.bytes[1];     
-      
+
       // clear page buffer as a precaution before filling the buffer in case 
       // a previous write operation failed and there is still something in the buffer.
 #ifdef CTPB
       __SPM_REG=(_BV(CTPB)|_BV(__SPM_ENABLE));
 #else
+  #ifdef RWWSRE
+      __SPM_REG=(_BV(RWWSRE)|_BV(__SPM_ENABLE));
+  #else    
       __SPM_REG=_BV(__SPM_ENABLE);
+  #endif
 #endif
       asm volatile("spm");
       
