@@ -12,7 +12,7 @@
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16 MHz V-USB implementation. 
  *       Untested as of Nov. 14, 2017
- * Last Change:     Nov. 14, 2017
+ * Last Change:     Nov. 20, 2017
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -56,13 +56,21 @@
 
 
 // setup interrupt for Pin Change for D+
-#define USB_INTR_CFG            PCMSK1
+// register where interrupt features are configured
+#define USB_INTR_CFG            PCMSK1  
+// feature bits to set
 #define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
+// feature bits to clear
 #define USB_INTR_CFG_CLR        0
+// register where interrupt enable bit resides
 #define USB_INTR_ENABLE         PCICR
+// bit number in above register
 #define USB_INTR_ENABLE_BIT     PCIE1
+// register where interrupt pending bit resides
 #define USB_INTR_PENDING        PCIFR
+// bit number in above register
 #define USB_INTR_PENDING_BIT    PCIF1
+// interrupt vector
 #define USB_INTR_VECTOR         PCINT1_vect
 
 /* ------------------------------------------------------------------------- */
