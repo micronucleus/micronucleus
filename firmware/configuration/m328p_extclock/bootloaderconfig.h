@@ -11,7 +11,6 @@
  *       LED    :   ACTIVE_HIGH at pin PD0
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16 MHz V-USB implementation. 
- *       Untested as of Nov. 14, 2017
  * Last Change:     Nov. 20, 2017
  *
  * License: GNU GPL v2 (see License.txt
