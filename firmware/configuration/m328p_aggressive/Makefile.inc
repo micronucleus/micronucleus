@@ -3,8 +3,8 @@
 # License: GNU GPL v2 (see License.txt)
 
 # Controller type: ATmega328p
-# Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
-# Last Change:     Nov 7,2017
+# Configuration:   Size optimized. Uses 12.8 MHz V-USB implementation, with the internal RC oscillator
+# Last Change:     Dec 10, 2017
 
 # Enable unsafe optimizions. This will disable several safety features in microncleus to save around 40 more bytes
 # 
@@ -13,9 +13,9 @@
 #   * Client side reset vector patching
 #   * USB collision detection. Micronucleus will not work reliability with hubs if this is disabled.
 
-CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
+#CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
 
-F_CPU = 16000000
+F_CPU = 12800000
 DEVICE = atmega328p
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
@@ -23,21 +23,51 @@ DEVICE = atmega328p
 # - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
 # - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 3800
+BOOTLOADER_ADDRESS = 7800
 
-FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xff:m
-FUSEOPT_DISABLERESET = -U lfuse:w:0x52:m -U efuse:w:0xff:m -U hfuse:w:0xd8:m
+# Note: the bootloader must reside in the space that is marked as bootloader flash space
+# in the fuse bits. (The ATmega328 prevents flash programming from code that is not in the
+# bootloader space.) But the application may also be in part of that space. 
+
+FUSEOPT = -U lfuse:w:0x22:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m
+FUSEOPT_DISABLERESET = -U lfuse:w:0xe2:m -U hfuse:w:0x59:m -U efuse:w:0xff:m
 
 #---------------------------------------------------------------------
 # ATMega328p
 #---------------------------------------------------------------------
-# Fuse extended byte:
-# 0xFF = - - - -   - 1 1 1
-#                        
+# Fuse low byte:
+# 0xe2 = 1 1 1 0   0 0 1 0
+#        ^ ^ \+/   \--+--/
+#        | |  |       +------- CKSEL 3..0 (clock selection -> internal RC Osc.)
+#        | |  +--------------- SUT 1..0 (Start up time -> slowly rising power)
+#        | +------------------ CKOUT (clock output on CKOUT pin -> disabled)
+#        +-------------------- CKDIV8 (divide clock by 8 -> don't divide)
 #
 # Fuse high byte:
-# 0xd8 = 1 1 0 1   1 0 0 0
+# 0xd9 = 1 1 0 1   1 0 0 1
+#        ^ ^ ^ ^   ^ \-/ ^
+#        | | | |   |  |  +---- BOOTRST (Select reset vector -> start at address 0x0000)
+#        | | | |   |  +------- BOOTSZ 1..0 (Bootloader flash size -> 2048 Bytes)
+#        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
+#        | | | +-------------- WDTON (watchdog timer always on -> disable)
+#        | | +---------------- SPIEN (enable serial programming -> enabled)
+#        | +------------------ DWEN (debug wire enable)
+#        +-------------------- RSTDISBL (disable external reset -> reset is enabled)
 #
-# Fuse low byte:
-# 0x52 = 0 1 0 1   0 0 1 0
+# Fuse high byte ("no reset": external reset disabled, can't program through SPI anymore)
+# 0x59 = 0 1 0 1   1 0 0 1
+#        ^ ^ ^ ^   ^ \-/ ^
+#        | | | |   |  |  +---- BOOTRST (Select reset vector -> start at address 0x0000)
+#        | | | |   |  +------- BOOTSZ 1..0 (Bootloader flash size -> 2048 Bytes)
+#        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
+#        | | | +-------------- WDTON (watchdog timer always on -> disable)
+#        | | +---------------- SPIEN (enable serial programming -> enabled)
+#        | +------------------ DWEN (debug wire enable)
+#        +-------------------- RSTDISBL (disable external reset -> reset is disabled)
+#
+# Fuse extended byte:
+# 0xff = - - - -   - 1 1 1
+#        ^ ^ ^ ^   ^ \-+-/ 
+#        \---------/   +------ BODLEVEL 2..0 (brownout trigger level -> brownout detection disabled)
+#             +--------------- Unused
 ###############################################################################
