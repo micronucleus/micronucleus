@@ -73,9 +73,9 @@ int main(int argc, char **argv) {
   int file_type = FILE_TYPE_INTEL_HEX;
   int arg_pointer = 1;
   #if defined(WIN)
-  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--erase-only] filename";
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] (--erase-only | filename)";
   #else
-  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--erase-only] filename [--no-ansi]";
+  char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--no-ansi] (--erase-only | filename)";
   #endif 
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
@@ -147,7 +147,8 @@ int main(int argc, char **argv) {
     arg_pointer += 1;
   }
 
-  if (file == NULL) {
+  if (file == NULL && erase_only == 0) {
+    printf("Neither filename nore --erase-only given!\n\n");
     puts(usage);
     return EXIT_FAILURE;
   }
