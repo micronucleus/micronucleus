@@ -30,6 +30,9 @@
 #include "micronucleus_lib.h"
 #include "littleWire_util.h"
 
+#include <string.h>
+#include <errno.h>
+
 micronucleus* micronucleus_connect(int fast_mode) {
   micronucleus *nucleus = NULL;
   struct usb_bus *busses;
@@ -61,6 +64,10 @@ micronucleus* micronucleus_connect(int fast_mode) {
         }
 
         nucleus->device = usb_open(dev);
+        if (!nucleus->device) {
+                fprintf(stderr, "Error opening bus %s device %s: %s\n", bus->dirname, dev->filename, strerror(errno));
+                return NULL;
+        }
 
         if (nucleus->version.major>=2) {  // Version 2.x
           // get nucleus info
