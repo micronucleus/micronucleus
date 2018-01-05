@@ -147,7 +147,7 @@ int main(int argc, char **argv) {
     arg_pointer += 1;
   }
 
-  if (argc < 2) {
+  if (file == NULL) {
     puts(usage);
     return EXIT_FAILURE;
   }
