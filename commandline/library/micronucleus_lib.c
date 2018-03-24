@@ -159,7 +159,7 @@ int micronucleus_eraseFlash(micronucleus* deviceHandle, micronucleus_callback pr
    On Mac OS a common error is -34 = epipe, but adding it to this list causes:
    Assertion failed: (res >= 4), function micronucleus_connect, file library/micronucleus_lib.c, line 63.
   */
-  if (res == -5 || res == -34 || res == -71 || res == -84) {
+  if (res == -5 || res == -32 || res == -34 || res == -71 || res == -84) {
     if (res == -34) {
       usb_close(deviceHandle->device);
       deviceHandle->device = NULL;
