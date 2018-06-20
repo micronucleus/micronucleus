@@ -101,6 +101,15 @@ PROGMEM const int usbDescriptorStringSerialNumber[] = {
 };
 #endif
 
+#if USB_CFG_DESCR_PROPS_STRING_OS_STRING == 0 && USB_CFG_OS_STRING_LEN
+#undef USB_CFG_DESCR_PROPS_STRING_OS_STRING
+#define USB_CFG_DESCR_PROPS_STRING_OS_STRING sizeof(usbDescriptorStringOsString)
+PROGMEM const int usbDescriptorStringOsString[] = {
+    USB_STRING_DESCRIPTOR_HEADER(USB_CFG_OS_STRING_LEN),
+    USB_CFG_OS_STRING
+};
+#endif
+
 #endif  /* USB_CFG_DESCR_PROPS_STRINGS == 0 */
 
 /* --------------------------- Device Descriptor --------------------------- */
@@ -108,23 +117,24 @@ PROGMEM const int usbDescriptorStringSerialNumber[] = {
 #if USB_CFG_DESCR_PROPS_DEVICE == 0
 #undef USB_CFG_DESCR_PROPS_DEVICE
 #define USB_CFG_DESCR_PROPS_DEVICE  sizeof(usbDescriptorDevice)
-PROGMEM const char usbDescriptorDevice[] = { /* USB device descriptor */
-18, /* sizeof(usbDescriptorDevice): length of descriptor in bytes */
-USBDESCR_DEVICE, /* descriptor type */
-0x10, 0x01, /* USB version supported */
-USB_CFG_DEVICE_CLASS,
-USB_CFG_DEVICE_SUBCLASS, 0, /* protocol */
-8, /* max packet size */
-/* the following two casts affect the first byte of the constant only, but
- * that's sufficient to avoid a warning with the default values.
- */
-(char) USB_CFG_VENDOR_ID,/* 2 bytes */
-(char) USB_CFG_DEVICE_ID,/* 2 bytes */
-USB_CFG_DEVICE_VERSION, /* 2 bytes */
-USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0, /* manufacturer string index */
-USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0, /* product string index */
-USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0, /* serial number string index */
-1, /* number of configurations */
+    PROGMEM const char usbDescriptorDevice[] = { /* USB device descriptor */
+    18, /* sizeof(usbDescriptorDevice): length of descriptor in bytes */
+    USBDESCR_DEVICE, /* descriptor type */
+    0x00, 0x02,             /* USB version supported */
+    USB_CFG_DEVICE_CLASS,
+    USB_CFG_DEVICE_SUBCLASS,
+    0, /* protocol */
+    8, /* max packet size */
+    /* the following two casts affect the first byte of the constant only, but
+     * that's sufficient to avoid a warning with the default values.
+     */
+    (char) USB_CFG_VENDOR_ID,/* 2 bytes */
+    (char) USB_CFG_DEVICE_ID,/* 2 bytes */
+    USB_CFG_DEVICE_VERSION, /* 2 bytes */
+    USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0, /* manufacturer string index */
+    USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0, /* product string index */
+    USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0, /* serial number string index */
+    1, /* number of configurations */
 };
 #endif
 
@@ -198,6 +208,8 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq) {
                 GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_PRODUCT, usbDescriptorStringDevice)
             } else if (_cmd == (3)) {
                 GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
+            } else if (_cmd == (0xee)) {
+                GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_OS_STRING, usbDescriptorStringOsString)
             }
         }
     }
