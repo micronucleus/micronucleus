@@ -3,7 +3,7 @@ Created: September 2012
   (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
   Changes for Micronucleus protocol version V2.x
   (c) 2014 T. Bo"scke
-  
+
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
   the Software without restriction, including without limitation the rights to
@@ -76,7 +76,7 @@ int main(int argc, char **argv) {
   char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] (--erase-only | filename)";
   #else
   char* usage = "usage: micronucleus [--help] [--run] [--dump-progress] [--fast-mode] [--type intel-hex|raw] [--timeout integer] [--no-ansi] (--erase-only | filename)";
-  #endif 
+  #endif
   progress_step = 0;
   progress_total_steps = 5; // steps: waiting, connecting, parsing, erasing, writing, (running)?
   dump_progress = 0;
@@ -148,7 +148,7 @@ int main(int argc, char **argv) {
   }
 
   if (file == NULL && erase_only == 0) {
-    printf("Neither filename nore --erase-only given!\n\n");
+    printf("Neither filename nor --erase-only given!\n\n");
     puts(usage);
     return EXIT_FAILURE;
   }
