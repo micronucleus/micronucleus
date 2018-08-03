@@ -27,6 +27,8 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [LaborTageBadge2013](http://www.das-labor.org/wiki/LaborTageBadge2013) - Badge with ATtiny85
 
+- [Franzininho](https://github.com/Franzininho/franzininho-diy-board) - Franzininho designed by Fábio Souza and Thalis Antunes for Arduino Day 2017 at São Paulo / Brazil.
+
 ## ATtiny 841 ##
 
 - [Wattuino Nanite 841](http://www.watterott.com/de/Wattuino-Nanite841) - Extremely small devboard with ATtiny841. Approximates the form factor of a DIP package.
