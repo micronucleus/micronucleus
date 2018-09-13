@@ -23,8 +23,6 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [Pro Nano 85](http://www.jayconsystems.com/pro-nano-50v-attiny85.html) by Jaconsystems
 
-- [Paperduino](http://paperduino.eu/doku.php) - Mini Arduino board on paper
-
 - [LaborTageBadge2013](http://www.das-labor.org/wiki/LaborTageBadge2013) - Badge with ATtiny85
 
 - [Franzininho](https://github.com/Franzininho/franzininho-diy-board) - Franzininho designed by Fábio Souza and Thalis Antunes for Arduino Day 2017 at São Paulo / Brazil.
