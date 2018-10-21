@@ -38,7 +38,7 @@ else
 endif
 
 LIBS    = $(USBLIBS)
-INCLUDE = library
+INCLUDE = library 
 CFLAGS  = $(USBFLAGS) -I$(INCLUDE) -O -g $(OSFLAG)
 
 LWLIBS = micronucleus_lib littleWire_util

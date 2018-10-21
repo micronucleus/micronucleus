@@ -1,6 +1,7 @@
 *.o
 *.tmp
 *.raw
+*.json
 firmware/*.bin
 commandline/littleWire_util.o
 commandline/micronucleus
@@ -20,3 +21,4 @@ firmware/main.hex
 firmware/osccalASM.o
 firmware/usbdrv/oddebug.o
 firmware/usbdrv/usbdrvasm.o
+firmware/.vscode/*

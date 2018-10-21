@@ -29,7 +29,12 @@
 /********************************************************************************
 * Header files
 ********************************************************************************/
+#if defined _WIN32
+#include <lusb0_usb.h>         // libusb-win32 
+#else
 #include <usb.h>
+#endif
+
 //#include "opendevice.h"      // common code moved to separate module
 #include <assert.h>
 #include <stdio.h>
