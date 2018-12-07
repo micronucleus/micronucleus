@@ -20,5 +20,5 @@ make clean
 make CONFIG=Nanite841
 cp main.hex releases/Nanite841.hex
 make clean
-make CONFIG=m328p_aggressive
-cp main.hex releases/m328p_aggressive.hex
+make CONFIG=m328p_extclock
+cp main.hex releases/m328p_extclock.hex
