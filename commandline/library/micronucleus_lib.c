@@ -179,7 +179,6 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
   unsigned int  res;
   unsigned int  pagecontainsdata;
   unsigned int  userReset;
-
   
   for (address = 0; address < deviceHandle->flash_size; address += deviceHandle->page_size) {
     // work around a bug in older bootloader versions
@@ -219,8 +218,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
                   "therefore the bootloader can not be inserted. Please rearrage your code.\n"
                   );
           return -1;         
-        }
-	fprintf(stderr,"Using userReset address: 0x%04x.\n",userReset);
+        } 
         
         // Patch in jmp to bootloader. 
         if (deviceHandle->bootloader_start > 0x2000) {
@@ -280,12 +278,9 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
       } else if (deviceHandle->version.major >= 2) {
         // Firmware rev.2 uses individual set up packets to transfer data
         res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 1, page_length, address, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-        if (res) {
-	  fprintf(stderr,"Flash-Write: received result %d while sending page address %d.\n",res,address);
-	  return -1;
-	}
+        if (res) return -1;
         int i;
-	  
+        
         for (i=0; i< page_length; i+=4)
         {
           int w1,w2;
@@ -293,10 +288,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
           w2=(page_buffer[i+3]<<8)+(page_buffer[i+2]<<0);
           
           res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 3, w1, w2, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-          if (res) {
-	    fprintf(stderr,"Flash-Write: received result %d at intra-page address %d.\n",res,i);
-	    return -1;
-	  }
+          if (res) return -1;
         }     
       }  
     /*
