@@ -3,7 +3,9 @@ ihsan Kehribar <ihsan@kehribar.me> and Bluebie <a@creativepony.com>
 
 It's been tested casually on Mac, Windows, and Linux, and aught to work on all
 three. To make and install, do the regular 'make; sudo make install' on unixes.
-On windows just 'make' with mingw and do whatever people do with windows exes.
+
+Building on windows requires mingw32+msys with lib-winusb32. Possibly it can also
+be built with mingw64. 
 
 Usage on Ubuntu:
   sudo micronucleus --run name_of_the_file.hex
@@ -24,3 +26,4 @@ directly to unknown USB devices. You can fix this by installing some config
 files, or you can just use sudo. Either way you're going to need root. To
 configure your system to allow micronucleus access from non-root users, copy
 49-micronucleus.rules from this folder to /etc/udev/rules.d/
+
