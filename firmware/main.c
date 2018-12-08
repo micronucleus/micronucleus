@@ -118,8 +118,8 @@ static inline void eraseApplication(void) {
     ptr -= SPM_PAGESIZE;        
 #endif    
     boot_page_erase(ptr);
-#if (defined __AVR_ATmega328P__)
-    // the ATmega328p doesn't halt the CPU when writing to RWW flash, so we need to wait here
+#if (defined __AVR_ATmega328P__)||(defined __AVR_ATmega168P__)||(defined __AVR_ATmega88P__)
+    // the ATmegaATmega328p/168p/88p don't halt the CPU when writing to RWW flash, so we need to wait here
     boot_spm_busy_wait();
 #endif    
   }
@@ -132,8 +132,8 @@ static inline void eraseApplication(void) {
 static inline void writeFlashPage(void) {
   if (currentAddress.w - 2 <BOOTLOADER_ADDRESS) {
     boot_page_write(currentAddress.w - 2);   // will halt CPU, no waiting required
-#if (defined __AVR_ATmega328P__)
-    // the ATmega328p doesn't halt the CPU when writing to RWW flash
+#if (defined __AVR_ATmega328P__)||(defined __AVR_ATmega168P__)||(defined __AVR_ATmega88P__)
+    // the ATmega328p/168p/88p don't halt the CPU when writing to RWW flash
     boot_spm_busy_wait();
 #endif
   }
@@ -249,7 +249,7 @@ static inline void leaveBootloader(void) {
   nop(); // NOP to avoid CPU hickup during oscillator stabilization
 #endif
 
-#if (defined __AVR_ATmega328P__)
+#if (defined __AVR_ATmega328P__)||(defined __AVR_ATmega168P__)||(defined __AVR_ATmega88P__)
   // Tell the system that we want to read from the RWW memory again.
   boot_rww_enable();
 #endif
