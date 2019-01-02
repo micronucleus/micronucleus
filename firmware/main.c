@@ -216,11 +216,11 @@ static void initHardware (void)
   // Disable watchdog and set timeout to maximum in case the WDT is fused on 
 #ifdef CCP
   // New ATtinies841/441 use a different unlock sequence and renamed registers
-  MCUSR=0;    
+  MCUSR = ~_BV(WDRF);    
   CCP = 0xD8; 
   WDTCSR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0; 
 #elif defined(WDTCR)
-  MCUSR=0;    
+  MCUSR = ~_BV(WDRF);   
   WDTCR = 1<<WDCE | 1<<WDE;
   WDTCR = 1<<WDP2 | 1<<WDP1 | 1<<WDP0;
 #else
