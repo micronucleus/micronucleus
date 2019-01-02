@@ -390,7 +390,7 @@ int main(void) {
 
     LED_EXIT();
     
-    initHardware();  /* Disconnect micronucleus */    
+    usbDeviceDisconnect(); /* Disconnect micronucleus */   
     
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
