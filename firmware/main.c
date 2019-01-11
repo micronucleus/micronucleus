@@ -389,8 +389,12 @@ int main(void) {
     } while(1);  
 
     LED_EXIT();
-    
+   
+#if defined USB_CFG_PULLUP_IOPORTNAME
+    usbDeviceDisconnect(); /* Disconnect micronucleus */
+#else
     initHardware();  /* Disconnect micronucleus */    
+#endif
     
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
