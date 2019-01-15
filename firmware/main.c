@@ -1,7 +1,7 @@
 /* 
- * Project: Micronucleus -  v2.3
+ * Project: Micronucleus -  v2.04
  *
- * Micronucleus V2.3             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
+ * Micronucleus V2.04             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  *                               (c) 2014 Shay Green
  * Original Micronucleus         (c) 2012 Jenna Fox
  *
@@ -12,7 +12,7 @@
  */
  
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 3
+#define MICRONUCLEUS_VERSION_MINOR 4
 
 #include <avr/io.h>
 #include <avr/pgmspace.h>
@@ -364,7 +364,7 @@ int main(void) {
          if (pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)!=0xff)  break;
       }
       
-      LED_MACRO( idlePolls.b[0] );   
+      LED_MACRO( idlePolls.b[0]);   
 
        // Test whether another interrupt occurred during the processing of USBpoll and commands.
        // If yes, we missed a data packet on the bus. Wait until the bus was idle for 8.8µs to 
