@@ -1,7 +1,7 @@
 # Makefile initially writen for Little-Wire by Omer Kilic <omerkilic@gmail.com>
 # Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application.
 
-CC=gcc
+CC?=gcc
 
 ifeq ($(shell uname), Linux)
 	USBFLAGS=$(shell libusb-config --cflags)
