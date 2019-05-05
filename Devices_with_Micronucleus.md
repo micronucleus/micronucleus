@@ -39,3 +39,6 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 ## ATtiny 84 ##
 - [Shinewave](https://github.com/GGreenwood/Shinewave) by [Electric Exploits](http://electricexploits.net/) - USB mods for GameCube controllers
+
+## ATtiny 88 ##
+- [MH Tiny88](http://mh.nodebb.com/topic/47/mh-et-live-tiny88-16-0mhz) - A tiny breakout board with an ATtiny 88. Arduino compatible.
