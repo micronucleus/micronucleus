@@ -29,6 +29,8 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [TinyStick](https://gitlab.com/nonchip/tinystick) - A simple open source Attiny85 board in a "usb stick on PCB" form factor simply exposes ISP and PortB without any onboard LED/button pin hogging. by Kyra 'nonchip' Zimmer
 
+- [ATtami](https://github.com/telavivmakers/at-tami) - using Micronucleus since 2015, for making the 1EU assmbly party.
+
 ## ATtiny 841 ##
 
 - [Wattuino Nanite 841](http://www.watterott.com/de/Wattuino-Nanite841) - Extremely small devboard with ATtiny841. Approximates the form factor of a DIP package.
