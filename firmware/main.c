@@ -69,7 +69,10 @@ PROGMEM const uint8_t configurationReply[6] = {
   
 #if OSCCAL_RESTORE_DEFAULT
   register uint8_t      osccal_default  asm("r2");
-#endif 
+#endif
+#if CKDIV_RESTORE_DEFAULT
+  register uint8_t      ckdiv_default   asm("r8");
+#endif
 
 register uint16_union_t currentAddress  asm("r4");  // r4/r5 current progmem address, used for erasing and writing 
 register uint16_union_t idlePolls       asm("r6");  // r6/r7 idlecounter
@@ -280,6 +283,13 @@ int main(void) {
 #endif
   
   if (bootLoaderStartCondition()||(pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_RESET_OFFSET + 1)==0xff)) {
+    #if CKDIV_RESTORE_DEFAULT
+      ckdiv_default = CLKPR;
+    #endif
+    #if CKDIV_RESET
+      CLKPR=0x80;
+      CLKPR=0x00;
+    #endif
   
     initHardware();        
     LED_INIT();
@@ -394,6 +404,11 @@ int main(void) {
     
     USB_INTR_ENABLE = 0;
     USB_INTR_CFG = 0;       /* also reset config bits */
+    #if CKDIV_RESTORE_DEFAULT
+      CLKPR = 1<<CLKPCE;
+      CLKPR = ckdiv_default;
+    #endif
+
  
   }
    
