@@ -46,7 +46,7 @@ Currently, the following configurations are included and tested. Please check th
 
 t84_default     -   ATtiny84A default configuration     -   1534 bytes
 t841_default    -   ATtiny841 default configuration     -   1586 bytes
-t45_default     -   ATtiny85  default configuration     -   1588 bytes
+t45_default     -   ATtiny45  default configuration     -   1588 bytes
 t85_default     -   ATtiny85  default configuration     -   1588 bytes
 t85_aggressive  -   ATtiny85  smaller size - critical   -   1418 bytes
 t167_default    -   ATtiny167 default (uses xtal)       -   1412 bytes
