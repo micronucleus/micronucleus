@@ -1,7 +1,7 @@
 /* 
  * Project: Micronucleus -  v2.04
  *
- * Micronucleus V2.04             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
+ * Micronucleus V2.04            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  *                               (c) 2014 Shay Green
  * Original Micronucleus         (c) 2012 Jenna Fox
  *
