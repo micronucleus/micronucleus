@@ -47,10 +47,10 @@
   #define XJMP jmp
 #else
   #define XJMP rjmp
-#endif  
+#endif
 
   #define XCALL rcall
-  
+
 	.macro	vector name
 	.weak	\name
 	.set	\name, __init
@@ -62,7 +62,7 @@
 	.global	__bad_interrupt
 	.func	__vectors
 
-__bad_interrupt:	
+__bad_interrupt:
 __vectors:
 	XJMP	__init
 ;	vector	__vector_1
@@ -95,18 +95,16 @@ __init:
 
 	.section .init2,"ax",@progbits
 	clr		R1
-    
-#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
-	out		0x3f,r1
+
+#if ! defined(ENABLE_UNSAFE_OPTIMIZATIONS) && ! defined(ENABLE_SAFE_OPTIMIZATIONS)
+	// out		0x3f,r1 // 2 bytes - reset status register especially the interrupt enable bit, but the interrupt enable bit is always in a disable state after reset!
+// set stackpointer. Datasheet says: Initial Value RAMEND, 8 bytes
 	ldi		r28,lo8(__stack)
 	ldi		r29,hi8(__stack)
 	out		0x3d, r28
 	out		0x3e, r29
-#endif    
+#endif
 	.section .init9,"ax",@progbits
-;  rcall main
-;  XJMP  __vectors-2
 	XJMP	main
-  
-;	.endfunc
 
+;	.endfunc

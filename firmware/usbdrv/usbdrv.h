@@ -9,8 +9,6 @@
 
 #ifndef __usbdrv_h_included__
 #define __usbdrv_h_included__
-#include "usbconfig.h"
-#include "usbportability.h"
 
 /*
 Hardware Prerequisites:
@@ -117,6 +115,23 @@ USB messages, even if they address another (low-speed) device on the same bus.
 
 */
 
+
+#ifdef __cplusplus
+// This header should be included as C-header from C++ code. However if usbdrv.c
+// is incorporated into a C++ module with an include, function names are mangled
+// and this header must be parsed as C++ header, too. External modules should be
+// treated as C, though, because they are compiled separately as C code.
+extern "C" {
+#endif
+
+#include "usbconfig.h"
+#include "usbportability.h"
+
+#ifdef __cplusplus
+}
+#endif
+
+
 /* ------------------------------------------------------------------------- */
 /* --------------------------- Module Interface ---------------------------- */
 /* ------------------------------------------------------------------------- */
@@ -193,6 +208,13 @@ extern usbMsgPtr_t usbMsgPtr;
  * implementation of usbFunctionWrite(). It is also used internally by the
  * driver for standard control requests.
  */
+
+extern uchar usbMsgFlags;    /* flag values see USB_FLG_* */
+/* Can be set to `USB_FLG_MSGPTR_IS_ROM` in `usbFunctionSetup()` or
+ * `usbFunctionDescriptor()` if `usbMsgPtr` has been set to a flash memory
+ * address.
+ */
+
 USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
 /* This function is called when the driver receives a SETUP transaction from
  * the host which is not answered by the driver itself (in practice: class and
@@ -301,8 +323,8 @@ USB_PUBLIC void usbFunctionWriteOut(uchar *data, uchar len);
 #define usbDeviceDisconnect()   ((USB_PULLUP_DDR &= ~(1<<USB_CFG_PULLUP_BIT)), \
                                   (USB_PULLUP_OUT &= ~(1<<USB_CFG_PULLUP_BIT)))
 #else /* USB_CFG_PULLUP_IOPORTNAME */
-#define usbDeviceConnect()      (USBDDR &= ~(1<<USBMINUS))
-#define usbDeviceDisconnect()   (USBDDR |= (1<<USBMINUS))
+#define usbDeviceConnect()      (USBDDR &= ~(1<<USBMINUS)) // Set to input
+#define usbDeviceDisconnect()   (USBDDR |= (1<<USBMINUS))  // Set to output
 #endif /* USB_CFG_PULLUP_IOPORTNAME */
 /* The macros usbDeviceConnect() and usbDeviceDisconnect() (intended to look
  * like a function) connect resp. disconnect the device from the host's USB.
@@ -316,6 +338,7 @@ USB_PUBLIC void usbFunctionWriteOut(uchar *data, uchar len);
  *     USB_INTR_ENABLE &= ~(1 << USB_INTR_ENABLE_BIT)
  * or use cli() to disable interrupts globally.
  */
+#if defined(USB_CRC_16_REQUIRED)
 extern unsigned usbCrc16(unsigned data, uchar len);
 #define usbCrc16(data, len) usbCrc16((unsigned)(data), len)
 /* This function calculates the binary complement of the data CRC used in
@@ -324,6 +347,7 @@ extern unsigned usbCrc16(unsigned data, uchar len);
  * data. We enforce 16 bit calling conventions for compatibility with IAR's
  * tiny memory model.
  */
+#endif
 extern unsigned usbCrc16Append(unsigned data, uchar len);
 #define usbCrc16Append(data, len)    usbCrc16Append((unsigned)(data), len)
 /* This function is equivalent to usbCrc16() above, except that it appends

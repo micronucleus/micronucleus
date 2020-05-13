@@ -88,8 +88,8 @@ se0:
 ;the end of SE0. The sync code allows up to 40 cycles delay from the start of
 ;the sync pattern until the first bit is sampled. That's a total of 56 cycles.
 ;
-;TB 2014-02-02 
-;The interrupt-less driver always has to wait for the next packet at this point 
+;TB 2014-02-02
+;The interrupt-less driver always has to wait for the next packet at this point
 ;or usbpoll() will get confused.
 
 handleSetupOrOut:               ;[32]
@@ -115,7 +115,7 @@ doReturn:
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
 sofError:
     POP_RETI                    ;macro call
-    
+
     ret                         ;02-02-2014 not called from INT in micronucleus.
 ;    reti
 
@@ -138,7 +138,7 @@ handleData:
 #endif
     sts     usbRxLen, cnt       ;[28] store received data, swap buffers
     sts     usbRxToken, shift   ;[30]
-    
+
 ; Microncleus V2 does not need double buffering due to in-order processing of USB-rx
 ; TB 2014-01-04
 ;    lds     x2, usbInputBufOffset;[32] swap buffers

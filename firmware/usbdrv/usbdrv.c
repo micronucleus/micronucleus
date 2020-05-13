@@ -4,24 +4,24 @@
  * Creation Date: 2004-12-29
  * Tabsize: 4
  *
- 
+
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
  */
 
 /* This copy of usbdrv.c was optimized to reduce the memory footprint with micronucleus V2
  *
- * Changes: 
+ * Changes:
  *     a) Replies to USB SETUP IN Packets are now only possible from Flash
  *       * Commented out routines to copy from SRAM
  *       * remove msgflag variable and all handling involving it
- */ 
-#define MNHACK_ONLY_FLASH_MSGPTR                
+ */
+#define MNHACK_ONLY_FLASH_MSGPTR
 /*     b) Do not use preinitialized global variables to avoid having to initialize
  *        the data section.
  */
-#define MNHACK_NO_DATASECTION   
- 
+#define MNHACK_NO_DATASECTION
+
 #include "usbdrv.h"
 #include "oddebug.h"
 
@@ -68,8 +68,8 @@ usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM addre
 #else
   static usbMsgLen_t  usbMsgLen = USB_NO_MSG; /* remaining number of bytes */
 #endif
-  
-#ifndef MNHACK_ONLY_FLASH_MSGPTR                
+
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
 static uchar        usbMsgFlags;    /* flag values see below */
 #endif
 
@@ -195,7 +195,8 @@ PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration desc
     0x00,       /* target country code */
     0x01,       /* number of HID Report (or other HID class) Descriptor infos to follow */
     0x22,       /* descriptor type: report */
-    USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH, 0,  /* total length of report descriptor */
+    (USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH & 0xFF), /* descriptor length (low byte) */
+    ((USB_CFG_HID_REPORT_DESCRIPTOR_LENGTH >> 8) & 0xFF), /*            (high byte) */
 #endif
 #if USB_CFG_HAVE_INTRIN_ENDPOINT    /* endpoint descriptor for endpoint 1 */
     7,          /* sizeof(usbDescrEndpoint) */
@@ -375,11 +376,11 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
             len = usbFunctionDescriptor(rq);
         }
     SWITCH_END
-    
-    flags=flags;  // Make compiler shut up about unused variable
-#ifndef MNHACK_ONLY_FLASH_MSGPTR                
+
+//    flags=flags;  // Make compiler shut up about unused variable -> leads to another warning :-(
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
     usbMsgFlags = flags;
-#endif    
+#endif
     return len;
 }
 
@@ -472,12 +473,12 @@ usbRequest_t    *rq = (void *)data;
         usbMsgLen_t replyLen;
         usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
         usbTxLen = USBPID_NAK;              /* abort pending transmit */
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
         usbMsgFlags = 0;
-#endif        
+#endif
         uchar type = rq->bmRequestType & USBRQ_TYPE_MASK;
         if(type != USBRQ_TYPE_STANDARD){    /* standard requests are handled by driver */
-            replyLen = usbFunctionSetup(data);
+            replyLen = usbFunctionSetup(data); // for USBRQ_TYPE_CLASS or USBRQ_TYPE_VENDOR
         }else{
             replyLen = usbDriverSetup(rq);
         }
@@ -532,22 +533,22 @@ static uchar usbDeviceRead(uchar *data, uchar len)
         {
             uchar i = len;
             usbMsgPtr_t r = usbMsgPtr;
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
             if(usbMsgFlags & USB_FLG_MSGPTR_IS_ROM){    /* ROM data */
-#endif          
+#endif
                 do{
                     uchar c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
                     *data++ = c;
                     r++;
                 }while(--i);
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
-             }else{  // RAM data 
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
+             }else{  // RAM data
                 do{
                     *data++ = *((uchar *)r);
                     r++;
                 }while(--i);
             }
-#endif                      
+#endif
             usbMsgPtr = r;
         }
     }
@@ -596,7 +597,7 @@ uchar           isReset = !notResetState;
         wasReset = isReset;
     }
 #else
-    notResetState = notResetState;  // avoid compiler warning
+//    notResetState = notResetState;  // avoid compiler warning -> leads to another warning :-(
 #endif
 }
 
@@ -646,18 +647,22 @@ isNotReset:
 
 USB_PUBLIC void usbInit(void)
 {
-#ifdef MNHACK_NO_DATASECTION   
+#ifdef MNHACK_NO_DATASECTION
     usbTxLen = USBPID_NAK;
     usbMsgLen = USB_NO_MSG;
 #endif
-    
+
 #if USB_INTR_CFG_SET != 0
     USB_INTR_CFG |= USB_INTR_CFG_SET;
 #endif
 #if USB_INTR_CFG_CLR != 0
     USB_INTR_CFG &= ~(USB_INTR_CFG_CLR);
 #endif
+#if (defined(GIMSK) || defined(EIMSK)) // GICR contains other bits, which must be kept
     USB_INTR_ENABLE |= (1 << USB_INTR_ENABLE_BIT);
+#else
+    USB_INTR_ENABLE = (1 << USB_INTR_ENABLE_BIT); // We only want one interrupt to be enabled, so keeping the other bits makes no sense.
+#endif
     usbResetDataToggling();
 #if USB_CFG_HAVE_INTRIN_ENDPOINT && !USB_CFG_SUPPRESS_INTR_CODE
     usbTxLen1 = USBPID_NAK;

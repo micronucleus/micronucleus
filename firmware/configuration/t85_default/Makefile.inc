@@ -4,18 +4,20 @@
 
 # Controller type: ATtiny 85 - 16.5 MHz
 # Configuration:   Default
-# Last Change:     Mar 16,2014
- 
- 
+# Last Change:     4/2020
+
+#CFLAGS += -DENABLE_SAFE_OPTIMIZATIONS  # This saves 10 bytes and disables reliable jump to 0x0000, which one should avoid anyway.
+
 F_CPU = 16500000
 DEVICE = attiny85
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
-# - make clean; make main.hex; ### output will list data: 2124 (or something like that)
-# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
-# - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
-# - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 1980
+# - make clean; make main.hex; ### output will list data: 1592 (or something like that)
+# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value = 6598
+# - How many pages in is that? 6598 / 64 (tiny85 page size in bytes) = 103.09377
+# - round that down to 103 - our new bootloader address is 103 * 64 = 6592, in hex = 19C0
+# - For data size up to 1600 the address is 19C0 for size from 1601 to 1664 the address is 1980
+BOOTLOADER_ADDRESS = 19C0
 
 FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
@@ -31,7 +33,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 #
 # Fuse high byte:
 # 0xdd = 1 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)
@@ -41,7 +43,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 #
 # Fuse high byte ("no reset": external reset disabled, can't program through SPI anymore)
 # 0x5d = 0 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)

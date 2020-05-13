@@ -103,7 +103,7 @@ haveTwoBitsK:
     bld     shift, 0        ;1 [20]
     push    x3              ;2 [22]
     push    cnt             ;2 [24]
-    
+
     in      x2, USBIN       ;1 [25] <-- sample bit 1
     ser     x3              ;1 [26] [inserted init instruction]
     eor     x1, x2          ;1 [27]

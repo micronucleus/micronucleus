@@ -39,7 +39,9 @@ the file appropriate for the given clock rate.
 #   if USB_COUNT_SOF
         extern usbSofCount
 #   endif
+#if defined(USB_CRC_16_REQUIRED)
     public  usbCrc16
+#endif
     public  usbCrc16Append
 
     COMMON  INTVEC
@@ -65,7 +67,9 @@ the file appropriate for the given clock rate.
     .text
     .global USB_INTR_VECTOR
     .type   USB_INTR_VECTOR, @function
+#if  defined(USB_CRC_16_REQUIRED)
     .global usbCrc16
+#endif
     .global usbCrc16Append
 #endif /* __IAR_SYSTEMS_ASM__ */
 
@@ -117,7 +121,7 @@ RTMODEL "__rt_version", "3"
 #   define polyH    r21
 #   define scratch  r23
 
-#else  /* __IAR_SYSTEMS_ASM__ */ 
+#else  /* __IAR_SYSTEMS_ASM__ */
 /* Register assignments for usbCrc16 on gcc */
 /* Calling conventions on gcc:
  * First parameter passed in r24/r25, second in r22/23 and so on.
@@ -154,7 +158,7 @@ RTMODEL "__rt_version", "3"
 ; unsigned table(unsigned char x)
 ; {
 ; unsigned    value;
-; 
+;
 ;     value = (unsigned)x << 6;
 ;     value ^= (unsigned)x << 7;
 ;     if(parity(x))
@@ -164,7 +168,7 @@ RTMODEL "__rt_version", "3"
 ; unsigned usbCrc16(unsigned char *argPtr, unsigned char argLen)
 ; {
 ; unsigned crc = 0xffff;
-; 
+;
 ;     while(argLen--)
 ;         crc = table(lo8(crc) ^ *argPtr++) ^ hi8(crc);
 ;     return ~crc;
@@ -179,7 +183,11 @@ RTMODEL "__rt_version", "3"
 ;   resCrc  r24+r25 / r16+r17
 ;   ptr     X / Z
 
+#if defined(USB_CRC_16_REQUIRED)
 usbCrc16:
+#else
+usbCrc16Append:
+#endif
     movw    ptrL, argPtrL
     ldi     resCrcL, 0xFF
     ldi     resCrcH, 0xFF
@@ -212,9 +220,13 @@ usbCrc16LoopTest:
     brsh    usbCrc16ByteLoop
     com     resCrcL
     com     resCrcH
+#if ! defined(USB_CRC_16_REQUIRED)
+    st      ptr+, resCrcL
+    st      ptr+, resCrcH
+#endif
     ret
-    
-#else   // USB_USE_FAST_CRC 
+
+#else   // USB_USE_FAST_CRC
 
 ; This implementation is slower, but has less code size
 ;
@@ -228,9 +240,14 @@ usbCrc16LoopTest:
 ;   scratch r23
 ;   resCrc  r24+r25 / r16+r17
 ;   ptr     X / Z
+#if defined(USB_CRC_16_REQUIRED)
 usbCrc16:
-    mov     ptrL, argPtrL
-    mov     ptrH, argPtrH
+#else
+usbCrc16Append:
+#endif
+    movw    ptrL, argPtrL
+#    mov     ptrL, argPtrL
+#    mov     ptrH, argPtrH
     ldi     resCrcL, 0
     ldi     resCrcH, 0
     ldi     polyL, lo8(0xa001)
@@ -254,17 +271,23 @@ usbCrcLoopEntry:
     subi    argLen, -1
     brcs    usbCrcByteLoop
 usbCrcReady:
+#if ! defined(USB_CRC_16_REQUIRED)
+    st      ptr+, resCrcL
+    st      ptr+, resCrcH
+#endif
     ret
 ; Thanks to Reimar Doeffinger for optimizing this CRC routine!
 
-#endif // USB_USE_FAST_CRC 
+#endif // USB_USE_FAST_CRC
 
+#if defined(USB_CRC_16_REQUIRED)
 ; extern unsigned usbCrc16Append(unsigned char *data, unsigned char len);
 usbCrc16Append:
     rcall   usbCrc16
     st      ptr+, resCrcL
     st      ptr+, resCrcH
     ret
+#endif
 
 #undef argLen
 #undef argPtrL
@@ -297,7 +320,7 @@ usbCrc16Append:
 #   define cnt16H   r31
 #   define cntH     r18
 
-#else  /* __IAR_SYSTEMS_ASM__ */ 
+#else  /* __IAR_SYSTEMS_ASM__ */
 /* Register assignments for usbMeasureFrameLength on gcc */
 /* Calling conventions on gcc:
  * First parameter passed in r24/r25, second in r22/23 and so on.
