@@ -1,28 +1,28 @@
 # Overview
 | Configuration | Available FLASH | Bootloader size | Non default config flags set |
 |---------------|-----------------|-----------------|------------------------------|
-| t85_aggressive | 6778 | 1408 | OSCCAL_SAVE_CALIB=0, ENABLE_UNSAFE_OPTIMIZATIONS |
+| t85_aggressive | 6778 | 1404 | OSCCAL_SAVE_CALIB=0, ENABLE_UNSAFE_OPTIMIZATIONS |
 |  |  |  |  |
-| t85_default | 6586 | 1548 | - |
-| t85_entry_on_power_on | 6586 | 1584 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), LED_MODE=ACTIVE_HIGH |
-| t85_entry_on_power_on_no_pullup | 6586 | 1598 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), LED_MODE=ACTIVE_HIGH |
-| t85_entry_on_power_on_fast_exit_on_no_USB | 6586 | 1592 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit), LED_MODE=ACTIVE_HIGH |
-| **t85_entry_on_power_on_no_pullup_fast_exit_on_no_USB**<br/>recommended configuration | 6586 | 1588 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit) |
-| t85_entry_on_power_on_pullup_at_0 | 6586 | 1572 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), USB_CFG_PULLUP_IOPORTNAME + USB_CFG_PULLUP_BIT |
-| t85_fast_exit_on_no_USB | 6586 | 1574 | [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit), LED_MODE=ACTIVE_HIGH |
-| t85_entry_on_reset_no_pullup | 6586 | 1586 | [ENTRY_EXT_RESET](#entry_ext_reset-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup) |
+| t85_default | 6586 | 1544 | - |
+| t85_entry_on_power_on | 6586 | 1580 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), LED_MODE=ACTIVE_HIGH |
+| t85_entry_on_power_on_no_pullup | 6586 | 1594 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), LED_MODE=ACTIVE_HIGH |
+| t85_entry_on_power_on_fast_exit_on_no_USB | 6586 | 1588 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit), LED_MODE=ACTIVE_HIGH |
+| **t85_entry_on_power_on_no_pullup_fast_exit_on_no_USB**<br/>recommended configuration | 6586 | 1584 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit) |
+| t85_entry_on_power_on_pullup_at_0 | 6586 | 1568 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), USB_CFG_PULLUP_IOPORTNAME + USB_CFG_PULLUP_BIT |
+| t85_fast_exit_on_no_USB | 6586 | 1570 | [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit), LED_MODE=ACTIVE_HIGH |
+| t85_entry_on_reset_no_pullup | 6582 | 1600 | [ENTRY_EXT_RESET](#entry_ext_reset-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), LED_MODE=ACTIVE_HIGH |
 |  |  |  |  |
 | t167_default | 14970 | 1390 | - |
 | t167_entry_on_power_on_no_pullup | 14842 | 1428 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), LED_MODE=ACTIVE_HIGH |
 | t167_entry_on_power_on_no_pullup_fast_exit_on_no_USB | 14842 | 1436 | [ENTRY_POWER_ON](#entry_power_on-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit), LED_MODE=ACTIVE_HIGH |
 | t167_entry_on_reset_no_pullup | 14842 | 1436 | [ENTRY_EXT_RESET](#entry_ext_reset-entry-condition), [START_WITHOUT_PULLUP](#start_without_pullup), LED_MODE=ACTIVE_HIGH |
 |  |  |  |  |
-| Nanite841 |  | 1608 |  |
-| BitBoss |  | 1606 |  |
-| t84_default |  | 1534 |  |
+| Nanite841 |  | 1594 |  |
+| BitBoss |  | 1588 |  |
+| t84_default |  | 1520 |  |
 |  |  |  |  |
-| m168p_extclock |  | 1438 |  |
-| m328p_extclock |  | 1438 |  |
+| m168p_extclock |  | 1538 |  |
+| m328p_extclock |  | 1538 |  |
 
 ### Legend
 - [ENTRY_POWER_ON](#entry_power_on-entry-condition) - Only enter bootloader on power on, not on reset or brownout.
