@@ -7,7 +7,7 @@ To allow maximum flexibility, micronucleus supports a [configuration system](/fi
 make CONFIG=<config_name>
 ```
 
-Please note that the configuration "t84_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
+Please note that the configuration "t85_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". 
 
