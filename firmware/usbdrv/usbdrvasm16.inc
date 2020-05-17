@@ -3,6 +3,8 @@
  * Author: Christian Starkjohann
  * Creation Date: 2007-06-15
  * Tabsize: 4
+ * 5/2020 ArminJo Saved 28 bytes by converting USB_INTR_VECTOR in *usbdrvasm165.inc* from ISR with pushes to a plain function.
+ * one push is still left
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
  */
@@ -31,10 +33,10 @@ of CPU cycles, but even an exact number of cycles!
 
 USB_INTR_VECTOR:
 ;order of registers pushed: YL, SREG YH, [sofError], bitcnt, shift, x1, x2, x3, x4, cnt
-    push    YL                  ;[-25] push only what is necessary to sync with edge ASAP
-    in      YL, SREG            ;[-23]
-    push    YL                  ;[-22]
-    push    YH                  ;[-20]
+#    push    YL                  ;[-25] push only what is necessary to sync with edge ASAP
+#    in      YL, SREG            ;[-23]
+#    push    YL                  ;[-22]
+#    push    YH                  ;[-20]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
@@ -74,20 +76,20 @@ foundK:                         ;[-12]
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for center sampling]
 ;we have 1 bit time for setup purposes, then sample again. Numbers in brackets
 ;are cycles from center of first sync (double K) bit after the instruction
-    push    bitcnt              ;[-12]
+    push    r0                  ;[-12] // dummy for timing
 ;   [---]                       ;[-11]
     lds     YL, usbInputBufOffset;[-10]
 ;   [---]                       ;[-9]
     clr     YH                  ;[-8]
     subi    YL, lo8(-(usbRxBuf));[-7] [rx loop init]
     sbci    YH, hi8(-(usbRxBuf));[-6] [rx loop init]
-    push    shift               ;[-5]
+    pop     r0                  ;[-5] // dummy for timing
 ;   [---]                       ;[-4]
     ldi     bitcnt, 0x55        ;[-3] [rx loop init]
     sbis    USBIN, USBMINUS     ;[-2] we want two bits K (sample 2 cycles too early)
     rjmp    haveTwoBitsK        ;[-1]
-    pop     shift               ;[0] undo the push from before
-    pop     bitcnt              ;[2] undo the push from before
+    push    r0                  ;[0] // dummy for timing
+    pop     r0                  ;[2] // dummy for timing
     rjmp    waitForK            ;[4] this was not the end of sync, retry
 ; The entire loop from waitForK until rjmp waitForK above must not exceed two
 ; bit times (= 21 cycles).
@@ -96,12 +98,12 @@ foundK:                         ;[-12]
 ; push more registers and initialize values while we sample the first bits:
 ;----------------------------------------------------------------------------
 haveTwoBitsK:
-    push    x1              ;[1]
-    push    x2              ;[3]
-    push    x3              ;[5]
+    push    x1              ;[1] // dummy for timing
+    pop     x1              ;[3]
+    push    x1              ;[5]
     ldi     shift, 0        ;[7]
     ldi     x3, 1<<4        ;[8] [rx loop init] first sample is inverse bit, compensate that
-    push    x4              ;[9] == leap
+    pop     x1              ;[9] == leap
 
     in      x1, USBIN       ;[11] <-- sample bit 0
     andi    x1, USBMASK     ;[12]
@@ -210,18 +212,18 @@ didUnstuffO:
 
 macro POP_STANDARD ; 14 cycles
     pop     cnt
-    pop     x4
-    pop     x3
-    pop     x2
-    pop     x1
-    pop     shift
-    pop     bitcnt
+#    pop     x4
+#    pop     x3
+#    pop     x2
+#    pop     x1
+#    pop     shift
+#    pop     bitcnt
     endm
 macro POP_RETI     ; 7 cycles
-    pop     YH
-    pop     YL
-    out     SREG, YL
-    pop     YL
+#    pop     YH
+#    pop     YL
+#    out     SREG, YL
+#    pop     YL
     endm
 
 #include "asmcommon.inc"

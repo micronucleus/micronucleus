@@ -225,7 +225,7 @@
  *                            This value will be reloaded after reset and will also be used for the user
  *                            program unless "OSCCAL_RESTORE_DEFAULT" is active. This allows calibrate the internal
  *                            RC oscillator to the F_CPU target frequency +/-1% from the USB timing. Please note
- *                            that only true if the ambient temperature does not change.
+ *                            that this is only true if the ambient temperature does not change.
  *                            Adds ~38 bytes.
  *
  *  OSCCAL_HAVE_XTAL          Set this to '1' if you have an external crystal oscillator. In this case no attempt
@@ -248,9 +248,9 @@
  *
  *  LED_MODE                  Define behavior of attached LED or suppress LED code.
  *
- *          NONE              Do not generate LED code (gains 20 bytes).
+ *          NONE              Do not generate LED code (gains 18 bytes).
  *          ACTIVE_HIGH       LED is on when output pin is high. This will toggle between 1 and 0.
- *          ACTIVE_LOW        LED is on when output pin is low.  This will toggle between Z and 0.
+ *          ACTIVE_LOW        LED is on when output pin is low.  This will toggle between Z and 0. + 2 bytes
  *
  *  LED_DDR,LED_PORT,LED_PIN  Where is your LED connected?
  *

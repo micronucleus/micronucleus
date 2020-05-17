@@ -50,11 +50,11 @@
 #endif
 
 // Postscript are the few bytes at the end of programmable memory which store user program reset vector and optionally OSCCAL calibration
-//#if OSCCAL_SAVE_CALIB
+#if OSCCAL_SAVE_CALIB
 #define POSTSCRIPT_SIZE 6
-//#else
-//#define POSTSCRIPT_SIZE 4
-//#endif
+#else
+#define POSTSCRIPT_SIZE 4
+#endif
 #define PROGMEM_SIZE (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) /* max size of user program */
 
 // verify the bootloader address aligns with page size
@@ -346,7 +346,7 @@ int main(void) {
 #endif
 
 #if OSCCAL_SAVE_CALIB
-    // adjust clock to previous calibration value, so bootloader starts with proper clock calibration
+    // Adjust clock to previous calibration value, so bootloader AND User program starts with proper clock calibration, even when not connected to USB
     unsigned char stored_osc_calibration = pgm_read_byte(BOOTLOADER_ADDRESS - TINYVECTOR_OSCCAL_OFFSET);
     if (stored_osc_calibration != 0xFF) {
         OSCCAL = stored_osc_calibration;
@@ -473,7 +473,7 @@ int main(void) {
             asm volatile("wdr");
             // perform cyclically watchdog reset, for the case it is fused on and we can not disable it.
 
-#if OSCCAL_SLOW_PROGRAMMING
+#if OSCCAL_SLOW_PROGRAMMING // reduce clock to enable save flash programming timing
             uint8_t osccal_tmp  = OSCCAL;
             OSCCAL      = osccal_default;
 #endif

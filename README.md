@@ -31,7 +31,7 @@ The bootloader is the recommended configuration [`entry_on_power_on_no_pullup_fa
 2. Run one of the Windows [scripts](https://github.com/ArminJo/micronucleus-firmware/tree/master/utils)
 like e.g. the [Burn_upgrade-t85_default.cmd](utils/Burn_upgrade-t85_default.cmd).
 
-# Configuration overview is [here](firmware/configuration)
+# Configuration overview is [here](firmware/configuration#overview)
 
 # New features
 ## MCUSR content now available in sketch

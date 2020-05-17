@@ -48,7 +48,6 @@
  */
 
 /* ----------------------- Optional Hardware Config ------------------------ */
-
 //#define USB_CFG_PULLUP_IOPORTNAME   B
 /* If you connect the 1.5k pullup resistor from D- to a port pin instead of
  * V+, you can connect and disconnect the device from firmware by calling
@@ -219,12 +218,16 @@
  *                            This value will be reloaded after reset and will also be used for the user
  *                            program unless "OSCCAL_RESTORE_DEFAULT" is active. This allows calibrate the internal
  *                            RC oscillator to the F_CPU target frequency +/-1% from the USB timing. Please note
- *                            that only true if the ambient temperature does not change.
+ *                            that this is only true if the ambient temperature does not change.
  *                            Adds ~38 bytes.
  *
  *  OSCCAL_HAVE_XTAL          Set this to '1' if you have an external crystal oscillator. In this case no attempt
  *                            will be made to calibrate the oscillator. You should deactivate both options above
  *                            if you use this to avoid redundant code.
+ *
+ *  OSCCAL_SLOW_PROGRAMMING   Setting this to '1' will set OSCCAL back to the factory calibration during programming to make
+ *                            sure correct timing is used for the flash writes. This is needed if the micronucleus clock
+ *                            speed significantly deviated from the default clock. E.g. 12 Mhz on ATtiny841 vs. 8Mhz default.
  *
  *  If both options are selected, OSCCAL_RESTORE_DEFAULT takes precedence.
  *
