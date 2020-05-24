@@ -9,6 +9,14 @@ Please note that Micronucleus is a completely independent project and is not afi
 
 - [Digispark](http://digistump.com/products/1) by [Digistump](digistump.com) - Widely spread tiny USB Developmentboard with Arduino-Support.
 
+![DigisparkProPinLayout](pictures/DigisparkProPinLayout.png)
+
+# Digispark clone and originals
+On the photos below you see from left-to-right: a clone, an old genuine and a new genuine board. The clone is larger. You can tell from the locations of the (zener)diodes with respect to the Attiny85 and the powerLED orientation.
+The value of the USB pullup resistor on a genuine Digispark Micro-USB is 1 kOhm (102). The series resistors are 22 Ohm.
+![DigisparkProPinLayout](pictures/Digispark+Clone.png)
+![DigisparkProPinLayout](pictures/Digispark+Clone_Back.png)
+
 - [Olimexino 85](https://www.olimex.com/Products/Duino/AVR/open-source-hardware) by [Olimex](https://www.olimex.com) - Several different devboards fully assembled or as kits with USB interface
 
 - [Usblinky](https://metalab.at/wiki/Usblinky) by [Metalab](https://metalab.at) - Tiny USB controller for WS2812 RGB LEDs.
