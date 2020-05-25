@@ -34,8 +34,8 @@ like e.g. the [Burn_upgrade-t85_default.cmd](utils/Burn_upgrade-t85_default.cmd)
 # Configuration overview is [here](firmware/configuration#overview)
 
 # New features
-## MCUSR content now available in sketch
-In this versions the reset flags in the MCUSR register are no longer cleared by micronucleus and can therefore read out by the sketch!<br/>
+## MCUSR content now available in userprogram
+In this versions the reset flags in the MCUSR register are no longer cleared by micronucleus and can therefore read out by the userprogram!<br/>
 If you use the flags in your program or use the `ENTRY_POWER_ON` boot mode, **you must clear them** with `MCUSR = 0;` **after** saving or evaluating them.
 If you do not reset the flags, and use the `ENTRY_POWER_ON` mode of the bootloader, the bootloader will be entered even after a reset, since the power on reset flag in MCUSR is still set!<br/>
 For `ENTRY_EXT_RESET` configuration see [Fixed wrong ENTRY_EXT_RESET].

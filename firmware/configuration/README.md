@@ -28,7 +28,7 @@ If not otherwise noted, the OSCCAL value is calibrated (+/- 1%) after boot for a
 ### Legend
 - [ENTRY_POWER_ON](#entry_power_on-entry-condition) - Only enter bootloader on power on, not on reset or brownout.
 - [ENTRY_EXT_RESET](#entry_ext_reset-entry-condition) - Only enter bootloader on reset, not on power up.
-- [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit) - If not connected to USB (e.g. powered via VIN) the sketch starts after 300 ms (+ initial 300 ms) -> 600 ms.
+- [FAST_EXIT_NO_USB_MS=300](#fast_exit_no_usb_ms-for-fast-bootloader-exit) - If not connected to USB (e.g. powered via VIN) the userprogram starts after 300 ms (+ initial 300 ms) -> 600 ms.
 - [START_WITHOUT_PULLUP](#start_without_pullup) - Bootloader does not hang up, if no pullup is activated/connected.
 - [ENABLE_SAFE_OPTIMIZATIONS](#enable_safe_optimizations) - jmp 0x0000 does not initialize the stackpointer.
 - [LED_MODE=ACTIVE_HIGH](https://github.com/ArminJo/micronucleus-firmware/blob/eebe73c46e7780d52c92e6f1c00c72edc26b7769/firmware/main.c#L527) - The built in LED flashes during the 5 seconds of the bootloader waiting for commands.
@@ -59,7 +59,7 @@ The 100 ms time to reset may depend on the type of host CPU etc., so I took 200 
 
 ## [`ENTRY_POWER_ON`](t85_entry_on_power_on/bootloaderconfig.h#L108) entry condition
 The `ENTRY_POWER_ON` configuration adds 18 bytes to the ATtiny85 default configuration, but this behavior is **what you normally need** if you use a Digispark board, since it is programmed by attaching to the USB port resulting in power up.<br/>
-In this configuration **a reset will immediately start your sketch** without any delay.<br/>
+In this configuration **a reset will immediately start your userprogram** without any delay.<br/>
 Do not forget to **reset the flags in setup()** with `MCUSR = 0;` to make it work!<br/>
 
 ## [`ENTRY_EXT_RESET`](t85_entry_on_reset_no_pullup/bootloaderconfig.h#L122) entry condition
@@ -74,7 +74,7 @@ The `START_WITHOUT_PULLUP` configuration adds 16 to 18 bytes for an additional c
 The recommended configuration is *entry_on_power_on_no_pullup_fast_exit_on_no_USB*:
 - Entry on power on, no entry on reset, ie. after a reset the application starts immediately.
 - Start even if pullup is disconnected. Otherwise the bootloader hangs forever, if you commect the Pullup to USB-VCC to save power.
-- Fast exit of bootloader (after 600 ms) if there is no host program sending us data (to upload a new application/sketch).
+- Fast exit of bootloader (after 600 ms) if there is no host program sending us data (to upload a new userprogram/sketch).
 
 #### Hex files for these configuration are already available in the [releases](/firmware/releases) and [upgrades](/firmware/upgrades) folders.
 
