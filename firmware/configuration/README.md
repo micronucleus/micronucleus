@@ -1,6 +1,4 @@
-# Overview
-
-## Computing the values
+# Computing the values
 The actual memory footprint for each configuration can be found in the file [*firmware/build.log*](firmware/build.log).<br/>
 Bytes used by the mironucleus bootloader can be computed by taking the data size value in *build.log*, 
 rounding it up to the next multiple of the page size which is e.g. 64 bytes for ATtiny85 and 128 bytes for ATtiny176.<br/>
