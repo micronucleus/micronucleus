@@ -31,7 +31,7 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
 # Options:
-CFLAGS += -I. -g2 -Os # -Wall
+CFLAGS += -I. -g2 -Os -Wall -Wextra
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 

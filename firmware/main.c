@@ -130,7 +130,7 @@ static inline void leaveBootloader(void);
 void blinkLED(uint8_t aBlinkCount);
 
 // This function is never called and optimized out, it is just here to suppress a compiler warning.
-USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq) {
+USB_PUBLIC usbMsgLen_t usbFunctionDescriptor(struct usbRequest *rq __attribute__((unused))) {
     return 0;
 }
 
@@ -564,13 +564,16 @@ int main(void) {
 #ifdef USB_CFG_PULLUP_IOPORTNAME
         usbDeviceDisconnect(); // Changing USB_PULLUP_OUT to input() to avoid to drive the pullup resistor, and set level to low.
 #else
-        // with STR(), the compiler is able to optimize the if :-)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Waddress"
+        // with STR(), the compiler is able to optimize the if :-) but gives a warning we can ignore.
         if (STR(USBDDR) == STR(LED_DDR) && LED_MODE != ACTIVE_LOW) {
             USBDDR = 0; // Set all pins to input, including LED and D- pin. The latter keeps device connected.
         } else {
             usbDeviceConnect(); // Changing only D- to input(). This keeps device connected.
         }
 #endif
+#pragma GCC diagnostic pop
 
         /*
          * Disable all previously enabled interrupts.
@@ -587,10 +590,15 @@ int main(void) {
 /*
  * For debugging purposes
  */
-void blinkLED(uint8_t aBlinkCount) {
+#if LED_MODE!=NONE
+void blinkLED(uint8_t aBlinkCount)
+#else
+void blinkLED(uint8_t aBlinkCount  __attribute__((unused)))
+#endif
+{
 #if LED_MODE!=NONE
     LED_INIT();
-    for (uint8_t i = 0; i < MCUSR; ++i) {
+    for (uint8_t i = 0; i < aBlinkCount; ++i) {
 #  if LED_MODE==ACTIVE_HIGH
         LED_PORT |= _BV(LED_PIN);
 #  else
