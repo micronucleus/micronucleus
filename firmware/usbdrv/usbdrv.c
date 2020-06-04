@@ -70,10 +70,9 @@ usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM addre
 #endif
 
 #ifndef MNHACK_ONLY_FLASH_MSGPTR
-static uchar        usbMsgFlags;    /* flag values see below */
+uchar        usbMsgFlags;    /* flag values see USB_FLG_* */
 #endif
 
-#define USB_FLG_MSGPTR_IS_ROM   (1<<6)
 #define USB_FLG_USE_USER_RW     (1<<7)
 
 /*

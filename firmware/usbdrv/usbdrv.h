@@ -215,6 +215,8 @@ extern uchar usbMsgFlags;    /* flag values see USB_FLG_* */
  * address.
  */
 
+#define USB_FLG_MSGPTR_IS_ROM   (1<<6)
+
 USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
 /* This function is called when the driver receives a SETUP transaction from
  * the host which is not answered by the driver itself (in practice: class and
