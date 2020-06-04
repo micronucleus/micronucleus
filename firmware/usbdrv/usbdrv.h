@@ -196,7 +196,7 @@ USB_PUBLIC void usbInit(void);
  * not been changed from their default status (which is 0). If you have changed
  * them, set both back to 0 (configure them as input with no internal pull-up).
  */
-USB_PUBLIC void usbPoll(void);
+//USB_PUBLIC void usbPoll(void); // Replaced for micronucleus V2
 /* This function must be called at regular intervals from the main loop.
  * Maximum delay between calls is somewhat less than 50ms (USB timeout for
  * accepting a Setup message). Otherwise the device will not be recognized.

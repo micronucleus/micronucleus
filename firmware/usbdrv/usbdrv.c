@@ -318,7 +318,7 @@ USB_PUBLIC void usbSetInterrupt3(uchar *data, uchar len)
  * This may cause problems with undefined symbols if compiled without
  * optimizing!
  */
-
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
   #define GET_DESCRIPTOR(cfgProp, staticName)         \
       if(cfgProp){                                    \
           if((cfgProp) & USB_PROP_IS_RAM)             \
@@ -330,14 +330,27 @@ USB_PUBLIC void usbSetInterrupt3(uchar *data, uchar len)
               usbMsgPtr = (usbMsgPtr_t)(staticName);  \
           }                                           \
       }
-
+#else
+// no ram descriptor possible here
+#define GET_DESCRIPTOR(cfgProp, staticName)         \
+    if(cfgProp){                                    \
+        if((cfgProp) & USB_PROP_IS_DYNAMIC){        \
+            len = usbFunctionDescriptor(rq);        \
+        }else{                                      \
+            len = USB_PROP_LENGTH(cfgProp);         \
+            usbMsgPtr = (usbMsgPtr_t)(staticName);  \
+        }                                           \
+    }
+#endif
 /* usbDriverDescriptor() is similar to usbFunctionDescriptor(), but used
  * internally for all types of descriptors.
  */
 static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
 {
 usbMsgLen_t len = 0;
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
 uchar       flags = USB_FLG_MSGPTR_IS_ROM;
+#endif
 
     SWITCH_START(rq->wValue.bytes[1])
     SWITCH_CASE(USBDESCR_DEVICE)    /* 1 */
@@ -347,7 +360,9 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
     SWITCH_CASE(USBDESCR_STRING)    /* 3 */
 #if USB_CFG_DESCR_PROPS_STRINGS & USB_PROP_IS_DYNAMIC
         if(USB_CFG_DESCR_PROPS_STRINGS & USB_PROP_IS_RAM)
-            flags = 0;
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
+           flags = 0;
+#endif
         len = usbFunctionDescriptor(rq);
 #else   /* USB_CFG_DESCR_PROPS_STRINGS & USB_PROP_IS_DYNAMIC */
         SWITCH_START(rq->wValue.bytes[0])
@@ -361,6 +376,11 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
             GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
         SWITCH_DEFAULT
             if(USB_CFG_DESCR_PROPS_UNKNOWN & USB_PROP_IS_DYNAMIC){
+                if(USB_CFG_DESCR_PROPS_UNKNOWN & USB_PROP_IS_RAM){
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
+                    flags = 0;
+#endif
+                }
                 len = usbFunctionDescriptor(rq);
             }
         SWITCH_END
@@ -373,6 +393,11 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
 #endif
     SWITCH_DEFAULT
         if(USB_CFG_DESCR_PROPS_UNKNOWN & USB_PROP_IS_DYNAMIC){
+            if(USB_CFG_DESCR_PROPS_UNKNOWN & USB_PROP_IS_RAM){
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
+                flags = 0;
+#endif
+            }
             len = usbFunctionDescriptor(rq);
         }
     SWITCH_END
@@ -586,9 +611,10 @@ uchar       len;
 
 /* ------------------------------------------------------------------------- */
 
+#ifdef USB_RESET_HOOK
 static inline void usbHandleResetHook(uchar notResetState)
 {
-#ifdef USB_RESET_HOOK
+
 static uchar    wasReset;
 uchar           isReset = !notResetState;
 
@@ -596,52 +622,51 @@ uchar           isReset = !notResetState;
         USB_RESET_HOOK(isReset);
         wasReset = isReset;
     }
+}
 #else
 //    notResetState = notResetState;  // avoid compiler warning -> leads to another warning :-(
 #endif
-}
-
 /* ------------------------------------------------------------------------- */
-
-USB_PUBLIC void usbPoll(void)
-{
-schar   len;
-uchar   i;
-
-    len = usbRxLen - 3;
-    if(len >= 0){
-/* We could check CRC16 here -- but ACK has already been sent anyway. If you
- * need data integrity checks with this driver, check the CRC in your app
- * code and report errors back to the host. Since the ACK was already sent,
- * retries must be handled on application level.
- * unsigned crc = usbCrc16(buffer + 1, usbRxLen - 3);
- */
-        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len);
-#if USB_CFG_HAVE_FLOWCONTROL
-        if(usbRxLen > 0)    /* only mark as available if not inactivated */
-            usbRxLen = 0;
-#else
-        usbRxLen = 0;       /* mark rx buffer as available */
-#endif
-    }
-    if(usbTxLen & 0x10){    /* transmit system idle */
-        if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
-            usbBuildTxBlock();
-        }
-    }
-    for(i = 20; i > 0; i--){
-        uchar usbLineStatus = USBIN & USBMASK;
-        if(usbLineStatus != 0)  /* SE0 has ended */
-            goto isNotReset;
-    }
-    /* RESET condition, called multiple times during reset */
-    usbNewDeviceAddr = 0;
-    usbDeviceAddr = 0;
-    usbResetStall();
-    DBG1(0xff, 0, 0);
-isNotReset:
-    usbHandleResetHook(i);
-}
+// Replaced for micronucleus V2
+//USB_PUBLIC void usbPoll(void)
+//{
+//schar   len;
+//uchar   i;
+//
+//    len = usbRxLen - 3;
+//    if(len >= 0){
+///* We could check CRC16 here -- but ACK has already been sent anyway. If you
+// * need data integrity checks with this driver, check the CRC in your app
+// * code and report errors back to the host. Since the ACK was already sent,
+// * retries must be handled on application level.
+// * unsigned crc = usbCrc16(buffer + 1, usbRxLen - 3);
+// */
+//        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len);
+//#if USB_CFG_HAVE_FLOWCONTROL
+//        if(usbRxLen > 0)    /* only mark as available if not inactivated */
+//            usbRxLen = 0;
+//#else
+//        usbRxLen = 0;       /* mark rx buffer as available */
+//#endif
+//    }
+//    if(usbTxLen & 0x10){    /* transmit system idle */
+//        if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
+//            usbBuildTxBlock();
+//        }
+//    }
+//    for(i = 20; i > 0; i--){
+//        uchar usbLineStatus = USBIN & USBMASK;
+//        if(usbLineStatus != 0)  /* SE0 has ended */
+//            goto isNotReset;
+//    }
+//    /* RESET condition, called multiple times during reset */
+//    usbNewDeviceAddr = 0;
+//    usbDeviceAddr = 0;
+//    usbResetStall();
+//    DBG1(0xff, 0, 0);
+//isNotReset:
+//    usbHandleResetHook(i);
+//}
 
 /* ------------------------------------------------------------------------- */
 
