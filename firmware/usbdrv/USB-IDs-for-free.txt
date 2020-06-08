@@ -133,6 +133,20 @@ PID dec (hex)  | VID dec (hex) | Description of use
 ---------------+---------------+-------------------------------------------
 10206 (0x27de) | 5824 (0x16c0) | For MIDI class devices
 ---------------+---------------+-------------------------------------------
+10207 (0x27df) | 5824 (0x16c0) | For Mass Storage class devices
+---------------+---------------+-------------------------------------------
+10208 (0x27e0) | 5824 (0x16c0) | For Audio class devices
+---------------+---------------+-------------------------------------------
+10209 (0x27e1) | 5824 (0x16c0) | For CDC-ECM class devices
+---------------+---------------+-------------------------------------------
+10210 (0x27e2) | 5824 (0x16c0) | For MTP class devices
+---------------+---------------+-------------------------------------------
+
+Note that the last six cannot be implemented using V-USB in a standards
+compliant way because they require bulk endpoints which are forbidden for
+low speed devices. We provide them nevertheless, either if you want to
+implement a non-compliant device or implement it using other technology
+than V-USB.
 
 
 =================

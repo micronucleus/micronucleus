@@ -98,6 +98,8 @@ __init:
 
 #if ! defined(ENABLE_UNSAFE_OPTIMIZATIONS) && ! defined(ENABLE_SAFE_OPTIMIZATIONS)
     // - reset status register especially the interrupt enable bit, but the interrupt enable bit is always in a disable state after reset!
+    // It would allow a jmp 0000 to safely enter the bootloader with a jmp 0000, but who want to do this and cannot disable the interrupts before???
+    // Restarting the program with jmp000 works without disabling the interrupts!
     // out        0x3f,r1 // gains 2 bytes
     // Set stackpointer. Datasheet says: Initial value after reset is RAMEND
     ldi        r28,lo8(__stack)
