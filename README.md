@@ -1,7 +1,7 @@
 # Micronucleus USB Bootloader for ATtiny Microcontrollers
 ### Version 2.5
 [![License: GPL v2](https://img.shields.io/badge/License-GPLv2-blue.svg)](https://www.gnu.org/licenses/gpl-2.0)
-[![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https://github.com/ArminJo/micronucleus-firmware)](https://github.com/brentvollebregt/hit-counter)
+[![Hit Counter](https://hitcounter.pythonanywhere.com/count/tag.svg?url=https://github.com/micronucleus/micronucleus)](https://github.com/brentvollebregt/hit-counter)
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny.
 
@@ -12,7 +12,7 @@ Micronucleus is widely installed on thousands of open source hardware devices. P
 
 # Usage
 
-*Please take a look at the [Digispark section](Digispark_usage.md) for specifics about the Arduino environment.*
+*Please take a look at the [Firmware fork](https://github.com/ArminJo/micronucleus-firmware) for specifics about the firmware configuration and the Arduino environment.*
 
 The bootloader allows uploading of new firmware via USB. In its usual configuration it is invoked at device power on or reset and will identify to the host computer. If no communication is initiated by the host machine within a given time (default are 6 seconds), the bootloader will time out and enter the user program, if one is present.
 
@@ -41,7 +41,7 @@ Other make options:
     make CONFIG=<config_name> fuse   	# Configure fuses
     make CONFIG=<config_name> flash  	# Uploade the bootloader using AVRDUDE
 
-Please refer to the [configuration overview](firmware/configuration#overview) for further detailss.
+Please refer to the [configuration overview](firmware/configuration) for further details.
 
 ## The MCUSR content is now available in the userprogram
 
