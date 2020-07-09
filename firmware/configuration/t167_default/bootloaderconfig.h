@@ -71,13 +71,13 @@
 
 // This is configured for PORTB.
 
-#define USB_INTR_CFG            PCMSK1
+#define USB_INTR_CFG            PCMSK1 // Pin interrupt enable register
 #define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
 #define USB_INTR_CFG_CLR        0
-#define USB_INTR_ENABLE         PCICR
-#define USB_INTR_ENABLE_BIT     PCIE1
-#define USB_INTR_PENDING        PCIFR
-#define USB_INTR_PENDING_BIT    PCIF1
+#define USB_INTR_ENABLE         PCICR // Global interrupt enable register
+#define USB_INTR_ENABLE_BIT     PCIE1 // Bit position in global interrupt enable register
+#define USB_INTR_PENDING        PCIFR // Register to read interrupt flag
+#define USB_INTR_PENDING_BIT    PCIF1 // Bit position in register to read interrupt flag
 
 /* Configuration for PORTA */
 /*

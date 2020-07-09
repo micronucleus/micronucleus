@@ -11,7 +11,7 @@
  *       LED    :   None
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16.5 MHz V-USB implementation with PLL
- * Last Change:     Mar 16,2014
+ * Last Change:     Jun 16,2020
  *
  * License: GNU GPL v2 (see License.txt
  */

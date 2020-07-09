@@ -4,7 +4,7 @@
 
 # Controller type: ATtiny 85 - 16.5 MHz
 # Configuration:   Default
-# Last Change:     4/2020
+# Last Change:     Jun 16,2020
 
 #CFLAGS += -DENABLE_SAFE_OPTIMIZATIONS  # This saves 10 bytes and disables reliable jump to 0x0000, which one should avoid anyway.
 
