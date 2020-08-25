@@ -53,7 +53,7 @@ t167_default    -   ATtiny167 default (uses xtal)       -   1412 bytes
 Nanite841       -   Nanite841 firmware                  -   1610 bytes
 m328p_extclock  -   ATMega328p external clock           -   1434 bytes
 
-Please note that the configuration "t84_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
+Please note that the configuration "t85_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
