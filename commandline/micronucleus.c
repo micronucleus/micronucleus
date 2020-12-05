@@ -137,9 +137,12 @@ int main(int argc, char **argv) {
     } else if (strcmp(argv[arg_pointer], "--timeout") == 0) {
       arg_pointer += 1;
       if (sscanf(argv[arg_pointer], "%d", &timeout) != 1) {
-        printf("Did not understand --timeout value\n");
+        fprintf(stderr, "Did not understand --timeout value: %s\n", argv[arg_pointer]);
         return EXIT_FAILURE;
       }
+    } else if (argv[arg_pointer][0] == '-') {
+      fprintf(stderr, "Unrecognized option: %s\n", argv[arg_pointer]);
+      return EXIT_FAILURE;
     } else {
       file = argv[arg_pointer];
     }
@@ -155,10 +158,10 @@ int main(int argc, char **argv) {
 
   setProgressData("waiting", 1);
   if (dump_progress) printProgress(0.5);
-  printf("> Please plug in or reset the device");
-  if (timeout > 0) printf(" (will time out in %d seconds)", timeout);
-  printf(" ...\n");
-  printf("> Press CTRL-C to terminate the program.\n");
+  fprintf(stderr, "> Please plug in or reset the device");
+  if (timeout > 0) fprintf(stderr, " (will time out in %d seconds)", timeout);
+  fprintf(stderr, " ...\n");
+  fprintf(stderr, "> Press CTRL-C to terminate the program.\n");
 
 
   time_t start_time, current_time;
