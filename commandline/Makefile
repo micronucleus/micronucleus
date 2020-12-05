@@ -5,7 +5,7 @@ CC=gcc
 
 ifeq ($(shell uname), Linux)
 	USBFLAGS=$(shell libusb-config --cflags)
-	USBLIBS=$(shell libusb-config --libs)
+	USBLIBS= -static $(shell libusb-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)
