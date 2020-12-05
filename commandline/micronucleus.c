@@ -158,11 +158,17 @@ int main(int argc, char **argv) {
 
   setProgressData("waiting", 1);
   if (dump_progress) printProgress(0.5);
+
+ /*
+   * For compatibility with the Arduino IDE, these messages should be
+   * written to stderr where they will be seen immediately; stdout is
+   * buffered by the IDE, so Micronucleus would appear to silently
+   * hang otherwise.
+   */
   fprintf(stderr, "> Please plug in or reset the device");
   if (timeout > 0) fprintf(stderr, " (will time out in %d seconds)", timeout);
   fprintf(stderr, " ...\n");
   fprintf(stderr, "> Press CTRL-C to terminate the program.\n");
-
 
   time_t start_time, current_time;
   time(&start_time);
