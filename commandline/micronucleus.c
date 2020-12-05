@@ -155,8 +155,10 @@ int main(int argc, char **argv) {
 
   setProgressData("waiting", 1);
   if (dump_progress) printProgress(0.5);
-  printf("> Please plug in the device ... \n");
-  printf("> Press CTRL+C to terminate the program.\n");
+  printf("> Please plug in or reset the device");
+  if (timeout > 0) printf(" (will time out in %d seconds)", timeout);
+  printf(" ...\n");
+  printf("> Press CTRL-C to terminate the program.\n");
 
 
   time_t start_time, current_time;
@@ -173,7 +175,7 @@ int main(int argc, char **argv) {
   }
 
   if (my_device == NULL) {
-    printf("> Device search timed out\n");
+    printf("> Device search timed out!\n");
     return EXIT_FAILURE;
   }
 
