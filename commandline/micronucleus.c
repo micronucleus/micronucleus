@@ -165,7 +165,7 @@ int main(int argc, char **argv) {
    * buffered by the IDE, so Micronucleus would appear to silently
    * hang otherwise.
    */
-  fprintf(stderr, "> Please plug in or reset the device");
+  fprintf(stderr, "> Please plug in the device");
   if (timeout > 0) fprintf(stderr, " (will time out in %d seconds)", timeout);
   fprintf(stderr, " ...\n");
   fprintf(stderr, "> Press CTRL-C to terminate the program.\n");
