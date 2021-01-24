@@ -1,0 +1,70 @@
+name: Build CLI tools
+
+on:
+  push:
+    branches:
+        - '*'
+    tags:
+        - '*'
+        - '!*-LATEST'
+
+jobs:
+  build-all:
+    strategy:
+      matrix:
+         include:
+         - os: ubuntu-latest
+           shell: bash
+         - os: macos-latest
+           shell: bash
+         - os: windows-2019
+           shell: msys2 {0}
+
+    runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+    steps:
+    - name: install dependencies
+      run: sudo sh -c "apt-get update && apt-get install libusb-dev"
+      if: runner.os == 'Linux'
+
+    - uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: git base-devel binutils mingw-w64-x86_64-toolchain make zip mingw-w64-x86_64-libusb-win32
+        update: true
+      if: runner.os == 'Windows'
+
+    - name: install dependencies
+      run: brew install libusb-compat
+      if: runner.os == 'macOS'
+
+    - uses: actions/checkout@v2
+
+    - name: make
+      id: make
+      env:
+        BUILD_OS: ${{ runner.os }}
+      run: |
+          bash -x $GITHUB_WORKSPACE/.github/workflows/build-pkg.sh
+
+    - name: Branch head release
+      uses: johnwbyrd/update-release@v1.0.0
+      if: steps.make.outputs.RELEASE_BRANCH != ''
+      with:
+        token: "${{ secrets.GITHUB_TOKEN }}"
+        release: "${{ steps.make.outputs.RELEASE_BRANCH }}-LATEST"
+        tag: "${{ steps.make.outputs.RELEASE_BRANCH }}-LATEST"
+        prerelease: true
+        message: "Development build on branch ${{ steps.make.outputs.RELEASE_BRANCH }}"
+        files: ${{ steps.make.outputs.RELEASE_FILE }}
+
+    - name: Tagged release
+      uses: johnwbyrd/update-release@v1.0.0
+      if: steps.make.outputs.RELEASE_TAG != ''
+      with:
+        token: "${{ secrets.GITHUB_TOKEN }}"
+        prerelease: false
+        message: "Release build ${{ steps.make.outputs.RELEASE_TAG }}"
+        files: ${{ steps.make.outputs.RELEASE_FILE }}
