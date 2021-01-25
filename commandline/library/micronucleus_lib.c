@@ -79,10 +79,19 @@ micronucleus* micronucleus_connect(int fast_mode) {
         if (nucleus->version.major>=2) {  // Version 2.x
           // get 6 byte nucleus info
           unsigned char buffer[6];
+          errno = 0;
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
 
           // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-          if (res<0) return NULL;  
+          if (res<0) return NULL;
+
+          // Only seen on windows.
+          // This happens if the usb device is not listening, but did not disconnect from the USB bus,
+          // which is a desirable behavior, since otherwise you get that nasty error in device manager.
+          if (res<6) {
+          	fprintf(stderr, "%s. Micronucleus device seems to be inactive. Please unplug and replug or reset the device.\n", strerror(errno));
+          	return NULL;
+          }
           
           assert(res >= 6);
 
