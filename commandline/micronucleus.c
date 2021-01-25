@@ -264,7 +264,7 @@ int main(int argc, char **argv) {
     printf(">> Reconnected! Continuing upload sequence...\n");
 
   } else if (res != 0) {
-    printf(">> Flash erase error %d has occured ...\n", res);
+    printf(">> Flash erase error: %s  has occured ...\n", strerror(-res));
     printf(">> Please unplug the device and restart the program.\n");
     return EXIT_FAILURE;
   }
@@ -275,7 +275,7 @@ int main(int argc, char **argv) {
     setProgressData("writing", 5);
     res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
     if (res != 0) {
-      printf(">> Flash write error %d has occured ...\n", res);
+      printf(">> Flash write error: %s has occured ...\n", strerror(-res));
       printf(">> Please unplug the device and restart the program.\n");
       return EXIT_FAILURE;
     }
@@ -289,7 +289,7 @@ int main(int argc, char **argv) {
     res = micronucleus_startApp(my_device);
 
     if (res != 0) {
-      printf(">> Run error %d has occured ...\n", res);
+      printf(">> Run error: %s has occured ...\n", strerror(-res));
       printf(">> Please unplug the device and restart the program. \n");
       return EXIT_FAILURE;
     }

@@ -233,7 +233,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
                   "The reset vector of the user program does not contain a branch instruction,\n"
                   "therefore the bootloader can not be inserted. Please rearrage your code.\n"
                   );
-          return -1;         
+          return -8;  // choose #define ENOEXEC     8   /* Exec format error */
         } 
         
         // Patch in jmp to bootloader. 
@@ -294,7 +294,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
       } else if (deviceHandle->version.major >= 2) {
         // Firmware rev.2 uses individual set up packets to transfer data
         res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 1, page_length, address, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-        if (res) return -1;
+        if (res) return res;
         int i;
         
         for (i=0; i< page_length; i+=4)
@@ -304,7 +304,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
           w2=(page_buffer[i+3]<<8)+(page_buffer[i+2]<<0);
           
           res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 3, w1, w2, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-          if (res) return -1;
+          if (res) return res;
         }     
       }  
     /*
@@ -337,7 +337,7 @@ int micronucleus_startApp(micronucleus* deviceHandle) {
   res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 4, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
 
   if(res!=0)
-    return -1;
+    return res;
   else
     return 0;
 }
