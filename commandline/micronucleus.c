@@ -157,7 +157,7 @@ int main(int argc, char **argv) {
   if (dump_progress) printProgress(0.5);
   printf("> Please plug in the device ... \n");
   printf("> Press CTRL+C to terminate the program.\n");
-
+  fflush(stdout);
 
   time_t start_time, current_time;
   time(&start_time);
@@ -190,13 +190,14 @@ int main(int argc, char **argv) {
     }
   }
   printProgress(1.0);
-
+      
   printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
   if (my_device->signature1) printf("> Device signature: 0x1e%02x%02x \n",(int)my_device->signature1,(int)my_device->signature2);
   printf("> Available space for user applications: %d bytes\n", my_device->flash_size);
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
   printf("> Whole page count: %d  page size: %d\n", my_device->pages,my_device->page_size);
   printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
+  fflush(stdout);
 
   int startAddress = 1, endAddress = 0;
 
@@ -323,6 +324,7 @@ static void printProgress(float progress) {
     }
   }
 
+  fflush(stdout);
   last_step = progress_step;
 }
 

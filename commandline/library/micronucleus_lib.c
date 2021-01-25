@@ -33,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
+// called every 100 ms
 micronucleus* micronucleus_connect(int fast_mode) {
   micronucleus *nucleus = NULL;
   struct usb_bus *busses;
@@ -43,6 +44,7 @@ micronucleus* micronucleus_connect(int fast_mode) {
   usb_find_devices();
 
   busses = usb_get_busses();
+  
   struct usb_bus *bus;
   for (bus = busses; bus; bus = bus->next) {
     struct usb_device *dev;
@@ -63,14 +65,19 @@ micronucleus* micronucleus_connect(int fast_mode) {
           return NULL;
         }
 
+        errno = 0;
         nucleus->device = usb_open(dev);
+        if (errno == 13) {
+                fprintf(stderr, "usb_open(): %s. For Linux, copy file ~/.arduino15/packages/digistump/tools/micronucleus/49-micronucleus.rules to /etc/udev/rules.d.\n", strerror(errno));
+                return NULL;
+        }
         if (!nucleus->device) {
                 fprintf(stderr, "Error opening bus %s device %s: %s\n", bus->dirname, dev->filename, strerror(errno));
                 return NULL;
         }
 
         if (nucleus->version.major>=2) {  // Version 2.x
-          // get nucleus info
+          // get 6 byte nucleus info
           unsigned char buffer[6];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
 
@@ -105,13 +112,13 @@ micronucleus* micronucleus_connect(int fast_mode) {
           nucleus->signature2 = buffer[5];           
           
         } else {  // Version 1.x        
-          // get nucleus info
+          // get 4 byte nucleus info
           unsigned char buffer[4];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
           
           // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-          if (res<0) return NULL;  
-            
+          if (res<0) return NULL; 
+                     
           assert(res >= 4);
 
           nucleus->flash_size = (buffer[0]<<8) + buffer[1];
