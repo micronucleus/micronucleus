@@ -140,6 +140,9 @@ int main(int argc, char **argv) {
         printf("Did not understand --timeout value\n");
         return EXIT_FAILURE;
       }
+    } else if (argv[arg_pointer][0] == '-') {
+      fprintf(stderr, "Unrecognized option: %s\n", argv[arg_pointer]);
+      return EXIT_FAILURE;
     } else {
       file = argv[arg_pointer];
     }
@@ -155,7 +158,9 @@ int main(int argc, char **argv) {
 
   setProgressData("waiting", 1);
   if (dump_progress) printProgress(0.5);
-  printf("> Please plug in the device ... \n");
+  printf("> Please plug in the device");
+  if (timeout > 0) printf(" (will time out in %d seconds)", timeout);
+  printf(" ... \n");
   printf("> Press CTRL+C to terminate the program.\n");
   fflush(stdout);
 
@@ -173,7 +178,7 @@ int main(int argc, char **argv) {
   }
 
   if (my_device == NULL) {
-    printf("> Device search timed out\n");
+    printf("> Device search timed out!\n");
     return EXIT_FAILURE;
   }
 
