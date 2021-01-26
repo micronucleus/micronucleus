@@ -20,12 +20,10 @@ case $BUILD_OS in
     ;;
 esac
 
-g++ -o launcher${EXE_EXT} avr-dummy/avrdude-dummy.cpp
-
 RELEASE_FILE=$PKG_NAME-$(uname -m)-$(uname -s).zip
 mkdir $PKG_NAME
 if [ -n "$ZIPLIB" ]; then eval "cp -p $ZIPLIB $PKG_NAME"; ZIPLIB=$(basename "$ZIPLIB"); fi
-cp -p micronucleus${EXE_EXT} launcher${EXE_EXT} $PKG_NAME
+cp -p micronucleus${EXE_EXT} $PKG_NAME
 eval zip -r $WORKSPACE_DIR/$RELEASE_FILE $PKG_NAME
 
 ## Prepare release and artifact upload
