@@ -161,7 +161,7 @@ int main(int argc, char **argv) {
   printf("> Please plug in the device");
   if (timeout > 0) printf(" (will time out in %d seconds)", timeout);
   printf(" ... \n");
-  printf("> Press CTRL+C to terminate the program.\n");
+  // printf("> Press CTRL+C to terminate the program.\n"); // only true for Linux commandline :-(
   fflush(stdout);
 
   time_t start_time, current_time;
