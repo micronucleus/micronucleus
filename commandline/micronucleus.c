@@ -265,6 +265,7 @@ int main(int argc, char **argv) {
 
   } else if (res != 0) {
     printf(">> Flash erase error: %s  has occured ...\n", strerror(-res));
+    printf(">> Consider to use another USB port or to restore the bootloader with an ISP, if this continues to happen.\n");
     printf(">> Please unplug the device and restart the program.\n");
     return EXIT_FAILURE;
   }
@@ -276,6 +277,7 @@ int main(int argc, char **argv) {
     res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
     if (res != 0) {
       printf(">> Flash write error: %s has occured ...\n", strerror(-res));
+      printf(">> Consider to use another USB port or to restore the bootloader with an ISP, if this continues to happen.\n");
       printf(">> Please unplug the device and restart the program.\n");
       return EXIT_FAILURE;
     }
