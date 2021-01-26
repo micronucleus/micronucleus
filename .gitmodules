@@ -1,3 +1,0 @@
-[submodule "commandline/avr-dummy"]
-	path = commandline/avr-dummy
-	url = https://github.com/digistump/avr-dummy
