@@ -61,7 +61,7 @@ typedef struct _micronucleus_version {
   unsigned char minor;
 } micronucleus_version;
 
-#define MICRONUCLEUS_COMMANDLINE_VERSION "Commandline tool version: 2.4"
+#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.4 from " __DATE__)
 
 // handle representing one micronucleus device
 typedef struct _micronucleus {

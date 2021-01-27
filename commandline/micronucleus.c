@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
+      puts(MICRONUCLEUS_COMMANDLINE_VERSION);
       puts(usage);
       puts("");
       puts("  --type [intel-hex, raw]: Set upload file type to either intel hex or raw");
@@ -122,8 +123,6 @@ int main(int argc, char **argv) {
       puts("      --timeout [integer]: Timeout after waiting specified number of seconds");
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
-      puts("");
-      puts(MICRONUCLEUS_COMMANDLINE_VERSION);
       return EXIT_SUCCESS;
     } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
       dump_progress = 1;
@@ -151,6 +150,8 @@ int main(int argc, char **argv) {
   }
 
   if (file == NULL && erase_only == 0) {
+    // print version if we are called without any parameter
+    printf(MICRONUCLEUS_COMMANDLINE_VERSION);
     printf("Neither filename nor --erase-only given!\n\n");
     puts(usage);
     return EXIT_FAILURE;
