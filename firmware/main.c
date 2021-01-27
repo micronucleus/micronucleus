@@ -1,7 +1,7 @@
 /*
- * Project: Micronucleus -  v2.4
+ * Project: Micronucleus -  v2.5
  *
- * Micronucleus V2.4             (c) 2020 Armin Joachimsmeyer armin.joachimsmeyer@gmail.com
+ * Micronucleus V2.5             (c) 2020 Armin Joachimsmeyer armin.joachimsmeyer@gmail.com
  * Micronucleus V2.04            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  * Micronucleus V2.3             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  *                               (c) 2014 Shay Green
@@ -27,7 +27,7 @@
  */
 
 #define MICRONUCLEUS_VERSION_MAJOR 2
-#define MICRONUCLEUS_VERSION_MINOR 4 // 164 (0xA4) is shown in W10 Device manager in BCD but as :4 instead of A4
+#define MICRONUCLEUS_VERSION_MINOR 5 // 165 (0xA5) is shown in W10 Device manager in BCD but as :5 instead of A5
 
 #define RECONNECT_DELAY_MILLIS 300 // Time between disconnect and connect. Even 250 is to fast!
 #define __DELAY_BACKWARD_COMPATIBLE__ // Saves 2 bytes at _delay_ms(). Must be declared before the include util/delay.h

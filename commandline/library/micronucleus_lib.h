@@ -30,7 +30,7 @@
 * Header files
 ********************************************************************************/
 #if defined _WIN32
-#include <lusb0_usb.h>         // libusb-win32 
+#include <lusb0_usb.h>         // libusb-win32
 #else
 #include <usb.h>
 #endif
@@ -61,7 +61,7 @@ typedef struct _micronucleus_version {
   unsigned char minor;
 } micronucleus_version;
 
-#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.4 from " __DATE__)
+#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.5 from " __DATE__)
 
 // handle representing one micronucleus device
 typedef struct _micronucleus {
