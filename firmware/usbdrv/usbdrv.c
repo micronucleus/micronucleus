@@ -4,24 +4,24 @@
  * Creation Date: 2004-12-29
  * Tabsize: 4
  *
- 
+
  * Copyright: (c) 2005 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
  */
 
 /* This copy of usbdrv.c was optimized to reduce the memory footprint with micronucleus V2
  *
- * Changes: 
+ * Changes:
  *     a) Replies to USB SETUP IN Packets are now only possible from Flash
  *       * Commented out routines to copy from SRAM
  *       * remove msgflag variable and all handling involving it
- */ 
-#define MNHACK_ONLY_FLASH_MSGPTR                
+ */
+#define MNHACK_ONLY_FLASH_MSGPTR
 /*     b) Do not use preinitialized global variables to avoid having to initialize
  *        the data section.
  */
-#define MNHACK_NO_DATASECTION   
- 
+#define MNHACK_NO_DATASECTION
+
 #include "usbdrv.h"
 #include "oddebug.h"
 
@@ -68,8 +68,8 @@ usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM addre
 #else
   static usbMsgLen_t  usbMsgLen = USB_NO_MSG; /* remaining number of bytes */
 #endif
-  
-#ifndef MNHACK_ONLY_FLASH_MSGPTR                
+
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
 static uchar        usbMsgFlags;    /* flag values see below */
 #endif
 
@@ -375,11 +375,11 @@ uchar       flags = USB_FLG_MSGPTR_IS_ROM;
             len = usbFunctionDescriptor(rq);
         }
     SWITCH_END
-    
+
     flags=flags;  // Make compiler shut up about unused variable
-#ifndef MNHACK_ONLY_FLASH_MSGPTR                
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
     usbMsgFlags = flags;
-#endif    
+#endif
     return len;
 }
 
@@ -472,9 +472,9 @@ usbRequest_t    *rq = (void *)data;
         usbMsgLen_t replyLen;
         usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
         usbTxLen = USBPID_NAK;              /* abort pending transmit */
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
         usbMsgFlags = 0;
-#endif        
+#endif
         uchar type = rq->bmRequestType & USBRQ_TYPE_MASK;
         if(type != USBRQ_TYPE_STANDARD){    /* standard requests are handled by driver */
             replyLen = usbFunctionSetup(data);
@@ -532,22 +532,22 @@ static uchar usbDeviceRead(uchar *data, uchar len)
         {
             uchar i = len;
             usbMsgPtr_t r = usbMsgPtr;
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
             if(usbMsgFlags & USB_FLG_MSGPTR_IS_ROM){    /* ROM data */
-#endif          
+#endif
                 do{
                     uchar c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
                     *data++ = c;
                     r++;
                 }while(--i);
-#ifndef MNHACK_ONLY_FLASH_MSGPTR            
-             }else{  // RAM data 
+#ifndef MNHACK_ONLY_FLASH_MSGPTR
+             }else{  // RAM data
                 do{
                     *data++ = *((uchar *)r);
                     r++;
                 }while(--i);
             }
-#endif                      
+#endif
             usbMsgPtr = r;
         }
     }
@@ -601,56 +601,56 @@ uchar           isReset = !notResetState;
 }
 
 /* ------------------------------------------------------------------------- */
-
-USB_PUBLIC void usbPoll(void)
-{
-schar   len;
-uchar   i;
-
-    len = usbRxLen - 3;
-    if(len >= 0){
-/* We could check CRC16 here -- but ACK has already been sent anyway. If you
- * need data integrity checks with this driver, check the CRC in your app
- * code and report errors back to the host. Since the ACK was already sent,
- * retries must be handled on application level.
- * unsigned crc = usbCrc16(buffer + 1, usbRxLen - 3);
- */
-        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len);
-#if USB_CFG_HAVE_FLOWCONTROL
-        if(usbRxLen > 0)    /* only mark as available if not inactivated */
-            usbRxLen = 0;
-#else
-        usbRxLen = 0;       /* mark rx buffer as available */
-#endif
-    }
-    if(usbTxLen & 0x10){    /* transmit system idle */
-        if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
-            usbBuildTxBlock();
-        }
-    }
-    for(i = 20; i > 0; i--){
-        uchar usbLineStatus = USBIN & USBMASK;
-        if(usbLineStatus != 0)  /* SE0 has ended */
-            goto isNotReset;
-    }
-    /* RESET condition, called multiple times during reset */
-    usbNewDeviceAddr = 0;
-    usbDeviceAddr = 0;
-    usbResetStall();
-    DBG1(0xff, 0, 0);
-isNotReset:
-    usbHandleResetHook(i);
-}
+// Replaced for micronucleus V2
+//USB_PUBLIC void usbPoll(void)
+//{
+//schar   len;
+//uchar   i;
+//
+//    len = usbRxLen - 3;
+//    if(len >= 0){
+///* We could check CRC16 here -- but ACK has already been sent anyway. If you
+// * need data integrity checks with this driver, check the CRC in your app
+// * code and report errors back to the host. Since the ACK was already sent,
+// * retries must be handled on application level.
+// * unsigned crc = usbCrc16(buffer + 1, usbRxLen - 3);
+// */
+//        usbProcessRx(usbRxBuf + USB_BUFSIZE + 1 - usbInputBufOffset, len);
+//#if USB_CFG_HAVE_FLOWCONTROL
+//        if(usbRxLen > 0)    /* only mark as available if not inactivated */
+//            usbRxLen = 0;
+//#else
+//        usbRxLen = 0;       /* mark rx buffer as available */
+//#endif
+//    }
+//    if(usbTxLen & 0x10){    /* transmit system idle */
+//        if(usbMsgLen != USB_NO_MSG){    /* transmit data pending? */
+//            usbBuildTxBlock();
+//        }
+//    }
+//    for(i = 20; i > 0; i--){
+//        uchar usbLineStatus = USBIN & USBMASK;
+//        if(usbLineStatus != 0)  /* SE0 has ended */
+//            goto isNotReset;
+//    }
+//    /* RESET condition, called multiple times during reset */
+//    usbNewDeviceAddr = 0;
+//    usbDeviceAddr = 0;
+//    usbResetStall();
+//    DBG1(0xff, 0, 0);
+//isNotReset:
+//    usbHandleResetHook(i);
+//}
 
 /* ------------------------------------------------------------------------- */
 
 USB_PUBLIC void usbInit(void)
 {
-#ifdef MNHACK_NO_DATASECTION   
+#ifdef MNHACK_NO_DATASECTION
     usbTxLen = USBPID_NAK;
     usbMsgLen = USB_NO_MSG;
 #endif
-    
+
 #if USB_INTR_CFG_SET != 0
     USB_INTR_CFG |= USB_INTR_CFG_SET;
 #endif
