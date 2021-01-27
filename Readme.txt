@@ -1,5 +1,5 @@
-Micronucleus V2.04
-==================
+Micronucleus V2.5pre
+====================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
 
@@ -16,7 +16,6 @@ The V2.0 release is a complete rewrite of the firmware and offers significant im
 Due to the many changes, also the upload tool had to be updated. The V2.0 upload tool is backwards compatible to the V1.X tool, though.
 
 The last release of the V1.x can be found here: https://github.com/micronucleus/micronucleus/tree/v1.11
-
 
 Usage
 =====
@@ -44,14 +43,14 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1534 bytes
-t841_default    -   ATtiny841 default configuration     -   1586 bytes
-t45_default     -   ATtiny45  default configuration     -   1588 bytes
-t85_default     -   ATtiny85  default configuration     -   1588 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1418 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1412 bytes
-Nanite841       -   Nanite841 firmware                  -   1610 bytes
-m328p_extclock  -   ATMega328p external clock           -   1434 bytes
+t84_default     -   ATtiny84A default configuration     -   ? bytes
+t841_default    -   ATtiny841 default configuration     -   ? bytes
+t45_default     -   ATtiny45  default configuration     -   ? bytes
+t85_default     -   ATtiny85  default configuration     -   ? bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   ? bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   ? bytes
+Nanite841       -   Nanite841 firmware                  -   ? bytes
+m328p_extclock  -   ATMega328p external clock           -   ? bytes
 
 Please note that the configuration "t85_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
@@ -132,10 +131,22 @@ Changes
       This will let micronucleus timeout also when traffic from other USB devices
       is present on the bus.
 
+• v2.5 prerelease - January 2021
+    - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration
+    - Cumulative minor fixed contributed throughout 2019-2020. Bit thanks to everyone!
+    - Automated build system for the command line tool using Gitgub actions thanks to @quinot
+    - renamed old USB_INTR_VECTOR name to USB_handler since it is no vector any more
+    - split initHardware() to inactivate Watchdog() and reconnectAndInitUSB()
+    - end with usbDeviceConnect(); or usbDeviceDisconnect(); or USBDDR = 0; instead of initHardware();
+    - improved exit handling for USB_CFG_PULLUP_IOPORTNAME and LED_MODE != ACTIVE_LOW
+    - added code for FAST_EXIT_NO_USB_MS and START_WITHOUT_PULLUP
+    - different MCUSR handling for SAVE_MCUSR
+
 Credits
 =======
 
 Firmware:
+ • Micronucleus V2.5             (c) 2021 Current maintainers: @ArminJo, @cpldcpu
  • Micronucleus V2.04            (c) 2019 Current maintainers: @cpldcpu, @AHorneffer
  • Micronucleus V2.0x            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
