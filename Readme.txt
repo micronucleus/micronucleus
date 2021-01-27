@@ -43,14 +43,14 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   ? bytes
-t841_default    -   ATtiny841 default configuration     -   ? bytes
-t45_default     -   ATtiny45  default configuration     -   ? bytes
-t85_default     -   ATtiny85  default configuration     -   ? bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   ? bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   ? bytes
-Nanite841       -   Nanite841 firmware                  -   ? bytes
-m328p_extclock  -   ATMega328p external clock           -   ? bytes
+t84_default     -   ATtiny84A default configuration     -   1526 bytes
+t841_default    -   ATtiny841 default configuration     -   1578 bytes
+t45_default     -   ATtiny45  default configuration     -   1580 bytes
+t85_default     -   ATtiny85  default configuration     -   1580 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1410 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1404 bytes
+Nanite841       -   Nanite841 firmware                  -   1602 bytes
+m328p_extclock  -   ATMega328p external clock           -   1542 bytes
 
 Please note that the configuration "t85_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
