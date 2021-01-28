@@ -45,8 +45,8 @@ Currently, the following configurations are included and tested. Please check th
 
 t84_default     -   ATtiny84A default configuration     -   1526 bytes
 t841_default    -   ATtiny841 default configuration     -   1578 bytes
-t45_default     -   ATtiny45  default configuration     -   1580 bytes
-t85_default     -   ATtiny85  default configuration     -   1580 bytes
+t45_default     -   ATtiny45  default configuration     -   1564 bytes
+t85_default     -   ATtiny85  default configuration     -   1564 bytes
 t85_aggressive  -   ATtiny85  smaller size - critical   -   1410 bytes
 t167_default    -   ATtiny167 default (uses xtal)       -   1404 bytes
 Nanite841       -   Nanite841 firmware                  -   1602 bytes
