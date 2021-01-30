@@ -7,7 +7,7 @@
   #include <unistd.h>
 #endif
 
-/* Delay in miliseconds */
+/* Delay in milliseconds */
 void delay(unsigned int duration);
 
 // end LITTLEWIRE_UTIL_H section:

@@ -33,6 +33,7 @@
 #include <string.h>
 #include <errno.h>
 
+// called every 100 ms
 micronucleus* micronucleus_connect(int fast_mode) {
   micronucleus *nucleus = NULL;
   struct usb_bus *busses;
@@ -43,6 +44,7 @@ micronucleus* micronucleus_connect(int fast_mode) {
   usb_find_devices();
 
   busses = usb_get_busses();
+  
   struct usb_bus *bus;
   for (bus = busses; bus; bus = bus->next) {
     struct usb_device *dev;
@@ -63,19 +65,33 @@ micronucleus* micronucleus_connect(int fast_mode) {
           return NULL;
         }
 
+        errno = 0;
         nucleus->device = usb_open(dev);
+        if (errno == 13) {
+                fprintf(stderr, "usb_open(): %s. For Linux, copy file ~/.arduino15/packages/digistump/tools/micronucleus/49-micronucleus.rules to /etc/udev/rules.d.\n", strerror(errno));
+                return NULL;
+        }
         if (!nucleus->device) {
                 fprintf(stderr, "Error opening bus %s device %s: %s\n", bus->dirname, dev->filename, strerror(errno));
                 return NULL;
         }
 
         if (nucleus->version.major>=2) {  // Version 2.x
-          // get nucleus info
+          // get 6 byte nucleus info
           unsigned char buffer[6];
+          errno = 0;
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 6, MICRONUCLEUS_USB_TIMEOUT);
 
           // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-          if (res<0) return NULL;  
+          if (res<0) return NULL;
+
+          // Only seen on windows.
+          // This happens if the usb device is not listening, but did not disconnect from the USB bus,
+          // which is a desirable behavior, since otherwise you get that nasty error in device manager.
+          if (res<6) {
+          	fprintf(stderr, "%s. Micronucleus device seems to be inactive. Please unplug and replug or reset the device.\n", strerror(errno));
+          	return NULL;
+          }
           
           assert(res >= 6);
 
@@ -105,13 +121,13 @@ micronucleus* micronucleus_connect(int fast_mode) {
           nucleus->signature2 = buffer[5];           
           
         } else {  // Version 1.x        
-          // get nucleus info
+          // get 4 byte nucleus info
           unsigned char buffer[4];
           int res = usb_control_msg(nucleus->device, USB_ENDPOINT_IN| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 0, 0, 0, (char *)buffer, 4, MICRONUCLEUS_USB_TIMEOUT);
           
           // Device descriptor was found, but talking to it was not succesful. This can happen when the device is being reset.
-          if (res<0) return NULL;  
-            
+          if (res<0) return NULL; 
+                     
           assert(res >= 4);
 
           nucleus->flash_size = (buffer[0]<<8) + buffer[1];
@@ -217,7 +233,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
                   "The reset vector of the user program does not contain a branch instruction,\n"
                   "therefore the bootloader can not be inserted. Please rearrage your code.\n"
                   );
-          return -1;         
+          return -8;  // choose #define ENOEXEC     8   /* Exec format error */
         } 
         
         // Patch in jmp to bootloader. 
@@ -278,7 +294,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
       } else if (deviceHandle->version.major >= 2) {
         // Firmware rev.2 uses individual set up packets to transfer data
         res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 1, page_length, address, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-        if (res) return -1;
+        if (res) return res;
         int i;
         
         for (i=0; i< page_length; i+=4)
@@ -288,7 +304,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
           w2=(page_buffer[i+3]<<8)+(page_buffer[i+2]<<0);
           
           res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 3, w1, w2, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
-          if (res) return -1;
+          if (res) return res;
         }     
       }  
     /*
@@ -321,7 +337,7 @@ int micronucleus_startApp(micronucleus* deviceHandle) {
   res = usb_control_msg(deviceHandle->device, USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE, 4, 0, 0, NULL, 0, MICRONUCLEUS_USB_TIMEOUT);
 
   if(res!=0)
-    return -1;
+    return res;
   else
     return 0;
 }

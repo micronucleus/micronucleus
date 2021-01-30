@@ -2,6 +2,7 @@
  * Project: V-USB, virtual USB port for Atmel's(r) AVR(r) microcontrollers
  * Author: Christian Starkjohann
  * Creation Date: 2007-04-22
+ * 5/2020 ArminJo Saved 16 bytes by converting USB_INTR_VECTOR in *usbdrvasm165.inc* from ISR with pushes to a plain function.
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
@@ -66,22 +67,14 @@ waitForK:
     rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
-#if USB_COUNT_SOF
-    lds     YL, usbSofCount
-    inc     YL
-    sts     usbSofCount, YL
-#endif  /* USB_COUNT_SOF */
-#ifdef USB_SOF_HOOK
-    USB_SOF_HOOK
-#endif
     rjmp    sofError
 foundK:                         ;[-12]
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for center sampling]
 ;we have 1 bit time for setup purposes, then sample again. Numbers in brackets
 ;are cycles from center of first sync (double K) bit after the instruction
-    push    r0                  ;[-12]
+    push    r0                  ;[-12] // dummy for timing
 ;   [---]                       ;[-11]
-    push    YH                  ;[-10]
+    pop     r0                  ;[-10] // dummy for timing
 ;   [---]                       ;[-9]
     lds     YL, usbInputBufOffset;[-8]
 ;   [---]                       ;[-7]
@@ -91,8 +84,8 @@ foundK:                         ;[-12]
     mov     r0, x2              ;[-3] [rx loop init]
     sbis    USBIN, USBMINUS     ;[-2] we want two bits K (sample 2 cycles too early)
     rjmp    haveTwoBitsK        ;[-1]
-    pop     YH                  ;[0] undo the pushes from before
-    pop     r0                  ;[2]
+    push    r0                  ;[0] // dummy for timing
+    pop     r0                  ;[2] // dummy for timing
     rjmp    waitForK            ;[4] this was not the end of sync, retry
 ; The entire loop from waitForK until rjmp waitForK above must not exceed two
 ; bit times (= 22 cycles).
@@ -101,19 +94,19 @@ foundK:                         ;[-12]
 ; push more registers and initialize values while we sample the first bits:
 ;----------------------------------------------------------------------------
 haveTwoBitsK:               ;[1]
-    push    shift           ;[1]
-    push    x1              ;[3]
-    push    x2              ;[5]
-    push    x3              ;[7]
+    push    x1              ;[1] // dummy for timing
+    pop     x1              ;[3]
+    push    x1              ;[5]
+    pop     x1              ;[7]
     ldi     shift, 0xff     ;[9] [rx loop init]
     ori     x3, 0xff        ;[10] [rx loop init] == ser x3, clear zero flag
 
     in      x1, USBIN       ;[11] <-- sample bit 0
     bst     x1, USBMINUS    ;[12]
     bld     shift, 0        ;[13]
-    push    x4              ;[14] == phase
+    push    x1              ;[14]  // dummy for timing
 ;   [---]                   ;[15]
-    push    cnt             ;[16]
+    pop     x1              ;[16]
 ;   [---]                   ;[17]
     ldi     phase, 0        ;[18] [rx loop init]
     ldi     cnt, USB_BUFSIZE;[19] [rx loop init]
@@ -331,14 +324,14 @@ didUnstuff4:                ;[   ]
 ;   [---]                   ;[054]
 
 macro POP_STANDARD ; 16 cycles
-    pop     cnt
-    pop     x4
-    pop     x3
-    pop     x2
-    pop     x1
-    pop     shift
-    pop     YH
-    pop     r0
+#    pop     cnt // not needed, since it is no ISR any more, it is a plain function.
+#    pop     x4
+#    pop     x3
+#    pop     x2
+#    pop     x1
+#    pop     shift
+#    pop     YH
+#    pop     r0
     endm
 macro POP_RETI     ; 5 cycles
     pop     YL

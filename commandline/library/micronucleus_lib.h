@@ -30,7 +30,7 @@
 * Header files
 ********************************************************************************/
 #if defined _WIN32
-#include <lusb0_usb.h>         // libusb-win32 
+#include <lusb0_usb.h>         // libusb-win32
 #else
 #include <usb.h>
 #endif
@@ -46,7 +46,7 @@
 ********************************************************************************/
 #define MICRONUCLEUS_VENDOR_ID   0x16D0
 #define MICRONUCLEUS_PRODUCT_ID  0x0753
-#define MICRONUCLEUS_USB_TIMEOUT 0xFFFF
+#define MICRONUCLEUS_USB_TIMEOUT 0x2800 // 10 seconds - timeout is in milliseconds. 65 seconds makes no sense for an individual USB transfer.
 #define MICRONUCLEUS_MAX_MAJOR_VERSION 2
 
 /*******************************************************************************/
@@ -61,7 +61,7 @@ typedef struct _micronucleus_version {
   unsigned char minor;
 } micronucleus_version;
 
-#define MICRONUCLEUS_COMMANDLINE_VERSION "Commandline tool version: 2.04"
+#define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.5 from " __DATE__)
 
 // handle representing one micronucleus device
 typedef struct _micronucleus {

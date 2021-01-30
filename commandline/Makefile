@@ -30,7 +30,7 @@ else ifeq ($(shell uname), FreeBSD)
 	OSFLAG = -D OPENBSD
 else
 	USBFLAGS =
-	USBLIBS = -lusb
+	USBLIBS =  -lusb
 	EXE_SUFFIX = .exe
 	OSFLAG = -D WIN
 endif

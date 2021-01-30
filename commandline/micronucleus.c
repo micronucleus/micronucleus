@@ -104,6 +104,7 @@ int main(int argc, char **argv) {
         return EXIT_FAILURE;
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
+      puts(MICRONUCLEUS_COMMANDLINE_VERSION);
       puts(usage);
       puts("");
       puts("  --type [intel-hex, raw]: Set upload file type to either intel hex or raw");
@@ -122,8 +123,6 @@ int main(int argc, char **argv) {
       puts("      --timeout [integer]: Timeout after waiting specified number of seconds");
       puts("                 filename: Path to intel hex or raw data file to upload,");
       puts("                           or \"-\" to read from stdin");
-      puts("");
-      puts(MICRONUCLEUS_COMMANDLINE_VERSION);
       return EXIT_SUCCESS;
     } else if (strcmp(argv[arg_pointer], "--dump-progress") == 0) {
       dump_progress = 1;
@@ -140,6 +139,9 @@ int main(int argc, char **argv) {
         printf("Did not understand --timeout value\n");
         return EXIT_FAILURE;
       }
+    } else if (argv[arg_pointer][0] == '-') {
+      fprintf(stderr, "Unrecognized option: %s\n", argv[arg_pointer]);
+      return EXIT_FAILURE;
     } else {
       file = argv[arg_pointer];
     }
@@ -148,6 +150,8 @@ int main(int argc, char **argv) {
   }
 
   if (file == NULL && erase_only == 0) {
+    // print version if we are called without any parameter
+    printf(MICRONUCLEUS_COMMANDLINE_VERSION);
     printf("Neither filename nor --erase-only given!\n\n");
     puts(usage);
     return EXIT_FAILURE;
@@ -155,9 +159,11 @@ int main(int argc, char **argv) {
 
   setProgressData("waiting", 1);
   if (dump_progress) printProgress(0.5);
-  printf("> Please plug in the device ... \n");
-  printf("> Press CTRL+C to terminate the program.\n");
-
+  printf("> Please plug in the device");
+  if (timeout > 0) printf(" (will time out in %d seconds)", timeout);
+  printf(" ... \n");
+  // printf("> Press CTRL+C to terminate the program.\n"); // only true for Linux commandline :-(
+  fflush(stdout);
 
   time_t start_time, current_time;
   time(&start_time);
@@ -173,7 +179,7 @@ int main(int argc, char **argv) {
   }
 
   if (my_device == NULL) {
-    printf("> Device search timed out\n");
+    printf("> Device search timed out!\n");
     return EXIT_FAILURE;
   }
 
@@ -190,13 +196,14 @@ int main(int argc, char **argv) {
     }
   }
   printProgress(1.0);
-
+      
   printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
   if (my_device->signature1) printf("> Device signature: 0x1e%02x%02x \n",(int)my_device->signature1,(int)my_device->signature2);
   printf("> Available space for user applications: %d bytes\n", my_device->flash_size);
   printf("> Suggested sleep time between sending pages: %ums\n", my_device->write_sleep);
   printf("> Whole page count: %d  page size: %d\n", my_device->pages,my_device->page_size);
   printf("> Erase function sleep duration: %dms\n", my_device->erase_sleep);
+  fflush(stdout);
 
   int startAddress = 1, endAddress = 0;
 
@@ -258,7 +265,8 @@ int main(int argc, char **argv) {
     printf(">> Reconnected! Continuing upload sequence...\n");
 
   } else if (res != 0) {
-    printf(">> Flash erase error %d has occured ...\n", res);
+    printf(">> Flash erase error: %s  has occured ...\n", strerror(-res));
+    printf(">> Consider to use another USB port or to restore the bootloader with an ISP, if this continues to happen.\n");
     printf(">> Please unplug the device and restart the program.\n");
     return EXIT_FAILURE;
   }
@@ -269,7 +277,8 @@ int main(int argc, char **argv) {
     setProgressData("writing", 5);
     res = micronucleus_writeFlash(my_device, endAddress, dataBuffer, printProgress);
     if (res != 0) {
-      printf(">> Flash write error %d has occured ...\n", res);
+      printf(">> Flash write error: %s has occured ...\n", strerror(-res));
+      printf(">> Consider to use another USB port or to restore the bootloader with an ISP, if this continues to happen.\n");
       printf(">> Please unplug the device and restart the program.\n");
       return EXIT_FAILURE;
     }
@@ -283,7 +292,7 @@ int main(int argc, char **argv) {
     res = micronucleus_startApp(my_device);
 
     if (res != 0) {
-      printf(">> Run error %d has occured ...\n", res);
+      printf(">> Run error: %s has occured ...\n", strerror(-res));
       printf(">> Please unplug the device and restart the program. \n");
       return EXIT_FAILURE;
     }
@@ -323,6 +332,7 @@ static void printProgress(float progress) {
     }
   }
 
+  fflush(stdout);
   last_step = progress_step;
 }
 
