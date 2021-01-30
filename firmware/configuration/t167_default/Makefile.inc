@@ -16,7 +16,7 @@ AVR_ARCHITECTURE_PARAMETER = --binary-architecture avr:35
 # - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
 # - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 3A00
+BOOTLOADER_ADDRESS = 3A80
 
 FUSEOPT = # TODO
 FUSEOPT_DISABLERESET = # TODO
