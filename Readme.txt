@@ -43,16 +43,16 @@ To allow maximum flexibility, micronucleus supports a configuration system. To c
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
 
-t84_default     -   ATtiny84A default configuration     -   1526 bytes
-t841_default    -   ATtiny841 default configuration     -   1578 bytes
-t45_default     -   ATtiny45  default configuration     -   1564 bytes
-t85_default     -   ATtiny85  default configuration     -   1564 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1410 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1404 bytes
-Nanite841       -   Nanite841 firmware                  -   1602 bytes
-m328p_extclock  -   ATMega328p external clock           -   1542 bytes
+t84_default     -   ATtiny84A default configuration     -   1522 bytes
+t841_default    -   ATtiny841 default configuration     -   1574 bytes
+t45_default     -   ATtiny45  default configuration     -   1558 bytes
+t85_default     -   ATtiny85  default configuration     -   1558 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1392 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1386 bytes
+Nanite841       -   Nanite841 firmware                  -   1598 bytes
+m328p_extclock  -   ATMega328p external clock           -   1524 bytes
 
-Please note that the configuration "t85_aggressive" may be instable unders certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
+Please note that the configuration "t85_aggressive" may be instable under certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
@@ -132,16 +132,18 @@ Changes
       is present on the bus.
 
 • v2.5 prerelease - January 2021
-    - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration
-    - Cumulative minor fixed contributed throughout 2019-2020. Bit thanks to everyone!
+    - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration:
+      * Improved exit handling for USB_CFG_PULLUP_IOPORTNAME and LED_MODE != ACTIVE_LOW
+      * Convert ISR into function and optimized CRC handling to save further bytes
+      * added code for FAST_EXIT_NO_USB_MS and START_WITHOUT_PULLUP
+      * different MCUSR handling for SAVE_MCUSR
+      * end with usbDeviceConnect(); or usbDeviceDisconnect(); or USBDDR = 0; instead of initHardware();
+      * Remove redundant code in usbdriver to reduce code size.
     - Automated build system for the command line tool using Gitgub actions thanks to @quinot
-    - renamed old USB_INTR_VECTOR name to USB_handler since it is no vector any more
-    - split initHardware() to inactivate Watchdog() and reconnectAndInitUSB()
-    - end with usbDeviceConnect(); or usbDeviceDisconnect(); or USBDDR = 0; instead of initHardware();
-    - improved exit handling for USB_CFG_PULLUP_IOPORTNAME and LED_MODE != ACTIVE_LOW
-    - added code for FAST_EXIT_NO_USB_MS and START_WITHOUT_PULLUP
-    - different MCUSR handling for SAVE_MCUSR
-
+    - Static binaries for MacOS and linux command line tool. Thanks @stonehippo
+    - Increase available use program size by 64 bytes for most implementations
+    - Cumulative minor fixed contributed throughout 2019-2020. Bit thanks to everyone!
+    
 Credits
 =======
 
@@ -160,7 +162,6 @@ Commandline tool:
  • Updates for V2.x              (c) 2014 T. Bo"scke
 
 Special Thanks:
- • Aaron Stone/@sodabrew for building the OS X command line tool and various fixes.
  • Objective Development's great V-USB bitbanging usb driver
  • Embedded Creations' pioneering and inspiring USBaspLoader-tiny85
  • Digistump for motivation and contributing the VID/PID pair
