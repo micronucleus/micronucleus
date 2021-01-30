@@ -7,9 +7,6 @@
 # License: GNU GPL v2 (see License.txt)
 
 CONFIG ?= t85_default
-#CONFIG ?= t85_aggressive
-#CONFIG ?= t841_default
-#CONFIG ?= t167_default
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -91,6 +88,10 @@ main.hex:	main.bin
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
 	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
 	@avr-size main.hex
+#	@avr-size -A -t main.hex >size.txt
+#	@python CalculateSize.py <size.txt
+#	@rm size.txt
+	
 
 disasm:	main.bin upgrade.bin
 	@avr-objdump -d -S main.bin >main.lss
@@ -126,7 +127,7 @@ else
 endif
 	@cat upgrade-app.hex >> upgrade.hex
 	@rm upgrade-app.hex
-	@avr-size upgrade.hex
+#m	@avr-size upgrade.hex
 
 
 bootloader.raw: main.hex
