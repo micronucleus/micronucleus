@@ -35,13 +35,15 @@ The bootloader resides in the same memory as the user program, since the ATtiny 
 Compiling
 =========
 
-Micronucleus can be configured to support all devices of the ATtiny series, with the exception of the reduced core ATtiny 4/5/9/10/20/40.
+Micronucleus can be configured to support all devices of the 'classic' ATtiny series, with the exception of the reduced core ATtiny 4/5/9/10/20/40.
 
 To allow maximum flexibility, micronucleus supports a configuration system. To compile micronucleus with a specific configuration, please invoke the AVR-GCC tool-chain with:
 
     make CONFIG=<config_name>
 
-Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. Hex files can be found in /releases.
+The makefile makes use of the gnu binutils and some unix commands such as 'mv' and 'rm'. If you are using Windows, make sure you have proper binaries installed. For example by using the 'Atmel Studio command prompt' or msys/mingw32.
+
+Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. 
 
 t84_default     -   ATtiny84A default configuration     -   1522 bytes
 t841_default    -   ATtiny841 default configuration     -   1574 bytes
@@ -54,6 +56,8 @@ m328p_extclock  -   ATMega328p external clock           -   1524 bytes
 
 Please note that the configuration "t85_aggressive" may be instable under certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
+Precompiled hex files of the bootloader can be found in /firmware/releases. The files can be directly programmed using AVRDUDE or other programmers. The folder /firmware/upgrade contains hex files that can be used to upgrade devices with existing version of micronucleus with a newer version. These can be uploaded using an older version micronucleus. 
+
 You can add your own configuration by adding a new folder to /firmware/configurations/. The folder has to contain a customized "Makefile.inc" and "bootloaderconfig.h". Feel free to supply a pull request if you added and tested a previously unsupported device.
 
 If changes to the configuration lead to an increase in bootloader size, it may be necessary to change the bootloader start address. Please consult "Makefile.inc" for details.
@@ -61,7 +65,7 @@ If changes to the configuration lead to an increase in bootloader size, it may b
 Other make options:
 
     make CONFIG=<config_name> fuse   	# Configure fuses
-    make CONFIG=<config_name> flash  	# Uploade the bootloader using AVRDUDE
+    make CONFIG=<config_name> flash  	# Upload the bootloader using AVRDUDE
     
 There is also an option to disable the reset line and use it as an I/O. While it may seem tempting to use this feature to make an additional I/O pin available on the ATtiny85, we strongly discourage from doing so, as it led to many issues in the past.
 
@@ -141,7 +145,7 @@ Changes
       * Remove redundant code in usbdriver to reduce code size.
     - Automated build system for the command line tool using Gitgub actions thanks to @quinot
     - Static binaries for MacOS and linux command line tool. Thanks @stonehippo
-    - Increase available use program size by 64 bytes for most implementations
+    - Increase available user program size by 64 bytes for most implementations
     - Cumulative minor fixed contributed throughout 2019-2020. Bit thanks to everyone!
     
 Credits
