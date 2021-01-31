@@ -37,7 +37,7 @@ jobs:
       if: runner.os == 'Windows'
 
     - name: install dependencies
-      run: brew install libusb libusb-compat
+      run: brew install libusb-compat
       if: runner.os == 'macOS'
 
     - uses: actions/checkout@v2
