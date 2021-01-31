@@ -68,7 +68,7 @@ typedef unsigned char boolean;
 #endif
 
 // delay in milliseconds - a custom implementation to avoid util/delay's tendancy to import floating point math libraries
-inline void delay(unsigned int ms) {
+void delay(unsigned int ms) {
   while (ms > 0) {
     // delay for one millisecond (250*4 cycles, multiplied by cpu mhz)
     // subtract number of time taken in while loop and decrement and other bits
