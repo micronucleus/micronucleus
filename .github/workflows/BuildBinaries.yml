@@ -1,0 +1,208 @@
+# BuildBinaries.yml
+# Github workflow to build micronucleus binaries for different platforms
+#
+# Copyright (C) 2021  Armin Joachimsmeyer based on the valuable work of Thomas Quinot https://github.com/quinot
+# https://github.com/ArminJo/Github-Actions
+#
+name: BuildBinaries
+
+on:
+  push:
+    paths:
+    - '**/comandline/library/**'
+    - '**/comandline/micronucleus.c'
+    - '**BuildBinaries.yml'
+
+jobs:
+  build-all-executables:
+    strategy:
+      matrix:
+         include:
+         - os: ubuntu-latest
+           target-dir: Linux-x86_64
+           shell: bash {0}
+
+         - os: ubuntu-latest
+           target-dir: Linux-armhf
+           container: debian:buster
+           shell: bash {0}
+
+         - os: ubuntu-latest
+           target-dir: Linux-armel
+           container: debian:buster
+           shell: bash {0}
+
+         - os: ubuntu-latest
+           target-dir: Linux-i686
+           container: debian:buster
+           shell: bash {0}
+
+         - os: macos-latest
+           target-dir: Darwin-x86_64
+           shell: bash {0}
+
+         - os: windows-2019
+           shell: msys2 {0}
+           target-dir: Windows
+
+    runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
+    defaults:
+      run:
+        shell: ${{ matrix.shell }}
+
+    steps:
+
+    - name: install git for Linux container
+      if: runner.os == 'Linux'
+      run: |
+        if [[ -z "$(which git)" ]]; then
+          echo "installing missing git"
+          apt-get update
+          apt-get install --yes git
+          GIT_DIR=$GITHUB_WORKSPACE
+        fi
+
+    - uses: actions/checkout@v2
+      #with:
+        #persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
+        #fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
+
+    - name: install Linux 64 dependencies and run make
+      if: runner.os == 'Linux' && matrix.target-dir == 'Linux-x86_64'
+      run: |
+        sudo apt-get update
+        sudo apt-get install libusb-dev
+        cd commandline
+        make
+
+    - name: install Linux 32 dependencies and run make
+      if: runner.os == 'Linux' && matrix.target-dir == 'Linux-i686'
+      run: |
+        ls -la $GITHUB_WORKSPACE
+        dpkg --add-architecture i386
+        apt-get update
+        echo apt-get install --yes make crossbuild-essential-i386 libusb-dev:i386
+        apt-get install --yes make crossbuild-essential-i386 libusb-dev:i386
+        cd commandline
+        make CC=i686-linux-gnu-gcc
+
+    - name: install Linux armhf dependencies and run make
+      if: runner.os == 'Linux' && matrix.target-dir == 'Linux-armhf'
+      run: |
+        dpkg --add-architecture armhf
+        apt-get update
+        apt-get install --yes make crossbuild-essential-armhf libusb-dev:armhf
+        cd commandline
+        make CC=arm-linux-gnueabihf-gcc
+
+    - name: install Linux armel dependencies and run make
+      if: runner.os == 'Linux' && matrix.target-dir == 'Linux-armel'
+      run: |
+        dpkg --add-architecture armel
+        apt-get update
+        apt-get install --yes make crossbuild-essential-armel libusb-dev:armel
+        cd commandline
+        make CC=arm-linux-gnueabi-gcc
+
+    - name: install macOS dependencies and run make
+      if: runner.os == 'macOS'
+      run: |
+        brew install libusb-compat # libusb is installed too for libusb-compat
+        LIBUSB_PREFIX=$(brew --prefix libusb-compat)
+        PKG_CONFIG_PATH=$LIBUSB_PREFIX/lib/pkgconfig
+        echo PKG_CONFIG_PATH=$PKG_CONFIG_PATH
+        cd commandline
+        echo make USBFLAGS="$(pkg-config --cflags libusb)"
+        make USBFLAGS="$(pkg-config --cflags libusb)"
+        ls -l
+#        echo "find $(brew --prefix libusb-compat)/lib -name "*dylib" -type f -depth 1"
+#        EXTRALIB=$(find $(brew --prefix libusb-compat)/lib -name "*dylib" -type f -depth 1)
+#        echo cp -p $EXTRALIB builds/$TARGET_DIR
+#        cp -p $EXTRALIB builds/$TARGET_DIR
+
+    - name: Install Windows build system
+      if: runner.os == 'Windows'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        install: git base-devel binutils mingw-w64-x86_64-toolchain make zip mingw-w64-x86_64-libusb-win32
+        update: true
+
+    - name: make windows exe
+      if: runner.os == 'Windows'
+      id: make
+      run: |
+        cd commandline
+        mingw32-make USBLIBS=-lusb0
+        TARGET_DIR=${{ matrix.target-dir }}
+        if [[ ! -d builds/$TARGET_DIR/ ]]; then mkdir builds/$TARGET_DIR; fi
+        echo mv micronucleus.exe builds/$TARGET_DIR
+        mv micronucleus.exe builds/$TARGET_DIR
+        echo cp -p /mingw64/bin/libusb*.dll builds/$TARGET_DIR
+        cp -p /mingw64/bin/libusb*.dll builds/$TARGET_DIR
+
+    - name: move exetutable to builds
+      if: runner.os != 'Windows'
+      run: |
+        cd commandline
+        TARGET_DIR=${{ matrix.target-dir }}
+        if [[ ! -d builds/$TARGET_DIR/ ]]; then
+          # build new directory, and add moved binary to git index
+          mkdir builds/$TARGET_DIR
+          echo mv micronucleus builds/$TARGET_DIR
+          mv micronucleus builds/$TARGET_DIR
+          echo git -add builds/$TARGET_DIR/micronucleus
+          git add builds/$TARGET_DIR/micronucleus
+        else
+          # show old content which we had checked out
+          ls -l builds/$TARGET_DIR
+          echo mv micronucleus builds/$TARGET_DIR
+          mv micronucleus builds/$TARGET_DIR
+        fi
+        # show new content
+        ls -l builds/$TARGET_DIR
+
+    - name: Commit and push files
+      run: |
+        TARGET_DIR=${{ matrix.target-dir }}
+        cd commandline/builds/$TARGET_DIR
+        ls -l
+        #echo GITHUB_ACTOR=$GITHUB_ACTOR # the one who made the commit which started this workflow
+        git config user.name "$GITHUB_ACTOR"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+
+        #echo git status:
+        #git status
+        echo git commit --message=\"exetutable for $TARGET_DIR\" --verbose micronucleus*
+        git commit --message="exetutable for $TARGET_DIR" --verbose micronucleus*
+        # Amend does not work for me :-(
+        #git commit --amend --no-edit --verbose micronucleus*
+        if [ $? -ne 0 ]; then
+          echo "nothing to commit"
+          exit 0
+        fi
+
+        # required to rebase with the push results of the parallel jobs
+        # Lets hope that we do not run into a race condition between pull and push
+        #echo git pull --ff-only --verbose
+        #git pull --ff-only --verbose
+        echo git pull --verbose
+        git pull --verbose
+
+        # not required for us
+        #repo_uri="https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${GITHUB_REPOSITORY}.git"
+        #git remote set-url "$remote_name" "$repo_uri" # includes access token
+        #git push --force origin ${{github.ref}}
+
+        echo git push
+        git push
+        if [[ $? -ne 0 ]]; then
+          RETRY_DELAY=$[ ( $RANDOM % 10 )  + 1 ]
+          echo "Race condition, retry in ${RETRY_DELAY} seconds"
+          sleep ${RETRY_DELAY}s
+          echo git pull
+          git pull
+          echo git push
+          git push
+        fi
