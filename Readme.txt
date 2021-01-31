@@ -136,7 +136,7 @@ Changes
       is present on the bus.
 
 • v2.5 prerelease - January 2021
-    - Removed zero in version numbering as it confused to some people. The minor version number of 
+    - Removed zero in version numbering as it confused some people. The minor version number of 
       this release is 5.
     - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration:
       * Improved exit handling for USB_CFG_PULLUP_IOPORTNAME and LED_MODE != ACTIVE_LOW
