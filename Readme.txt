@@ -136,6 +136,8 @@ Changes
       is present on the bus.
 
 • v2.5 prerelease - January 2021
+    - Removed zero in version numbering as it confused to some people. The minor version number of 
+      this release is 5.
     - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration:
       * Improved exit handling for USB_CFG_PULLUP_IOPORTNAME and LED_MODE != ACTIVE_LOW
       * Convert ISR into function and optimized CRC handling to save further bytes
@@ -143,10 +145,10 @@ Changes
       * different MCUSR handling for SAVE_MCUSR
       * end with usbDeviceConnect(); or usbDeviceDisconnect(); or USBDDR = 0; instead of initHardware();
       * Remove redundant code in usbdriver to reduce code size.
-    - Automated build system for the command line tool using Gitgub actions thanks to @quinot
+    - Automated build system for the command line tool using Github actions thanks to @quinot
     - Static binaries for MacOS and linux command line tool. Thanks @stonehippo
     - Increase available user program size by 64 bytes for most implementations
-    - Cumulative minor fixed contributed throughout 2019-2020. Bit thanks to everyone!
+    - Cumulative minor fixes contributed throughout 2019-2020. Big thanks to everyone!
     
 Credits
 =======
