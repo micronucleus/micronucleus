@@ -10,10 +10,10 @@ ifeq ($(shell uname), Linux)
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)
 	USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
-	USBLIBS=$(shell libusb-config --libs || libusb-legacy-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D MAC_OS
-	USBLIBS = /usr/local/opt/libusb/lib/libusb-1.0.a
+	USBLIBS = /usr/local/opt/libusb-compat/lib/libusb.a
+	USBLIBS += /usr/local/opt/libusb/lib/libusb-1.0.a
 	USBLIBS += -framework CoreFoundation
 	USBLIBS += -framework IOKit
 	# Uncomment these to create a dual architecture binary:
