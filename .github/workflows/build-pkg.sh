@@ -12,7 +12,7 @@ case $BUILD_OS in
     ;;
   macOS)
     make USBFLAGS=$(PKG_CONFIG_PATH=$(brew --prefix libusb-compat)/lib/pkgconfig pkg-config --cflags libusb) \
-         USBLIBS="$(PKG_CONFIG_PATH=$(brew --prefix libusb-compat)/lib/pkgconfig pkg-config --libs libusb) -lusb"
+         USBLIBS="$(brew --prefix libusb-compat)/lib/libusb.a $(brew --prefix libusb)/lib/libusb-1.0.a -framework CoreFoundation -framework IOKit"
     ZIPLIB=$(find $(brew --prefix libusb-compat)/lib -name "*dylib" -type f -depth 1)
     ;;
   Linux)
