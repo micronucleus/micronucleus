@@ -3,6 +3,8 @@ Created: September 2012
   (c) 2012 by ihsan Kehribar <ihsan@kehribar.me>
   Changes for Micronucleus protocol version V2.x
   (c) 2014 T. Bo"scke
+  Improved error messages version 2.5
+  (c) 2021 T. ArminJo
 
   Permission is hereby granted, free of charge, to any person obtaining a copy of
   this software and associated documentation files (the "Software"), to deal in
@@ -105,6 +107,7 @@ int main(int argc, char **argv) {
       }
     } else if (strcmp(argv[arg_pointer], "--help") == 0 || strcmp(argv[arg_pointer], "-h") == 0) {
       puts(MICRONUCLEUS_COMMANDLINE_VERSION);
+      puts("");
       puts(usage);
       puts("");
       puts("  --type [intel-hex, raw]: Set upload file type to either intel hex or raw");
@@ -152,7 +155,7 @@ int main(int argc, char **argv) {
   if (file == NULL && erase_only == 0) {
     // print version if we are called without any parameter
     printf(MICRONUCLEUS_COMMANDLINE_VERSION);
-    printf("Neither filename nor --erase-only given!\n\n");
+    printf("\nNeither filename nor --erase-only given!\n\n");
     puts(usage);
     return EXIT_FAILURE;
   }
@@ -196,7 +199,7 @@ int main(int argc, char **argv) {
     }
   }
   printProgress(1.0);
-      
+
   printf("> Device has firmware version %d.%d\n",my_device->version.major,my_device->version.minor);
   if (my_device->signature1) printf("> Device signature: 0x1e%02x%02x \n",(int)my_device->signature1,(int)my_device->signature2);
   printf("> Available space for user applications: %d bytes\n", my_device->flash_size);
