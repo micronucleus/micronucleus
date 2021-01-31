@@ -24,6 +24,7 @@ RELEASE_FILE=$PKG_NAME-$(uname -m)-$(uname -s).zip
 mkdir $PKG_NAME
 if [ -n "$ZIPLIB" ]; then eval "cp -p $ZIPLIB $PKG_NAME"; ZIPLIB=$(basename "$ZIPLIB"); fi
 cp -p micronucleus${EXE_EXT} $PKG_NAME
+echo "Built on $(date) from $GITHUB_REF:$GITHUB_SHA" > $PKG_NAME/BUILD_INFO
 eval zip -r $WORKSPACE_DIR/$RELEASE_FILE $PKG_NAME
 
 ## Prepare release and artifact upload

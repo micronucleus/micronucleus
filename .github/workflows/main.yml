@@ -9,7 +9,22 @@ on:
         - '!*-LATEST'
 
 jobs:
+  delete-previous-branch-release:
+      runs-on: ubuntu-latest
+      steps:
+          - name: compute branch name
+            id: compute-branch
+            run: echo "${{ github.ref }}" | sed "s,^refs/heads/,::set-output name=RELEASE_BRANCH::,"
+          - uses: dev-drprasad/delete-tag-and-release@v0.1.2
+            if: startswith(github.ref, 'refs/heads/')
+            with:
+                delete_release: true # default: false
+                tag_name: "${{ steps.compute-branch.outputs.RELEASE_BRANCH }}-LATEST"
+            env:
+                GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
   build-all:
+    needs: delete-previous-branch-release
     strategy:
       matrix:
          include:
