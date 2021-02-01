@@ -35,7 +35,12 @@ The bootloader resides in the same memory as the user program, since the ATtiny 
 Downloads
 =========
 
-Archives with snapshots of the latest builds of commandline tool and firmware can be accessed here: https://github.com/micronucleus/micronucleus/releases/tag/master-LATEST
+The latest release version can be found here:
+https://github.com/micronucleus/micronucleus/releases
+
+Archives with snapshots of the latest binaries of commandline tool and firmware can be accessed here:
+https://github.com/micronucleus/micronucleus/releases/tag/master-LATEST
+
 
 Compiling
 =========
