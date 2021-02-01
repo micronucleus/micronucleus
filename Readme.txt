@@ -32,6 +32,11 @@ Please invoke the command line tool with "micronucleus -help" for a list of avai
 
 The bootloader resides in the same memory as the user program, since the ATtiny series does not support a protected bootloader section. Therefore, special care has to be taken not to overwrite the bootloader if the user program uses the self programming features. The bootloader will patch itself into the reset vector of the user program. No other interrupt vectors are changed.
 
+Downloads
+=========
+
+Archives with snapshots of the latest builds of commandline tool and firmware can be accessed here: https://github.com/micronucleus/micronucleus/releases/tag/master-LATEST
+
 Compiling
 =========
 
