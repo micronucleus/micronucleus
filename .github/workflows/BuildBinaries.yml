@@ -64,9 +64,6 @@ jobs:
         fi
 
     - uses: actions/checkout@v2
-      #with:
-        #persist-credentials: false # otherwise, the token used is the GITHUB_TOKEN, instead of your personal token
-        #fetch-depth: 0 # otherwise, you will failed to push refs to dest repo
 
     - name: install Linux 64 dependencies and run make
       if: runner.os == 'Linux' && matrix.target-dir == 'Linux-x86_64'
@@ -116,10 +113,6 @@ jobs:
         echo make USBFLAGS="$(pkg-config --cflags libusb)"
         make USBFLAGS="$(pkg-config --cflags libusb)"
         ls -l
-#        echo "find $(brew --prefix libusb-compat)/lib -name "*dylib" -type f -depth 1"
-#        EXTRALIB=$(find $(brew --prefix libusb-compat)/lib -name "*dylib" -type f -depth 1)
-#        echo cp -p $EXTRALIB builds/$TARGET_DIR
-#        cp -p $EXTRALIB builds/$TARGET_DIR
 
     - name: Install Windows build system
       if: runner.os == 'Windows'
@@ -134,7 +127,7 @@ jobs:
       id: make
       run: |
         cd commandline
-        mingw32-make USBLIBS=-lusb0
+        mingw32-make
         TARGET_DIR=${{ matrix.target-dir }}
         if [[ ! -d builds/$TARGET_DIR/ ]]; then mkdir builds/$TARGET_DIR; fi
         echo mv micronucleus.exe builds/$TARGET_DIR

@@ -1,9 +1,12 @@
 # Makefile initially writen for Little-Wire by Omer Kilic <omerkilic@gmail.com>
 # Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application.
 
+SHELL := /bin/bash
+
 CC=gcc
 
 ifeq ($(shell uname), Linux)
+# If you get the error "usb.h: No such file or directory" you must run "sudo apt-get install libusb-dev"
 	USBFLAGS=$(shell libusb-config --cflags)
 	USBLIBS= -static $(shell libusb-config --libs)
 	EXE_SUFFIX =
@@ -28,37 +31,35 @@ else ifeq ($(shell uname), FreeBSD)
 	USBLIBS= -lusb
 	EXE_SUFFIX =
 	OSFLAG = -D OPENBSD
-else
+else # Windows
 	USBFLAGS =
-	USBLIBS =  -lusb
+	USBLIBS = -lusb0
 	EXE_SUFFIX = .exe
 	OSFLAG = -D WIN
 endif
 
 LIBS    = $(USBLIBS)
-INCLUDE = library 
-CFLAGS  = $(USBFLAGS) -I$(INCLUDE) -O -g $(OSFLAG)
+CFLAGS  = $(USBFLAGS) -Ilibrary -O -g $(OSFLAG)
 
 LWLIBS = micronucleus_lib littleWire_util
-EXAMPLES = micronucleus
 
-.PHONY:	clean library
+.PHONY:	clean library micronucleus
 
-all: library $(EXAMPLES)
+all: micronucleus
 	rm -f *.o
 
 library: $(LWLIBS)
 
-$(LWLIBS):
-	@echo Building library: $@...
-	$(CC) $(CFLAGS) -c library/$@.c
+%.o: ./library/%.c
+	@echo Building library: $<...
+	$(CC) $(CFLAGS) -c $<
 
-$(EXAMPLES): $(addsuffix .o, $(LWLIBS))
-	@echo Building command line tool: $@...
+micronucleus: $(addsuffix .o, $(LWLIBS))
+	@echo Building command line tool: $@$(EXE_SUFFIX)...
 	$(CC) $(CFLAGS) -o $@$(EXE_SUFFIX) $@.c $^ $(LIBS)
 
 clean:
-	rm -f $(EXAMPLES)$(EXE_SUFFIX) *.o *.exe
+	rm -f micronucleus *.o *.exe
 
 install: all
 	cp micronucleus /usr/local/bin
