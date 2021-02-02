@@ -7,6 +7,9 @@
 # License: GNU GPL v2 (see License.txt)
 
 CONFIG ?= t85_default
+#CONFIG ?= t85_aggressive
+#CONFIG ?= t841_default
+#CONFIG ?= t167_default
 
 ###############################################################################
 # Configure the following variables according to your AVR.
@@ -16,7 +19,7 @@ CONFIG ?= t85_default
 #     make disablereset		# use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
 
 CFLAGS =
-CONFIGPATH	  = configuration/$(CONFIG)
+CONFIGPATH = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
 PROGRAMMER ?= -c USBasp
@@ -27,7 +30,7 @@ AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE)
 CC = avr-gcc
 
 # Options:
-CFLAGS += -I. -g2 -Os # -Wall -Wextra
+CFLAGS += -I. -g2 -Os -Wall -Wextra
 CFLAGS += -I$(CONFIGPATH) -mmcu=$(DEVICE) -DF_CPU=$(F_CPU) -DBOOTLOADER_ADDRESS=0x$(BOOTLOADER_ADDRESS) 
 CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-inline-small-functions -fno-move-loop-invariants -fno-tree-scev-cprop
 
@@ -70,7 +73,7 @@ read_fuses:
 
 clean:
 	@rm -f main.hex main.bin main.c.lst main.map main.raw *.o usbdrv/*.o main.s usbdrv/oddebug.s usbdrv/usbdrv.s usbdrv/oddebug.c.lst main.lss main.lst
-	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map main.s upgrade.lss upgrade.lst upgrade.lss
+	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map main.s upgrade.lss upgrade.lst upgrade.lss size.txt size.out
 
 distclean: clean
 	@rm *~
@@ -86,12 +89,17 @@ main.hex:	main.bin
 	@echo Building Micronucleus configuration: $(CONFIG)
 	@rm -f main.hex main.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
-	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
-	@avr-size main.hex
-#	@avr-size -A -t main.hex >size.txt
-#	@python CalculateSize.py <size.txt
-#	@rm size.txt
-	
+#	useful as backup, if no python available
+#	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
+#	@avr-size main.hex
+# Output size, BOOTLOADER_ADDRESS, and free user memory
+	@echo Building Micronucleus configuration: $(CONFIG) >> build.log
+	@avr-size -A -t main.hex > size.txt
+	@python CalculateSize.py < size.txt > size.out
+	@cat size.out >> build.log
+	@echo - >> build.log
+	@cat size.out
+
 
 disasm:	main.bin upgrade.bin
 	@avr-objdump -d -S main.bin >main.lss
@@ -127,7 +135,7 @@ else
 endif
 	@cat upgrade-app.hex >> upgrade.hex
 	@rm upgrade-app.hex
-#m	@avr-size upgrade.hex
+#	@avr-size upgrade.hex
 
 
 bootloader.raw: main.hex

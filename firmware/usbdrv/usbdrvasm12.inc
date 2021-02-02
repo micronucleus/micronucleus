@@ -37,7 +37,7 @@ DATAx (rx) to ACK/NAK/STALL (tx)                    2   7.5    16-60
 ;max allowable interrupt latency: 34 cycles -> max 25 cycles interrupt disable
 ;max stack usage: [ret(2), YL, SREG, YH, shift, x1, x2, x3, cnt, x4] = 11 bytes
 ;Numbers in brackets are maximum cycles since SOF.
-USB_INTR_VECTOR:
+USB_handler:
 ;order of registers pushed: YL, SREG [sofError], YH, shift, x1, x2, x3, cnt
     push    YL              ;2 [35] push only what is necessary to sync with edge ASAP
     in      YL, SREG        ;1 [37]
@@ -66,14 +66,6 @@ waitForK:
     rjmp    foundK
     sbis    USBIN, USBMINUS
     rjmp    foundK
-#if USB_COUNT_SOF
-    lds     YL, usbSofCount
-    inc     YL
-    sts     usbSofCount, YL
-#endif  /* USB_COUNT_SOF */
-#ifdef USB_SOF_HOOK
-    USB_SOF_HOOK
-#endif
     rjmp    sofError
 foundK:
 ;{3, 5} after falling D- edge, average delay: 4 cycles [we want 4 for center sampling]
@@ -103,7 +95,7 @@ haveTwoBitsK:
     bld     shift, 0        ;1 [20]
     push    x3              ;2 [22]
     push    cnt             ;2 [24]
-    
+
     in      x2, USBIN       ;1 [25] <-- sample bit 1
     ser     x3              ;1 [26] [inserted init instruction]
     eor     x1, x2          ;1 [27]

@@ -7,7 +7,7 @@
 # Last Change:     Dec 8, 2018
 
 # Enable unsafe optimizions. This will disable several safety features in microncleus to save around 40 more bytes
-# 
+#
 # Disabled features:
 #   * Stack pointer and SREG initialization in CRT
 #   * Client side reset vector patching
@@ -24,17 +24,17 @@ DEVICE = atmega168p
 # - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
 # - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
 # - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
-BOOTLOADER_ADDRESS = 3a00
+BOOTLOADER_ADDRESS = 3A00
 
 # Note: the bootloader must reside in the space that is marked as bootloader flash space
 # in the fuse bits. (The ATmega328 prevents flash programming from code that is not in the
-# bootloader space.) But the application may also be in part of that space. 
+# bootloader space.) But the application may also be in part of that space.
 
 FUSEOPT = -U lfuse:w:0xff:m -U hfuse:w:0xdd:m -U efuse:w:0xf9:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x5d:m -U efuse:w:0xf9:m
 
 #---------------------------------------------------------------------
-# ATMega168p
+# ATmega168p
 #---------------------------------------------------------------------
 # Fuse low byte:
 # 0xff = 1 1 1 1   1 1 1 1
@@ -46,7 +46,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x5d:m -U efuse:w:0xf9:m
 #
 # Fuse high byte:
 # 0xd9 = 1 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> brownout detection at 2.7 V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)
@@ -56,7 +56,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x5d:m -U efuse:w:0xf9:m
 #
 # Fuse high byte ("no reset": external reset disabled, can't program through SPI anymore)
 # 0x59 = 0 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> brownout detection at 2.7 V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)

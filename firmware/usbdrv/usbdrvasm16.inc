@@ -3,7 +3,7 @@
  * Author: Christian Starkjohann
  * Creation Date: 2007-06-15
  * Tabsize: 4
- * 5/2020 ArminJo Saved 22 bytes by converting USB_INTR_VECTOR in *usbdrvasm16.inc* from ISR with pushes to a plain function.
+ * 5/2020 ArminJo Saved 22 bytes by converting USB_handler in *usbdrvasm16.inc* from ISR with pushes to a plain function.
  * one push is still left
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
@@ -31,10 +31,10 @@ of CPU cycles, but even an exact number of cycles!
 ; Numbers in brackets are clocks counted from center of last sync bit
 ; when instruction starts
 
-USB_INTR_VECTOR:
+USB_handler:
 ;order of registers pushed: YL, SREG, YH, [sofError], bitcnt, shift, x1, x2, x3, x4, cnt
-    push    YL                  ;[-25] push only what is necessary to sync with edge ASAP
-    in      YL, SREG            ;[-23]
+;    push    YL                  ;[-25] push only what is necessary to sync with edge ASAP
+;    in      YL, SREG            ;[-23]
     push    YL                  ;[-22]
     push    YH                  ;[-20]
 ;----------------------------------------------------------------------------
@@ -43,8 +43,8 @@ USB_INTR_VECTOR:
 ;sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;sync up with J to K edge during sync pattern -- use fastest possible loops
 ;The first part waits at most 1 bit long since we must be in sync pattern.
-;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
-;waitForJ, ensure that this prerequisite is met.
+;When we jump to waitForJ, ensure that YL is at least < 0x80..
+    clr     YL
 waitForJ:
     inc     YL
     sbis    USBIN, USBMINUS
@@ -214,8 +214,8 @@ macro POP_STANDARD ; 14 cycles
 macro POP_RETI     ; 7 cycles
     pop     YH
     pop     YL
-    out     SREG, YL
-    pop     YL
+;    out     SREG, YL
+;    pop     YL
     endm
 
 #include "asmcommon.inc"

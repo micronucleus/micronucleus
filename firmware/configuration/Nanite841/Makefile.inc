@@ -2,10 +2,10 @@
 # Project: Micronucleus
 # License: GNU GPL v2 (see License.txt)
 #
-# Controller type: ATtiny 841 
+# Controller type: ATtiny 841
 # Configuration:   Default configuration - 12 Mhz RC oscillator
 # Last Change:     Mar 16,2014
- 
+
 
 F_CPU = 12000000
 DEVICE = attiny841

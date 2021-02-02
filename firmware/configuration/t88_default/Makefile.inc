@@ -2,29 +2,20 @@
 # Project: Micronucleus
 # License: GNU GPL v2 (see License.txt)
 
-# Controller type: ATtiny 85
-# Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
-# Last Change:     Jun 16,2020
-
-# Enable unsafe optimizations. This will disable several safety features in microncleus to save around 40 more bytes
-#
-# Disabled features:
-#   * Stack pointer and SREG initialization in CRT
-#   * Client side reset vector patching
-#   * USB collision detection. Micronucleus will not work reliability with hubs if this is disabled.
-
-#CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
+# Controller type: ATtiny 88 - 16 MHz - China MHETtiny88 board
+# Configuration:   Default  + LED
+# Last Change:     6/2020
 
 F_CPU = 16000000
-DEVICE = attiny85
+DEVICE = attiny88
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
-# - make clean; make main.hex; ### output will list data: 1404
-# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value = 6788
-# - How many pages in is that? 6770 / 64 (tiny85 page size in bytes) = 106.xxx
-# - round that down to 106 - our new bootloader address is 106 * 64 = 6784, in hex = 1A80
-# - For data size up to 1408 the address is 1A80 for size from 1409 the address is 1A40
-BOOTLOADER_ADDRESS = 1A80
+# - make clean; make main.hex; ### output will list data: 1452
+# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value = 6740
+# - How many pages in is that? 6740 / 64 (tiny88 page size in bytes) = 105.xxx
+# - round that down to 105 - our new bootloader address is 105 * 64 = 6720, in hex = 1A40
+# - For data size up to 1408 the address is 1A80 for size from 1409 to 1471 it is 1A40 from 1472 to 1535 it is 1A00, from 1536 it is 19C0
+BOOTLOADER_ADDRESS = 1A40
 
 FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m

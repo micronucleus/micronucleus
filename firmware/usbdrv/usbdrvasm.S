@@ -39,28 +39,15 @@ the file appropriate for the given clock rate.
     public  usbCrc16Append
 
     COMMON  INTVEC
-#   ifndef USB_INTR_VECTOR
-        ORG     INT0_vect
-#   else /* USB_INTR_VECTOR */
-        ORG     USB_INTR_VECTOR
-#       undef   USB_INTR_VECTOR
-#   endif /* USB_INTR_VECTOR */
-#   define  USB_INTR_VECTOR usbInterruptHandler
-    rjmp    USB_INTR_VECTOR
+    ORG     USB_handler
+    rjmp    USB_handler
     RSEG    CODE
 
 #else /* __IAR_SYSTEMS_ASM__ */
 
-#   ifndef USB_INTR_VECTOR /* default to hardware interrupt INT0 */
-#       ifdef INT0_vect
-#           define USB_INTR_VECTOR  INT0_vect       // this is the "new" define for the vector
-#       else
-#           define USB_INTR_VECTOR  SIG_INTERRUPT0  // this is the "old" vector
-#       endif
-#   endif
     .text
-    .global USB_INTR_VECTOR
-    .type   USB_INTR_VECTOR, @function
+    .global USB_handler
+    .type   USB_handler, @function
     .global usbCrc16Append
 #endif /* __IAR_SYSTEMS_ASM__ */
 
