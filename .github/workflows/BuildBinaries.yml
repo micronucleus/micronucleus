@@ -93,14 +93,14 @@ jobs:
         cd commandline
         make CC=arm-linux-gnueabihf-gcc
 
-    - name: install Linux armel dependencies and run make
+    - name: install Linux arm64 dependencies and run make
       if: runner.os == 'Linux' && matrix.target-dir == 'aarch64-linux-gnu'
       run: |
-        dpkg --add-architecture armel
+        dpkg --add-architecture arm64
         apt-get update
-        apt-get install --yes make crossbuild-essential-armel libusb-dev:armel
+        apt-get install --yes make crossbuild-essential-arm64 libusb-dev:arm64
         cd commandline
-        make CC=arm-linux-gnueabi-gcc
+        make CC=aarch64-linux-gnu-gcc
 
     - name: install macOS dependencies and run make
       if: runner.os == 'macOS'
