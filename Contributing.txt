@@ -31,8 +31,8 @@ Before contributing, please keep in mind the following:
  - Even if you aren't writing code, we prefer spaces to tabs.
  
  - This repository is for source code only. There are some exceptions, but these
-   are mostly due to legacy code and in some cases different constraints when setting
-   up this repository. If you can contribute by cleaning up things, this is highly appreciated!
+   are mostly legacy  and in some case that related to constraints that existed in the past. 
+   If you can contribute by cleaning up, this is highly appreciated!
 
    Some notes regarding this:
    - Documentation that is not directly relevant to the bootloader and compiling it
