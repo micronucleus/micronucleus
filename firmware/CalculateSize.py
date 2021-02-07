@@ -27,4 +27,4 @@ if (codesize == 0):
 print('8K  Device -- ',end='')
 printmnsize(codesize,pagesize=64,memsize=8192)
 print('16K Device -- ',end='')
-printmnsize(codesize,pagesize=64,memsize=16384)
+printmnsize(codesize,pagesize=128,memsize=16384)
