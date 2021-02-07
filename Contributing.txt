@@ -6,12 +6,14 @@ Before contributing, please keep in mind the following:
    https://github.com/micronucleus/micronucleus/tree/testing
  
  - Please commit contributions as a pull request to "testing" so there is less
-   troube with merging. Alternatively, if you only have small changes, just
+   trouble with merging. Alternatively, if you only have small changes, just
    open an issue and one of the maintainers will add it manually.
    https://github.com/micronucleus/micronucleus/issues
    
  - Have a look at License.txt
+
  - If you're going to write or change C or Ruby code, read Style Guide.txt
+ 
  - When writing commit messages, please prefix your message with one of these:
 	   firmware:
 	   upgrade:
@@ -20,5 +22,26 @@ Before contributing, please keep in mind the following:
 	   tests:
 	 This will help us all understand what your commit is primarily in relation
 	 to when reading through the commit history hunting for specific changes.
+
+ - Please clean up your code-base before commits and make sure that the commit 
+   relates to the intended changes only. E.g. remnants of spurious edits like
+   randoms spaces or inserted/deleted lines should be avoided unless they are
+   part of intentional refactoring.
+
  - Even if you aren't writing code, we prefer spaces to tabs.
  
+ - This repository is for source code only. There are some exceptions, but these
+   are mostly due to legacy code and in some cases different constraints when setting
+   up this repository. If you can contribute by cleaning up things, this is highly appreciated!
+
+   Some notes regarding this:
+   - Documentation that is not directly relevant to the bootloader and compiling it
+     should go into the Wiki or elsewhere
+   - Executables should never be part of the repository. Releases are automatically
+     deployed as archives in the github release section.
+   - Currently the hex files are stored in the repository as a legacy. It would be
+     preferable to also build them using a CDCI process. This is work in progress.
+   - All documentation should use standard ASCII or proper markdown.
+   - Platform dependent build scripts should be avoided. 
+
+
