@@ -159,6 +159,7 @@ Changes
     - Static binaries for MacOS and linux command line tool. Thanks @stonehippo
     - Increase available user program size by 64 bytes for most implementations
     - Cumulative minor fixes contributed throughout 2019-2020. Big thanks to everyone!
+    - "make release" will now rebuild all release hexfiles. Thanks to @Ho-Ro.
     
 Credits
 =======
