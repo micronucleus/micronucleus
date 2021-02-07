@@ -2,30 +2,24 @@
 # Project: Micronucleus
 # Author: Jenna Fox; portions by Christian Starkjohann, Louis Beaudoin
 # Creation Date: 2007-12-10
-# Tabsize: 4
 # Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
 # License: GNU GPL v2 (see License.txt)
 
 CONFIG ?= t85_default
 #CONFIG ?= t85_aggressive
+#CONFIG ?= t85_aggressive
+#CONFIG ?= t841_default
+#CONFIG ?= t167_default
 #CONFIG ?= t841_default
 #CONFIG ?= t167_default
 
-###############################################################################
-# Configure the following variables according to your AVR.
 # Program the device with
-#     make fuse    			# to set the clock generator, boot section size etc.
-#     make flash   			# to load the boot loader into flash
-#     make disablereset		# use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
-
-CFLAGS =
 CONFIGPATH = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
-PROGRAMMER ?= -c USBasp
 # PROGRAMMER contains AVRDUDE options to address your programmer
 
-# Tools:
+CONFIGPATH = configuration/$(CONFIG)
 AVRDUDE = avrdude $(PROGRAMMER) -p $(DEVICE) 
 CC = avr-gcc
 
@@ -79,19 +73,25 @@ distclean: clean
 	@rm *~
 
 
-# file targets:
+	@rm -f bootloader.* upgrade.hex upgrade.bin upgrade.c.lst upgrade.map main.s upgrade.lss upgrade.lst upgrade.lss size.txt size.out
 main.bin:	$(OBJECTS)
-	@$(CC) $(CFLAGS) -o main.bin $(OBJECTS) $(LDFLAGS)
-	@avr-objdump -d -S main.bin > main.lss
+distclean: clean
+	@rm *~
+
 
 
 main.hex:	main.bin
 	@echo Building Micronucleus configuration: $(CONFIG)
 	@rm -f main.hex main.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
+
 #	useful as backup, if no python available
 #	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
 #	@avr-size main.hex
+# Output size, BOOTLOADER_ADDRESS, and free user memory
+#	useful as backup, if no python available
+#	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
+	@avr-size -A -t main.hex > size.txt
 # Output size, BOOTLOADER_ADDRESS, and free user memory
 	@echo Building Micronucleus configuration: $(CONFIG) >> build.log
 	@avr-size -A -t main.hex > size.txt
@@ -99,6 +99,7 @@ main.hex:	main.bin
 	@cat size.out >> build.log
 	@echo - >> build.log
 	@cat size.out
+
 
 
 disasm:	main.bin upgrade.bin
@@ -114,11 +115,14 @@ CFLAGS_U = -Wall -g2 -Os -fno-move-loop-invariants -fno-tree-scev-cprop -fno-inl
 LDFLAGS_U = -Wl,--relax,--gc-sections -Wl,--section-start=.text=$(APP_ADDRESS),-Map=upgrade.map
 
 
+
 upgrade.o: upgrade.c bootloader.h
+
 	@$(CC) $(CFLAGS_U) -c $< -o $@ $(LDFLAGS_U) -Wa,-ahls=$<.lst
 
 
 upgrade.bin:	upgrade.o bootloader.o
+
 	@$(CC) $(CFLAGS_U) -o upgrade.bin upgrade.o bootloader.o $(LDFLAGS_U)
 	@avr-objdump -d -S upgrade.bin > upgrade.lss
 
@@ -131,7 +135,7 @@ ifeq ($(OS),Windows_NT)
 	@echo :1000000003C003C003C003C003C003C003C003C0D8> upgrade.hex
 else
 # for unix echo command
-	@echo ":1000000003C003C003C003C003C003C003C003C0D8" > upgrade.hex
+#	@avr-size upgrade.hex
 endif
 	@cat upgrade-app.hex >> upgrade.hex
 	@rm upgrade-app.hex
@@ -166,6 +170,3 @@ else
 	@echo "extern const uint8_t" $*"[] PROGMEM;" > $@
 	@echo "extern const uint8_t" $*_end"[] PROGMEM;" >> $@
 	@echo "extern const uint8_t" $*_size_sym"[];" >> $@
-	@echo "#define $*_size ( (int) $*_size_sym )" >> $@
-	@echo "#define $*_address 0x$(BOOTLOADER_ADDRESS)" >> $@
-endif
