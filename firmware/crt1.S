@@ -47,66 +47,68 @@
   #define XJMP jmp
 #else
   #define XJMP rjmp
-#endif  
+#endif
 
   #define XCALL rcall
-  
-	.macro	vector name
-	.weak	\name
-	.set	\name, __init
-	XJMP	\name
-	.endm
 
-	.section .vectors,"ax",@progbits
-	.global	__vectors
-	.global	__bad_interrupt
-	.func	__vectors
+    .macro    vector name
+    .weak    \name
+    .set    \name, __init
+    XJMP    \name
+    .endm
 
-__bad_interrupt:	
+    .section .vectors,"ax",@progbits
+    .global    __vectors
+    .global    __bad_interrupt
+    .func    __vectors
+
+__bad_interrupt:
 __vectors:
-	XJMP	__init
-;	vector	__vector_1
-;	vector	__vector_2
-;	vector	__vector_3
-	.endfunc
+    XJMP    __init
+;    vector    __vector_1
+;    vector    __vector_2
+;    vector    __vector_3
+    .endfunc
 
-	/* Handle unexpected interrupts (enabled and no handler), which
-	   usually indicate a bug.  Jump to the __vector_default function
-	   if defined by the user, otherwise jump to the reset address.
+    /* Handle unexpected interrupts (enabled and no handler), which
+       usually indicate a bug.  Jump to the __vector_default function
+       if defined by the user, otherwise jump to the reset address.
 
-	   This must be in a different section, otherwise the assembler
-	   will resolve "rjmp" offsets and there will be no relocs.  */
+       This must be in a different section, otherwise the assembler
+       will resolve "rjmp" offsets and there will be no relocs.  */
 
-	.section .init0,"ax",@progbits
-	.weak	__init
-;	.func	__init
+    .section .init0,"ax",@progbits
+    .weak    __init
+;    .func    __init
 __init:
 
-	.weak	__stack
-	.set	__stack, RAMEND
-	/* By default, malloc() uses the current value of the stack pointer
-	   minus __malloc_margin as the highest available address.
+    .weak    __stack
+    .set    __stack, RAMEND
+    /* By default, malloc() uses the current value of the stack pointer
+       minus __malloc_margin as the highest available address.
 
-	   In some applications with external SRAM, the stack can be below
-	   the data section (in the internal SRAM - faster), and __heap_end
-	   should be set to the highest address available for malloc().  */
-	.weak	__heap_end
-	.set	__heap_end, 0
+       In some applications with external SRAM, the stack can be below
+       the data section (in the internal SRAM - faster), and __heap_end
+       should be set to the highest address available for malloc().  */
+    .weak    __heap_end
+    .set    __heap_end, 0
 
-	.section .init2,"ax",@progbits
-	clr		R1
-    
-#ifndef ENABLE_UNSAFE_OPTIMIZATIONS
-	out		0x3f,r1
-	ldi		r28,lo8(__stack)
-	ldi		r29,hi8(__stack)
-	out		0x3d, r28
-	out		0x3e, r29
-#endif    
-	.section .init9,"ax",@progbits
-;  rcall main
-;  XJMP  __vectors-2
-	XJMP	main
-  
-;	.endfunc
+    .section .init2,"ax",@progbits
+    clr        R1
 
+#if ! defined(ENABLE_UNSAFE_OPTIMIZATIONS)
+    // 0x3f,r1 -> reset status register especially the interrupt enable bit,
+    // but the interrupt enable bit is always in a disable state after reset!
+    // So it would allow a jmp 0000 instead of an reset to safely enter the bootloader
+    // without disabling the interrupts before the jmp 0000.
+    out        0x3f,r1 // disable interrupts
+    // Set stackpointer. Datasheet says: Initial value after reset is RAMEND
+    ldi        r28,lo8(__stack)
+    ldi        r29,hi8(__stack)
+    out        0x3d, r28
+    out        0x3e, r29
+#endif
+    .section .init9,"ax",@progbits
+    XJMP    main
+
+;    .endfunc

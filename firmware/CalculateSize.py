@@ -5,10 +5,10 @@ import math
 
 def printmnsize(codesize,pagesize=64,memsize=8192):
     pages=math.ceil(codesize/pagesize)
-    freespace=memsize-pages*pagesize-6
+    freespace=memsize-pages*pagesize-6 # 6 is POSTSCRIPT_SIZE
     bootstart=memsize-pages*pagesize
 
-    print('Codesize: {:04d} bytes, BOOTLOADER ADDRESS: 0x{:04X}, Free user memory {:04d} bytes.'.format(codesize,bootstart,freespace))
+    print('Codesize: {:04d} bytes, BOOTLOADER_ADDRESS: 0x{:04X}, Free user memory {:04d} bytes.'.format(codesize,bootstart,freespace))
 
 codesize=0
 

@@ -17,7 +17,7 @@
 /*
 General Description:
 This file contains assembler code which is shared among the USB driver
-implementations for different CPU cocks. Since the code must be inserted
+implementations for different CPU clocks. Since the code must be inserted
 in the middle of the module, it's split out into this file and #included.
 
 Jump destinations called from outside:
@@ -71,11 +71,6 @@ se0:
     lsl     x2                  ;[21] shift out 1 bit endpoint number
     cpse    x2, shift           ;[22]
     rjmp    ignorePacket        ;[23]
-/* only compute endpoint number in x3 if required later */
-#if USB_CFG_HAVE_INTRIN_ENDPOINT || USB_CFG_IMPLEMENT_FN_WRITEOUT
-    ldd     x3, y+2             ;[24] endpoint number + crc
-    rol     x3                  ;[26] shift in LSB of endpoint
-#endif
     cpi     token, USBPID_IN    ;[27]
     breq    handleIn            ;[28]
     cpi     token, USBPID_SETUP ;[29]
@@ -88,8 +83,8 @@ se0:
 ;the end of SE0. The sync code allows up to 40 cycles delay from the start of
 ;the sync pattern until the first bit is sampled. That's a total of 56 cycles.
 ;
-;TB 2014-02-02 
-;The interrupt-less driver always has to wait for the next packet at this point 
+;TB 2014-02-02
+;The interrupt-less driver always has to wait for the next packet at this point
 ;or usbpoll() will get confused.
 
 handleSetupOrOut:               ;[32]
@@ -101,11 +96,6 @@ waitForData:
     dec     YL
     brne     waitForData
 
-#if USB_CFG_IMPLEMENT_FN_WRITEOUT   /* if we have data for endpoint != 0, set usbCurrentTok to address */
-    andi    x3, 0xf             ;[32]
-    breq    storeTokenAndReturn ;[33]
-    mov     token, x3           ;[34] indicate that this is endpoint x OUT
-#endif
 storeTokenAndReturn:
     sts     usbCurrentTok, token;[35]
 doReturn:
@@ -115,14 +105,11 @@ doReturn:
     rjmp    waitForJ            ;[51] save the pops and pushes -- a new interrupt is already pending
 sofError:
     POP_RETI                    ;macro call
-    
+
     ret                         ;02-02-2014 not called from INT in micronucleus.
 ;    reti
 
 handleData:
-#if USB_CFG_CHECK_CRC
-    CRC_CLEANUP_AND_CHECK       ; jumps to ignorePacket if CRC error
-#endif
     lds     shift, usbCurrentTok;[18]
     tst     shift               ;[20]
     breq    doReturn            ;[21]
@@ -133,12 +120,9 @@ handleData:
 ; recognized if usbPoll() was called less frequently than once every 4 ms.
     cpi     cnt, 4              ;[26] zero sized data packets are status phase only -- ignore and ack
     brmi    sendAckAndReti      ;[27] keep rx buffer clean -- we must not NAK next SETUP
-#if USB_CFG_CHECK_DATA_TOGGLING
-    sts     usbCurrentDataToken, token  ; store for checking by C code
-#endif
     sts     usbRxLen, cnt       ;[28] store received data, swap buffers
     sts     usbRxToken, shift   ;[30]
-    
+
 ; Microncleus V2 does not need double buffering due to in-order processing of USB-rx
 ; TB 2014-01-04
 ;    lds     x2, usbInputBufOffset;[32] swap buffers
@@ -155,14 +139,6 @@ handleIn:
     cpi     x1, 1               ;[32] negative values are flow control, 0 means "buffer free"
     brge    sendNakAndReti      ;[33] unprocessed input packet?
     ldi     x1, USBPID_NAK      ;[34] prepare value for usbTxLen
-#if USB_CFG_HAVE_INTRIN_ENDPOINT
-    andi    x3, 0xf             ;[35] x3 contains endpoint
-#if USB_CFG_SUPPRESS_INTR_CODE
-    brne    sendNakAndReti      ;[36]
-#else
-    brne    handleIn1           ;[36]
-#endif
-#endif
     lds     cnt, usbTxLen       ;[37]
     sbrc    cnt, 4              ;[39] all handshake tokens have bit 4 set
     rjmp    sendCntAndReti      ;[40] 42 + 16 = 58 until SOP
@@ -179,30 +155,3 @@ handleIn:
 ; assuming that no error occurs and the host sends an ACK. We save one byte
 ; RAM this way and avoid potential problems with endless retries. The rest of
 ; the driver assumes error-free transfers anyway.
-
-#if !USB_CFG_SUPPRESS_INTR_CODE && USB_CFG_HAVE_INTRIN_ENDPOINT /* placed here due to relative jump range */
-handleIn1:                      ;[38]
-#if USB_CFG_HAVE_INTRIN_ENDPOINT3
-; 2006-06-10 as suggested by O.Tamura: support second INTR IN / BULK IN endpoint
-    cpi     x3, USB_CFG_EP3_NUMBER;[38]
-    breq    handleIn3           ;[39]
-#endif
-    lds     cnt, usbTxLen1      ;[40]
-    sbrc    cnt, 4              ;[42] all handshake tokens have bit 4 set
-    rjmp    sendCntAndReti      ;[43] 47 + 16 = 63 until SOP
-    sts     usbTxLen1, x1       ;[44] x1 == USBPID_NAK from above
-    ldi     YL, lo8(usbTxBuf1)  ;[46]
-    ldi     YH, hi8(usbTxBuf1)  ;[47]
-    rjmp    usbSendAndReti      ;[48] 50 + 12 = 62 until SOP
-
-#if USB_CFG_HAVE_INTRIN_ENDPOINT3
-handleIn3:
-    lds     cnt, usbTxLen3      ;[41]
-    sbrc    cnt, 4              ;[43]
-    rjmp    sendCntAndReti      ;[44] 49 + 16 = 65 until SOP
-    sts     usbTxLen3, x1       ;[45] x1 == USBPID_NAK from above
-    ldi     YL, lo8(usbTxBuf3)  ;[47]
-    ldi     YH, hi8(usbTxBuf3)  ;[48]
-    rjmp    usbSendAndReti      ;[49] 51 + 12 = 63 until SOP
-#endif
-#endif

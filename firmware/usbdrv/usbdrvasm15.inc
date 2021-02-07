@@ -30,13 +30,13 @@ of CPU cycles, but even an exact number of cycles!
 ; when instruction starts
 
 ;----------------------------------------------------------------------------
-; order of registers pushed: 
+; order of registers pushed:
 ;	YL, SREG [sofError] YH, shift, x1, x2, x3, bitcnt, cnt, x4
 ;----------------------------------------------------------------------------
-USB_INTR_VECTOR:              
+USB_handler:
     push    YL                   ;2 	push only what is necessary to sync with edge ASAP
-    in      YL, SREG             ;1 
-    push    YL                   ;2 
+    in      YL, SREG             ;1
+    push    YL                   ;2
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;
@@ -50,10 +50,10 @@ waitForJ:
     sbis    USBIN, USBMINUS
     brne    waitForJ        ; just make sure we have ANY timeout
 ;-------------------------------------------------------------------------------
-; The following code results in a sampling window of < 1/4 bit 
+; The following code results in a sampling window of < 1/4 bit
 ;	which meets the spec.
 ;-------------------------------------------------------------------------------
-waitForK:			 ;- 
+waitForK:			 ;-
     sbis    USBIN, USBMINUS      ;1 [00] <-- sample
     rjmp    foundK               ;2 [01]
     sbis    USBIN, USBMINUS	 ;	 <-- sample
@@ -66,20 +66,12 @@ waitForK:			 ;-
     rjmp    foundK
     sbis    USBIN, USBMINUS	 ;	 <-- sample
     rjmp    foundK
-#if USB_COUNT_SOF
-    lds     YL, usbSofCount
-    inc     YL
-    sts     usbSofCount, YL
-#endif  /* USB_COUNT_SOF */
-#ifdef USB_SOF_HOOK
-    USB_SOF_HOOK
-#endif
     rjmp    sofError
 ;------------------------------------------------------------------------------
-; {3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for 
-;	center sampling] 
-; 	we have 1 bit time for setup purposes, then sample again. 
-;	Numbers in brackets are cycles from center of first sync (double K) 
+; {3, 5} after falling D- edge, average delay: 4 cycles [we want 5 for
+;	center sampling]
+; 	we have 1 bit time for setup purposes, then sample again.
+;	Numbers in brackets are cycles from center of first sync (double K)
 ;	bit after the instruction
 ;------------------------------------------------------------------------------
 foundK:                          ;- [02]
@@ -105,12 +97,12 @@ haveTwoBitsK:			;- [01]
     push    x1              	;2 [02+03]
     push    x2              	;2 [04+05]
     push    x3              	;2 [06+07]
-    push    bitcnt              ;2 [08+09]	
+    push    bitcnt              ;2 [08+09]
     in      x1, USBIN       	;1 [00] [10] <-- sample bit 0
     bst     x1, USBMINUS    	;1 [01]
     bld     shift, 0        	;1 [02]
     push    cnt             	;2 [03+04]
-    ldi     cnt, USB_BUFSIZE	;1 [05] 
+    ldi     cnt, USB_BUFSIZE	;1 [05]
     push    x4              	;2 [06+07] tx loop
     rjmp    rxLoop          	;2 [08]
 ;----------------------------------------------------------------------------
@@ -121,7 +113,7 @@ unstuff0:               	;- [07] (branch taken)
     mov     x1, x2      	;1 [09] x2 contains last sampled (stuffed) bit
     in      x2, USBIN   	;1 [00] [10] <-- sample bit 1 again
     andi    x2, USBMASK 	;1 [01]
-    breq    se0Hop         	;1 [02] SE0 check for bit 1 
+    breq    se0Hop         	;1 [02] SE0 check for bit 1
     ori     shift, 0x01 	;1 [03] 0b00000001
     nop				;1 [04]
     rjmp    didUnstuff0 	;2 [05]
@@ -133,7 +125,7 @@ unstuff1:               	;- [05] (branch taken)
     nop                 	;1 [09]
     in      x1, USBIN   	;1 [00] [10] <-- sample bit 2 again
     andi    x1, USBMASK 	;1 [01]
-    breq    se0Hop         	;1 [02] SE0 check for bit 2 
+    breq    se0Hop         	;1 [02] SE0 check for bit 2
     rjmp    didUnstuff1 	;2 [03]
 ;-----------------------------------------------------
 unstuff2:               	;- [05] (branch taken)
@@ -143,20 +135,20 @@ unstuff2:               	;- [05] (branch taken)
     nop                 	;1 [09]
     in      x2, USBIN   	;1 [00] [10] <-- sample bit 3
     andi    x2, USBMASK 	;1 [01]
-    breq    se0Hop         	;1 [02] SE0 check for bit 3 
+    breq    se0Hop         	;1 [02] SE0 check for bit 3
     rjmp    didUnstuff2 	;2 [03]
 ;-----------------------------------------------------
 unstuff3:               	;- [00] [10]  (branch taken)
     in      x2, USBIN   	;1 [01] [11] <-- sample stuffed bit 3 one cycle too late
     andi    x2, USBMASK 	;1 [02]
-    breq    se0Hop         	;1 [03] SE0 check for stuffed bit 3 
+    breq    se0Hop         	;1 [03] SE0 check for stuffed bit 3
     andi    x3, ~0x08   	;1 [04]
     ori     shift, 0x08 	;1 [05] 0b00001000
     rjmp    didUnstuff3 	;2 [06]
 ;----------------------------------------------------------------------------
 ; extra jobs done during bit interval:
 ;
-; bit 0:    store, clear [SE0 is unreliable here due to bit dribbling in hubs], 
+; bit 0:    store, clear [SE0 is unreliable here due to bit dribbling in hubs],
 ; 		overflow check, jump to the head of rxLoop
 ; bit 1:    SE0 check
 ; bit 2:    SE0 check, recovery from delay [bit 0 tasks took too long]
@@ -171,7 +163,7 @@ rxLoop:				;- [09]
     andi    x2, USBMASK 	;1 [01]
     brne    SkipSe0Hop		;1 [02]
 se0Hop:				;- [02]
-    rjmp    se0         	;2 [03] SE0 check for bit 1 
+    rjmp    se0         	;2 [03] SE0 check for bit 1
 SkipSe0Hop:			;- [03]
     ser     x3          	;1 [04]
     andi    shift, 0xf9 	;1 [05] 0b11111001
@@ -179,10 +171,10 @@ SkipSe0Hop:			;- [03]
 didUnstuff0:			;- [06]
     eor     x1, x2      	;1 [07]
     bst     x1, USBMINUS	;1 [08]
-    bld     shift, 1    	;1 [09] 
+    bld     shift, 1    	;1 [09]
     in      x1, USBIN   	;1 [00] [10] <-- sample bit 2 (or possibly bit 1 stuffed)
     andi    x1, USBMASK 	;1 [01]
-    breq    se0Hop         	;1 [02] SE0 check for bit 2 
+    breq    se0Hop         	;1 [02] SE0 check for bit 2
     andi    shift, 0xf3 	;1 [03] 0b11110011
     breq    unstuff1    	;1 [04] do remaining work for bit 1
 didUnstuff1:			;- [04]
@@ -192,7 +184,7 @@ didUnstuff1:			;- [04]
     nop2			;2 [08+09]
     in      x2, USBIN   	;1 [00] [10] <-- sample bit 3 (or possibly bit 2 stuffed)
     andi    x2, USBMASK 	;1 [01]
-    breq    se0Hop         	;1 [02] SE0 check for bit 3 
+    breq    se0Hop         	;1 [02] SE0 check for bit 3
     andi    shift, 0xe7 	;1 [03] 0b11100111
     breq    unstuff2    	;1 [04]
 didUnstuff2:			;- [04]
@@ -238,7 +230,7 @@ didUnstuff6:			;- [05]
     eor     x1, x2      	;1 [03]
     bst     x1, USBMINUS	;1 [04]
     bld     shift, 7    	;1 [05]
-didUnstuff7:			;- [05] 
+didUnstuff7:			;- [05]
     cpi     shift, 0x04 	;1 [06] 0b00000100
     brlo    unstuff7		;1 [07]
     eor     x3, shift   	;1 [08] reconstruct: x3 is 0 at bit locations we changed, 1 at others
@@ -252,7 +244,7 @@ didUnstuff7:			;- [05]
     brcs    overflow	;1 [07]
     rjmp    rxLoop		;2 [08]
 ;-----------------------------------------------------
-unstuff4:               	;- [08] 
+unstuff4:               	;- [08]
     andi    x3, ~0x10   	;1 [09]
     in      x1, USBIN   	;1 [00] [10] <-- sample stuffed bit 4
     andi    x1, USBMASK 	;1 [01]
@@ -260,7 +252,7 @@ unstuff4:               	;- [08]
     ori     shift, 0x10 	;1 [03]
     rjmp    didUnstuff4 	;2 [04]
 ;-----------------------------------------------------
-unstuff5:               	;- [08] 
+unstuff5:               	;- [08]
     ori     shift, 0x20 	;1 [09]
     in      x2, USBIN   	;1 [00] [10] <-- sample stuffed bit 5
     andi    x2, USBMASK 	;1 [01]
@@ -268,7 +260,7 @@ unstuff5:               	;- [08]
     andi    x3, ~0x20   	;1 [03]
     rjmp    didUnstuff5		;2 [04]
 ;-----------------------------------------------------
-unstuff6:               	;- [08] 
+unstuff6:               	;- [08]
     andi    x3, ~0x40   	;1 [09]
     in      x1, USBIN   	;1 [00] [10] <-- sample stuffed bit 6
     andi    x1, USBMASK 	;1 [01]
@@ -283,9 +275,9 @@ unstuff7:			;- [08]
     breq    se0         	;1 [02] SE0 check for stuffed bit 7
     ori     shift, 0x80 	;1 [03]
     rjmp    didUnstuff7 	;2 [04]
-    
+
 macro POP_STANDARD ; 16 cycles
-    pop     x4    
+    pop     x4
     pop     cnt
     pop     bitcnt
     pop     x3
@@ -314,7 +306,7 @@ bitstuffN:		    	;- [04]
     clr	    x2			;1 [06]
     nop				;1 [07]
     rjmp    didStuffN       	;1 [08]
-;---------------------------------------------------------------------------    
+;---------------------------------------------------------------------------
 bitstuff6:		    	;- [04]
     eor     x1, x4          	;1 [05]
     clr	    x2			;1 [06]
@@ -345,7 +337,7 @@ sendX3AndReti:			;- [-15]
 ;number of bytes in 'cnt' -- including sync byte [range 2 ... 12]
 ;uses: x1...x4, btcnt, shift, cnt, Y
 ;Numbers in brackets are time since first bit of sync pattern is sent
-;We need not to match the transfer rate exactly because the spec demands 
+;We need not to match the transfer rate exactly because the spec demands
 ;only 1.5% precision anyway.
 usbSendAndReti:             	;- [-13] 13 cycles until SOP
     in      x2, USBDDR      	;1 [-12]
@@ -353,14 +345,14 @@ usbSendAndReti:             	;- [-13] 13 cycles until SOP
     sbi     USBOUT, USBMINUS	;2 [-09-10] prepare idle state; D+ and D- must have been 0 (no pullups)
     in      x1, USBOUT      	;1 [-08] port mirror for tx loop
     out     USBDDR, x2      	;1 [-07] <- acquire bus
-	; need not init x2 (bitstuff history) because sync starts with 0 
+	; need not init x2 (bitstuff history) because sync starts with 0
     ldi     x4, USBMASK     	;1 [-06] 	exor mask
     ldi     shift, 0x80     	;1 [-05] 	sync byte is first byte sent
-    ldi     bitcnt, 6    	;1 [-04] 
+    ldi     bitcnt, 6    	;1 [-04]
 txBitLoop:		    	;- [-04] [06]
     sbrs    shift, 0        	;1 [-03] [07]
-    eor     x1, x4          	;1 [-02] [08] 
-    ror     shift           	;1 [-01] [09]  
+    eor     x1, x4          	;1 [-02] [08]
+    ror     shift           	;1 [-01] [09]
 didStuffN:		    	;-       [09]
     out     USBOUT, x1      	;1 [00]  [10] <-- out N
     ror     x2              	;1 [01]
@@ -374,7 +366,7 @@ didStuffN:		    	;-       [09]
 didStuff6:			;- [08]
     nop				;1 [09]
     out     USBOUT, x1      	;1 [00] [10] <-- out 6
-    ror     x2              	;1 [01] 
+    ror     x2              	;1 [01]
     cpi     x2, 0xfc        	;1 [02]
     brcc    bitstuff6       	;1 [03]
     sbrs    shift, 0        	;1 [04]
@@ -411,9 +403,9 @@ skipAddrAssign:				;- [03/04]
     mov     x3, x1          		;1 [10]
     cbr     x3, USBMASK     		;1 [11] configure no pullup on both pins
     ldi     x4, 3           		;1 [12]
-se0Delay:				;- [12] [15] 
-    dec     x4              		;1 [13] [16] 
-    brne    se0Delay        		;1 [14] [17] 
+se0Delay:				;- [12] [15]
+    dec     x4              		;1 [13] [16]
+    brne    se0Delay        		;1 [14] [17]
     nop2				;2      [18+19]
     out     USBOUT, x1      		;1      [20] <--out J (idle) -- end of SE0 (EOP sig.)
     out     USBDDR, x2      		;1      [21] <--release bus now

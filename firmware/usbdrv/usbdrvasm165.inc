@@ -2,7 +2,7 @@
  * Project: V-USB, virtual USB port for Atmel's(r) AVR(r) microcontrollers
  * Author: Christian Starkjohann
  * Creation Date: 2007-04-22
- * 5/2020 ArminJo Saved 16 bytes by converting USB_INTR_VECTOR in *usbdrvasm165.inc* from ISR with pushes to a plain function.
+ * 5/2020 ArminJo Saved 16 bytes by converting USB_handler in *usbdrvasm165.inc* from ISR with pushes to a plain function.
  * Tabsize: 4
  * Copyright: (c) 2007 by OBJECTIVE DEVELOPMENT Software GmbH
  * License: GNU GPL v2 (see License.txt), GNU GPL v3 or proprietary (CommercialLicense.txt)
@@ -27,8 +27,6 @@ of CPU cycles, but even an exact number of cycles!
 */
 
 ;Software-receiver engine. Strict timing! Don't change unless you can preserve timing!
-;interrupt response time: 4 cycles + insn running = 7 max if interrupts always enabled
-;max allowable interrupt latency: 59 cycles -> max 52 cycles interrupt disable
 ;max stack usage: [ret(2), r0, SREG, YL, YH, shift, x1, x2, x3, x4, cnt] = 12 bytes
 ;nominal frequency: 16.5 MHz -> 11 cycles per bit
 ; 16.3125 MHz < F_CPU < 16.6875 MHz (+/- 1.1%)
@@ -36,19 +34,24 @@ of CPU cycles, but even an exact number of cycles!
 ; when instruction starts
 
 
-USB_INTR_VECTOR:
+USB_handler:
+; replacing YL with ZL or XL and YH with ZH or XH instead of pushing does not work :-(
+; But with using YL without pushing (next 3 lines are commented) works like a charm
+; with avr-gcc.exe (GCC) 7.3.0 / 2017, although according to the
+; avr-libc calling convention, Y must be saved. (But this C code does not rely on this)
 ;order of registers pushed: YL, SREG [sofError], r0, YH, shift, x1, x2, x3, x4, cnt
-    push    YL                  ;[-23] push only what is necessary to sync with edge ASAP
-    in      YL, SREG            ;[-21]
-    push    YL                  ;[-20]
+    push    YL                  ;[-23] not really required with avr-gcc.exe (GCC) 7.3.0 / 2017.
+    push    YH                  ;[-23] not really required with avr-gcc.exe (GCC) 7.3.0 / 2017.
+#    in      YL, SREG            ;[-21]
+#    push    YL                  ;[-20]
 ;----------------------------------------------------------------------------
 ; Synchronize with sync pattern:
 ;----------------------------------------------------------------------------
 ;sync byte (D-) pattern LSb to MSb: 01010100 [1 = idle = J, 0 = K]
 ;sync up with J to K edge during sync pattern -- use fastest possible loops
 ;The first part waits at most 1 bit long since we must be in sync pattern.
-;YL is guarenteed to be < 0x80 because I flag is clear. When we jump to
-;waitForJ, ensure that this prerequisite is met.
+;When we jump to waitForJ, ensure that YL is at least < 0x80.
+    clr     YL ; not really required here with avr-gcc.exe (GCC) 7.3.0 / 2017.
 waitForJ:
     inc     YL
     sbis    USBIN, USBMINUS
@@ -334,9 +337,10 @@ macro POP_STANDARD ; 16 cycles
 #    pop     r0
     endm
 macro POP_RETI     ; 5 cycles
-    pop     YL
-    out     SREG, YL
-    pop     YL
+#    pop     YL
+#    out     SREG, YL
+    pop     YH ; not really required with avr-gcc.exe (GCC) 7.3.0 / 2017.
+    pop     YL ; not really required with avr-gcc.exe (GCC) 7.3.0 / 2017.
     endm
 
 #include "asmcommon.inc"

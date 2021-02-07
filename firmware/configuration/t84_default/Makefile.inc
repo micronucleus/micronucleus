@@ -5,7 +5,7 @@
 # Controller type: ATtiny 84
 # Configuration:   Default configuration - 12 Mhz RC oscillator
 # Last Change:     Mar 16,2014
- 
+
 
 F_CPU = 12000000
 DEVICE = attiny84
@@ -32,7 +32,7 @@ FUSEOPT_DISABLERESET =  # TODO
 #
 # Fuse high byte:
 # 0xdd = 1 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)
@@ -42,7 +42,7 @@ FUSEOPT_DISABLERESET =  # TODO
 #
 # Fuse high byte ("no reset": external reset disabled, can't program through SPI anymore)
 # 0x5d = 0 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)

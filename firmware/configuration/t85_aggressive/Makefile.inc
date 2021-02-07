@@ -4,25 +4,26 @@
 
 # Controller type: ATtiny 85
 # Configuration:   Size optimized. Uses 16 MHz V-USB implementation, which may be instable with some computers
-# Last Change:     Jan 11,2015
+# Last Change:     Jun 16,2020
 
-# Enable unsafe optimizions. This will disable several safety features in microncleus to save around 40 more bytes
-# 
+# Enable unsafe optimizations. This will disable several safety features in microncleus to save around 40 more bytes
+#
 # Disabled features:
 #   * Stack pointer and SREG initialization in CRT
 #   * Client side reset vector patching
 #   * USB collision detection. Micronucleus will not work reliability with hubs if this is disabled.
 
-CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
+#CFLAGS += -DENABLE_UNSAFE_OPTIMIZATIONS
 
 F_CPU = 16000000
 DEVICE = attiny85
 
 # hexadecimal address for bootloader section to begin. To calculate the best value:
-# - make clean; make main.hex; ### output will list data: 2124 (or something like that)
-# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value 2124... = 6068
-# - How many pages in is that? 6068 / 64 (tiny85 page size in bytes) = 94.8125
-# - round that down to 94 - our new bootloader address is 94 * 64 = 6016, in hex = 1780
+# - make clean; make main.hex; ### output will list data: 1404
+# - for the size of your device (8kb = 1024 * 8 = 8192) subtract above value = 6788
+# - How many pages in is that? 6770 / 64 (tiny85 page size in bytes) = 106.xxx
+# - round that down to 106 - our new bootloader address is 106 * 64 = 6784, in hex = 1A80
+# - For data size up to 1408 the address is 1A80 for size from 1409 the address is 1A40
 BOOTLOADER_ADDRESS = 1A80
 
 FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
@@ -39,7 +40,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 #
 # Fuse high byte:
 # 0xdd = 1 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)
@@ -49,7 +50,7 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
 #
 # Fuse high byte ("no reset": external reset disabled, can't program through SPI anymore)
 # 0x5d = 0 1 0 1   1 1 0 1
-#        ^ ^ ^ ^   ^ \-+-/ 
+#        ^ ^ ^ ^   ^ \-+-/
 #        | | | |   |   +------ BODLEVEL 2..0 (brownout trigger level -> 2.7V)
 #        | | | |   +---------- EESAVE (preserve EEPROM on Chip Erase -> not preserved)
 #        | | | +-------------- WDTON (watchdog timer always on -> disable)

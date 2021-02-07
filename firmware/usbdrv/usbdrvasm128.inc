@@ -97,7 +97,7 @@ layout of samples and operations:
 #define phase   x3
 
 
-USB_INTR_VECTOR:
+USB_handler:
 ;order of registers pushed: YL, SREG [sofError], YH, shift, x1, x2, x3, cnt, r0
     push    YL              ;2 push only what is necessary to sync with edge ASAP
     in      YL, SREG        ;1
@@ -126,14 +126,6 @@ waitForK:
     rjmp    foundK
     sbis    USBIN, USBMINUS ;[0]
     rjmp    foundK          ;[1]
-#if USB_COUNT_SOF
-    lds     YL, usbSofCount
-    inc     YL
-    sts     usbSofCount, YL
-#endif  /* USB_COUNT_SOF */
-#ifdef USB_SOF_HOOK
-    USB_SOF_HOOK
-#endif
     rjmp    sofError
 
 foundK:
