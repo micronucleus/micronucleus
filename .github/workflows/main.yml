@@ -28,6 +28,7 @@ jobs:
     strategy:
       matrix:
          include:
+         # Native
          - os: ubuntu-latest
            shell: bash
          - os: macos-latest
@@ -35,23 +36,50 @@ jobs:
          - os: windows-2019
            shell: msys2 {0}
 
+         # Linux cross
+         - os: ubuntu-latest
+           container: debian:buster
+           target: i386
+           shell: bash
+         - os: ubuntu-latest
+           container: debian:buster
+           target: armel
+           shell: bash
+         - os: ubuntu-latest
+           container: debian:buster
+           target: armhf
+           shell: bash
+
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     defaults:
       run:
         shell: ${{ matrix.shell }}
     steps:
-    - name: install dependencies
+    - name: install dependencies (${{ runner.os }})
       run: sudo sh -c "apt-get update && apt-get install libusb-dev"
-      if: runner.os == 'Linux'
+      if: runner.os == 'Linux' && matrix.target == ''
 
-    - uses: msys2/setup-msys2@v2
+    - name: install dependencies (${{ runner.os }})
+      if: runner.os == 'Linux' && matrix.target == ''
+      run: sudo sh -c "apt-get update && apt-get install libusb-dev"
+
+    - name: install dependencies (${{ matrix.target }} cross)
+      if: runner.os == 'Linux' && matrix.target != ''
+      run: |
+          dpkg --add-architecture ${{ matrix.target }}
+          apt-get update || true
+          apt-get install -y make zip crossbuild-essential-${{ matrix.target }} libusb-dev:${{ matrix.target }}
+
+    - name: install dependencies (${{ runner.os }})
+      uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         install: git base-devel binutils mingw-w64-x86_64-toolchain make zip mingw-w64-x86_64-libusb-win32
         update: true
       if: runner.os == 'Windows'
 
-    - name: install dependencies
+    - name: install dependencies (${{ runner.os }})
       run: brew install libusb-compat
       if: runner.os == 'macOS'
 
@@ -62,7 +90,7 @@ jobs:
       env:
         BUILD_OS: ${{ runner.os }}
       run: |
-          bash -x $GITHUB_WORKSPACE/.github/workflows/build-pkg.sh
+          bash -x $GITHUB_WORKSPACE/.github/workflows/build-pkg.sh ${{ matrix.target }}
 
     - name: Branch head release
       uses: johnwbyrd/update-release@v1.0.0
