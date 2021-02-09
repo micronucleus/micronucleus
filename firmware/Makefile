@@ -94,7 +94,7 @@ main.hex:	main.bin
 	@rm -f main.hex main.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex main.bin main.hex
 # 	@echo Size of binary hexfile. Use the "data" size to calculate the bootloader address:
-#	@avr-size main.hex
+	@avr-size main.hex
 #   if you don't have python installed, you can comment out the next three lines and use the two above
 	@avr-size -A -t main.hex >size.txt
 	@python CalculateSize.py <size.txt
@@ -172,10 +172,12 @@ ifeq ($(OS),Windows_NT)
 	@echo off
 	@if not exist releases MKDIR releases
 	@if not exist upgrades MKDIR upgrades
+	@make 
 	@FOR /D  %%C IN (configuration/*) DO ( echo. \
 		&& echo ********************************************************** \
 		&& echo make Configuration %%C \
 		&& echo ********************************************************** \
+		&& make clean \
 		&& make CONFIG=%%C \
 		&& mv main.hex releases\%%C.hex \
 		&& mv upgrade.hex upgrades\upgrade-%%C.hex \
@@ -187,6 +189,7 @@ else
 	@mkdir -p upgrades
 	@rm -f build.log
 	@for config in `ls configuration` ; do \
+	 	make clean; \
 		make CONFIG=$$config; \
 		mv main.hex releases/$$config.hex; \
 		mv upgrade.hex upgrades/upgrade-$$config.hex; \
