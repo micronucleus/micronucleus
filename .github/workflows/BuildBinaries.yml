@@ -45,6 +45,10 @@ jobs:
            shell: msys2 {0}
            target-dir: i686-mingw32
 
+         - os: windows-2019
+           shell: msys2 {0}
+           target-dir: x86_64-mingw32
+
     runs-on: ${{ matrix.os }}
     container: ${{ matrix.container }}
     defaults:
@@ -114,21 +118,42 @@ jobs:
         make USBFLAGS="$(pkg-config --cflags libusb)"
         ls -l
 
-    - name: Install Windows build system
-      if: runner.os == 'Windows'
+    - name: Install Windows i686 build system
+      if: runner.os == 'Windows' && matrix.target-dir == 'i686-mingw32'
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: MINGW64
+        #install: git base-devel binutils mingw-w64-x86_64-toolchain make zip mingw-w64-x86_64-libusb-win32
+        install: git base-devel mingw-w64-i686-toolchain zip mingw-w64-i686-libusb-win32
+        update: true
+
+    - name: make i686 Windows exe
+      if: runner.os == 'Windows' && matrix.target-dir == 'i686-mingw32'
+      run: |
+        TARGET_DIR=${{ matrix.target-dir }}
+        cd commandline
+        PATH="/mingw32/bin:$PATH"
+        mingw32-make
+        if [[ ! -d builds/$TARGET_DIR/ ]]; then mkdir builds/$TARGET_DIR; fi
+        echo mv micronucleus.exe builds/$TARGET_DIR
+        mv micronucleus.exe builds/$TARGET_DIR
+        echo cp -p /mingw32/bin/libusb*.dll builds/$TARGET_DIR
+        cp -p /mingw32/bin/libusb*.dll builds/$TARGET_DIR
+
+    - name: Install Windows x86_64 build system
+      if: runner.os == 'Windows' && matrix.target-dir == 'x86_64-mingw32'
       uses: msys2/setup-msys2@v2
       with:
         msystem: MINGW64
         install: git base-devel binutils mingw-w64-x86_64-toolchain make zip mingw-w64-x86_64-libusb-win32
         update: true
 
-    - name: make windows exe
-      if: runner.os == 'Windows'
-      id: make
+    - name: make x86_64 Windows exe
+      if: runner.os == 'Windows' && matrix.target-dir == 'x86_64-mingw32'
       run: |
+        TARGET_DIR=${{ matrix.target-dir }}
         cd commandline
         mingw32-make
-        TARGET_DIR=${{ matrix.target-dir }}
         if [[ ! -d builds/$TARGET_DIR/ ]]; then mkdir builds/$TARGET_DIR; fi
         echo mv micronucleus.exe builds/$TARGET_DIR
         mv micronucleus.exe builds/$TARGET_DIR
@@ -138,8 +163,8 @@ jobs:
     - name: move exetutable to builds
       if: runner.os != 'Windows'
       run: |
-        cd commandline
         TARGET_DIR=${{ matrix.target-dir }}
+        cd commandline
         if [[ ! -d builds/$TARGET_DIR/ ]]; then
           # build new directory, and add moved binary to git index
           mkdir builds/$TARGET_DIR
@@ -191,11 +216,15 @@ jobs:
         echo git push
         git push
         if [[ $? -ne 0 ]]; then
-          RETRY_DELAY=$[ ( $RANDOM % 10 )  + 1 ]
-          echo "Race condition, retry in ${RETRY_DELAY} seconds"
-          sleep ${RETRY_DELAY}s
-          echo git pull
-          git pull
-          echo git push
-          git push
+          # try 4 times with random delays
+          for ((i = 0 ; i < 4 ; i++)); do
+            RETRY_DELAY=$[ ( $RANDOM % 10 )  + 10 ]
+            echo "Race condition, retry in ${RETRY_DELAY} seconds"
+            sleep ${RETRY_DELAY}s
+            echo git pull
+            git pull
+            echo git push
+            git push
+            if [[ $? -eq 0 ]]; then break; fi
+          done
         fi

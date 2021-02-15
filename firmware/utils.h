@@ -67,7 +67,7 @@ typedef unsigned char boolean;
   #define microdelay(microseconds) _delay_loop_2(((microseconds) * (F_CPU / 100000)) / 40)
 #endif
 
-// delay in milliseconds - a custom implementation to avoid util/delay's tendancy to import floating point math libraries
+// delay in milliseconds - a custom implementation to avoid util/delay's tendency to import floating point math libraries
 void delay(unsigned int ms) {
   while (ms > 0) {
     // delay for one millisecond (250*4 cycles, multiplied by cpu mhz)
