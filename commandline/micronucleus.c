@@ -142,7 +142,7 @@ int main(int argc, char **argv) {
         printf("Did not understand --timeout value\n");
         return EXIT_FAILURE;
       }
-    } else if (argv[arg_pointer][0] == '-') {
+    } else if (strlen(argv[arg_pointer]) > 1 && argv[arg_pointer][0] == '-') {
       fprintf(stderr, "Unrecognized option: %s\n", argv[arg_pointer]);
       return EXIT_FAILURE;
     } else {
