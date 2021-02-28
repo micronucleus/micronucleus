@@ -43,7 +43,7 @@ CFLAGS += -nostartfiles -ffunction-sections -fdata-sections -fpack-struct -fno-i
 LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,-Map=main.map
 
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
-OBJECTS += osccalASM.o
+OBJECTS += osccal.o
 
 
 # symbolic targets:
@@ -196,3 +196,4 @@ else
 		done
 	@make clean
 endif
+
