@@ -1,5 +1,5 @@
-Micronucleus V2.5pre
-====================
+Micronucleus V2.5
+=================
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
 
@@ -55,14 +55,15 @@ The makefile makes use of the gnu binutils and some unix commands such as 'mv' a
 
 Currently, the following configurations are included and tested. Please check the subfolders /firmware/configurations/ for details. 
 
-t84_default     -   ATtiny84A default configuration     -   1522 bytes
-t841_default    -   ATtiny841 default configuration     -   1574 bytes
-t45_default     -   ATtiny45  default configuration     -   1558 bytes
-t85_default     -   ATtiny85  default configuration     -   1558 bytes
-t85_aggressive  -   ATtiny85  smaller size - critical   -   1392 bytes
-t167_default    -   ATtiny167 default (uses xtal)       -   1386 bytes
-Nanite841       -   Nanite841 firmware                  -   1598 bytes
-m328p_extclock  -   ATMega328p external clock           -   1524 bytes
+t84_default     -   ATtiny84A default configuration     -   1476 bytes
+t841_default    -   ATtiny841 default configuration     -   1522 bytes
+t45_default     -   ATtiny45  default configuration     -   1510 bytes
+t85_default     -   ATtiny85  default configuration     -   1510 bytes
+t85_aggressive  -   ATtiny85  smaller size - critical   -   1358 bytes
+t88_default     -   ATtiny88  default configuration     -   1432 bytes
+t167_default    -   ATtiny167 default (uses xtal)       -   1338 bytes
+Nanite841       -   Nanite841 firmware                  -   1546 bytes
+m328p_extclock  -   ATMega328p external clock           -   1490 bytes
 
 Please note that the configuration "t85_aggressive" may be instable under certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
@@ -145,7 +146,7 @@ Changes
       This will let micronucleus timeout also when traffic from other USB devices
       is present on the bus.
 
-• v2.5 prerelease - January 2021
+• v2.5 March 5th, 2021
     - Removed zero in version numbering as it confused some people. The minor version number of 
       this release is 5.
     - Huge update by @ArminJo addressing many issues especially for ATTinyCore integration:
@@ -160,6 +161,9 @@ Changes
     - Increase available user program size by 64 bytes for most implementations
     - Cumulative minor fixes contributed throughout 2019-2020. Big thanks to everyone!
     - "make release" will now rebuild all release hexfiles. Thanks to @Ho-Ro.
+    - Added new osccal code by @nerdralph, significantly reducing code siez and fixing a bug
+      that led to issues when micronucleus was operated on an USB hub together with other
+      low-speed USB devices.
     
 Credits
 =======
