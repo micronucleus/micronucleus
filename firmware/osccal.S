@@ -1,7 +1,29 @@
 ; Ralph Doncaster 2020
 ; optimized OSCCAL tuning from low-speed USB SOF every 1ms
 
-#include "macros.inc"
+; Ralph Doncaster public domain AVR asm macros github.com/nerdralph
+
+.macro GLABEL name
+     .global \name
+     \name:
+.endm
+
+; in/out require an io register at address < 0x40
+.macro LOAD rd, ioreg
+    .if \ioreg > 0x3F
+    lds \rd, \ioreg
+    .else
+    in \rd, \ioreg
+    .endif
+.endm
+
+.macro STORE ioreg, rr
+    .if \ioreg > 0x3F
+    sts \ioreg, \rr
+    .else
+    out \ioreg, \rr
+    .endif
+.endm
 
 #define __SFR_OFFSET 0                  /* start SFRs at 0x00 not 0x20 */
 #include "usbdrv/usbdrv.h"
