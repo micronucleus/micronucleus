@@ -161,7 +161,7 @@ Changes
     - Increase available user program size by 64 bytes for most implementations
     - Cumulative minor fixes contributed throughout 2019-2020. Big thanks to everyone!
     - "make release" will now rebuild all release hexfiles. Thanks to @Ho-Ro.
-    - Added new osccal code by @nerdralph, significantly reducing code siez and fixing a bug
+    - Added new osccal code by @nerdralph, significantly reducing code size and fixing a bug
       that led to issues when micronucleus was operated on an USB hub together with other
       low-speed USB devices.
     
