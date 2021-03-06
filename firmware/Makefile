@@ -45,6 +45,14 @@ LDFLAGS = -Wl,--relax,--section-start=.text=$(BOOTLOADER_ADDRESS),--gc-sections,
 OBJECTS =  crt1.o usbdrv/usbdrvasm.o usbdrv/oddebug.o main.o 
 OBJECTS += osccal.o
 
+# Detect shell type
+
+ifeq ($(OS),Windows_NT)
+	ifneq ($(SHELL),/bin/sh)
+	SHELLTYPE = WINDOWS
+	endif
+endif
+
 
 # symbolic targets:
 all: main.hex upgrade.hex
@@ -123,7 +131,7 @@ upgrade.hex:	upgrade.bin
 	@rm -f upgrade.hex upgrade.eep.hex
 	@avr-objcopy -j .text -j .data -O ihex upgrade.bin upgrade-app.hex
 # for internal echo command, mainly on windows
-ifeq ($(OS),Windows_NT)
+ifeq ($(SHELLTYPE), WINDOWS)
 	@echo :1000000003C003C003C003C003C003C003C003C0D8> upgrade.hex
 else
 # for unix echo command
@@ -151,7 +159,7 @@ bootloader.o: bootloader.raw
 bootloader.h: bootloader.o
 #	@echo generating bootloader.h
 # for internal echo command, mainly on windows
-ifeq ($(OS),Windows_NT)
+ifeq ($(SHELLTYPE), WINDOWS)
 	@echo extern const uint8_t $* [] PROGMEM;> $@
 	@echo extern const uint8_t $*_end [] PROGMEM;>> $@
 	@echo extern const uint8_t $*_size_sym [];>> $@
@@ -168,7 +176,7 @@ endif
 
 release:
 # for internal echo command, mainly on windows
-ifeq ($(OS),Windows_NT)
+ifeq ($(SHELLTYPE), WINDOWS)
 	@echo off
 	@if not exist releases MKDIR releases
 	@if not exist upgrades MKDIR upgrades
@@ -182,7 +190,7 @@ ifeq ($(OS),Windows_NT)
 		&& mv main.hex releases\%%C.hex \
 		&& mv upgrade.hex upgrades\upgrade-%%C.hex \
 	)
-	make clean
+	@make clean
 else
 # for unix echo command
 	@mkdir -p releases
