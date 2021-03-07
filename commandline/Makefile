@@ -9,6 +9,8 @@ ifeq ($(shell uname), Linux)
 # If you get the error "usb.h: No such file or directory" you must run "sudo apt-get install libusb-dev"
 	USBFLAGS=$(shell libusb-config --cflags)
 	USBLIBS= -static $(shell libusb-config --libs)
+# If you get an error about missing USB libraries, please use the line below instead of the one above
+#	USBLIBS= $(shell libusb-config --libs)
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)

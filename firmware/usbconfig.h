@@ -42,7 +42,7 @@
 // Check CRC of all received data
 
 #ifndef __ASSEMBLER__
-    void calibrateOscillatorASM(void); // from osccalASM.S
+    void tuneOsccal(void);              // from osccal.S
     #define USB_CFG_HAVE_MEASURE_FRAME_LENGTH   0
 #endif
 
