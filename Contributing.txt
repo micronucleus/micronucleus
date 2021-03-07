@@ -28,8 +28,6 @@ Before contributing, please keep in mind the following:
    randoms spaces or inserted/deleted lines should be avoided unless they are
    part of intentional refactoring.
 
- - Even if you aren't writing code, we prefer spaces to tabs.
- 
  - This repository is for source code only. There are some exceptions, but these
    are mostly legacy and in some cases relate to constraints that existed in the past. 
    If you can contribute by cleaning up, this is highly appreciated!
