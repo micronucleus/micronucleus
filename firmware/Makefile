@@ -14,18 +14,18 @@ CONFIG ?= t85_default
 #     make CONFIG=<config>  # build a specific configuration
 #     make                  # build standard configuration
 #     make release          # will cycle through all configurations in the configuration folder and build them
-#	  make clean			# cleans up last build files
+#     make clean            # cleans up last build files
 #     make dist-clean       # removes all hex files
 #
 # Configure the following variables according to your AVR.
-# Program the device with#
-#     make fuse    			# to set the clock generator, boot section size etc.
-#     make flash   			# to load the boot loader into flash
-#     make disablereset		# use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
+# Program the device with:
+#     make fuse            # to set the clock generator, boot section size etc.
+#     make flash           # to load the boot loader into flash
+#     make disablereset	   # use external reset line for IO (CAUTION: this is not easy to enable again, see README) 
 ###############################################################################
 
 CFLAGS =
-CONFIGPATH	  = configuration/$(CONFIG)
+CONFIGPATH = configuration/$(CONFIG)
 include $(CONFIGPATH)/Makefile.inc
 
 PROGRAMMER ?= -c USBasp
@@ -139,7 +139,7 @@ else
 endif
 	@cat upgrade-app.hex >> upgrade.hex
 	@rm upgrade-app.hex
-#m	@avr-size upgrade.hex
+#	@avr-size upgrade.hex
 
 
 bootloader.raw: main.hex
@@ -180,7 +180,6 @@ ifeq ($(SHELLTYPE), WINDOWS)
 	@echo off
 	@if not exist releases MKDIR releases
 	@if not exist upgrades MKDIR upgrades
-	@make 
 	@FOR /D  %%C IN (configuration/*) DO ( echo. \
 		&& echo ********************************************************** \
 		&& echo make Configuration %%C \

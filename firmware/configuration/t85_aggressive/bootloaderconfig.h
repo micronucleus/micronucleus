@@ -232,14 +232,6 @@
 
 /* ----------------------- Optional Timeout Config ------------------------ */
 
-//#define START_WITHOUT_PULLUP
-/* It is only required if the bootloader can be entered without a pullup attached activated at the D- pin.
- * If not connected to USB we then have an endless USB reset condition,
- * which must be handled separately by commenting out the define.
- * This handling adds 14 to 16 bytes to the code size.
- * This handling also works well with standard / unmodified pullup connection :-).
- */
-
 /*
  *  Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
  *

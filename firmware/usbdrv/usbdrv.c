@@ -271,7 +271,7 @@ skipMsgPtrAssignment:
  */
 static inline void usbProcessRx(uchar *data, uchar len)
 {
-usbRequest_t    *rq = (void *)data;
+usbRequest_t    *rq = (void *)data; // data is constant value usbRxBuf + 1 and optimized out
 
 /* usbRxToken can be:
  * 0x2d 00101101 (USBPID_SETUP for setup data)
@@ -286,7 +286,7 @@ usbRequest_t    *rq = (void *)data;
         usbMsgLen_t replyLen;
         usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
         usbTxLen = USBPID_NAK;              /* abort pending transmit */
-        uchar type = rq->bmRequestType & USBRQ_TYPE_MASK;
+        uchar type = rq->bmRequestType & USBRQ_TYPE_MASK; // masking is essential here
         if(type != USBRQ_TYPE_STANDARD){    /* standard requests are handled by driver */
             replyLen = usbFunctionSetup(data); // for USBRQ_TYPE_CLASS or USBRQ_TYPE_VENDOR
         }else{
