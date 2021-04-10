@@ -1,4 +1,4 @@
-START_WITHOUT_PULLUP/* Name: bootloaderconfig.h
+/* Name: bootloaderconfig.h
  * Micronucleus configuration file.
  * This file (together with some settings in Makefile.inc) configures the boot loader
  * according to the hardware.
