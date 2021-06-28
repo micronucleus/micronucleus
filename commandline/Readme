@@ -3,6 +3,7 @@ ihsan Kehribar <ihsan@kehribar.me> and Bluebie <a@creativepony.com>
 
 It's been tested casually on Mac, Windows, and Linux, and aught to work on all
 three. To make and install, do the regular 'make; sudo make install' on unixes.
+If you're on linux and don't want a static binary, use 'make STATIC=' instead.
 
 If you get the error "usb.h: No such file or directory" you must run "sudo apt-get install libusb-dev".
 
