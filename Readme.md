@@ -67,6 +67,7 @@ Currently, the following configurations are included and tested. Please check th
 | t167_default    |   ATtiny167 default (uses xtal)       |   1338 bytes |
 | Nanite841       |   Nanite841 firmware                  |   1546 bytes |
 | m328p_extclock  |   ATMega328p external clock           |   1490 bytes |
+| t4313_default   |   Attiny 4313 default configuration   |   1456 bytes |
 
 Please note that the configuration "t85_aggressive" may be instable under certain circumstances. Please revert to "t85_default" if downloading of user programs fails.
 
