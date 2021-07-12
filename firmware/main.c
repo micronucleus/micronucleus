@@ -401,10 +401,6 @@ int main(void) {
         command = cmd_local_nop; // initialize register 3
         currentAddress.w = 0;
 
-#if ((OSCCAL_HAVE_XTAL == 0) || (FAST_EXIT_NO_USB_MS > 0)) && defined(START_WITHOUT_PULLUP) // Adds 14 bytes
-        uint8_t resetDetected = 0; // Flag to call OSCCAL calibration fn or reset idlePolls directly after host reset ends.
-#endif
-
         /*
          * 1. Wait for 5 ms or USB transmission (and detect reset)
          * 2. Interpret and execute USB command
@@ -429,24 +425,6 @@ int main(void) {
                 if ((USBIN & USBMASK) != 0) {
                     // No host reset here! We are unconnected with pullup or receive host data -> rearm counter
                     tResetDownCounter = 100;
-
-#if defined(START_WITHOUT_PULLUP)
-#  if (OSCCAL_HAVE_XTAL == 0) || (FAST_EXIT_NO_USB_MS > 0)
-                    /*
-                     * Call OSCCAL calibration fn or reset idlePolls only if USB is attached and after a reset, otherwise just skip it and wait for timeout.
-                     * If USB has no pullup at VCC but at USB 5 volt, we will end up here only if USB 5 volt is connected and after host reset has ended.
-                     */
-                    if (resetDetected) {
-                        resetDetected = 0; // do it only once after reset
-#    if (OSCCAL_HAVE_XTAL == 0)
-                        tuneOsccal();
-#    endif
-#    if (FAST_EXIT_NO_USB_MS > 0)
-                    idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by end of a reset condition
-#    endif
-                    }
-#  endif
-#endif
                 }
                 if (--tResetDownCounter == 0) {
                     /*
@@ -458,22 +436,17 @@ int main(void) {
                     usbNewDeviceAddr = 0;
                     usbDeviceAddr = 0;
 
-#if defined(START_WITHOUT_PULLUP) // if not connected to USB we have an endless USB reset condition, so do actions after end of reset
-#  if (OSCCAL_HAVE_XTAL == 0) || (FAST_EXIT_NO_USB_MS > 0)
-                    resetDetected = 1;  // Set flag to wait for reset to end before calling OSCCAL calibrate fn or reset idlePolls.
-#  endif  // OSCCAL_HAVE_XTAL
-#else
-#  if (OSCCAL_HAVE_XTAL == 0)
+#if (OSCCAL_HAVE_XTAL == 0)
                     /*
                      * Called if we received an host reset. This waits for the D- line to toggle or at least.
                      * It will wait forever, if no host is connected and the pullup at D- was detached.
                      * In this case we recognize a (dummy) host reset but no toggling at D- will occur.
                      */
                     tuneOsccal();
-#  endif
-#if (FAST_EXIT_NO_USB_MS > 0)
-                    idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected USB connection by getting a reset
 #endif
+#if (FAST_EXIT_NO_USB_MS > 0)
+                    // I measured 350 ms (940 ms on my old Linux laptop) from here to the configurationReply request
+                    idlePolls.w = ((AUTO_EXIT_MS - 1200) / 5); // Allow another 1200 ms for micronucleus to request configurationReply
 #endif
                 }
 
@@ -528,6 +501,12 @@ int main(void) {
                 if (len >= 0) {
                     usbProcessRx(usbRxBuf + 1, len); // only single buffer due to in-order processing
                     usbRxLen = 0; /* mark rx buffer as available */
+#if (FAST_EXIT_NO_USB_MS > 0)
+                    if ((*(usbRxBuf + 1) & USBRQ_TYPE_MASK) != USBRQ_TYPE_STANDARD) {
+                        // we have a request from a running micronucleus program here
+                        idlePolls.b[1] = 0; // Reset counter to have 6 seconds timeout since we detected running micronucleus program here
+                    }
+#endif
                 }
 
                 if (usbTxLen & 0x10) { /* transmit system idle */

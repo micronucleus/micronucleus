@@ -3,15 +3,15 @@
  * This file (together with some settings in Makefile.inc) configures the boot loader
  * according to the hardware.
  *
- * Controller type: ATtiny 167 - 16 MHz with crystal
- * Configuration:   Standard configuration - Follows Digispark Pro defaults. Needs 16Mhz XTAL.
- *       USB D- :   PB3
- *       USB D+ :   PB6
+ * Controller type: ATtiny 4313 - 20 MHz
+ * Configuration:   Default configuration
+ *       USB D- :   PD0
+ *       USB D+ :   PD1
  *       Entry  :   Always
- *       LED    :   Active High on PB1
- *       OSCCAL :   No change due to external crystal
- * Note: Uses 16 MHz V-USB implementation.
- * Last Change:     JUn 15,2015
+ *       LED    :   PB7, Active Low
+ *       OSCCAL :   Revert to precalibrated value (8 MHz)
+ * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny84A
+ * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -24,17 +24,17 @@
 /*      Change this according to your CPU and USB configuration              */
 /* ------------------------------------------------------------------------- */
 
-#define USB_CFG_IOPORTNAME      B
+#define USB_CFG_IOPORTNAME      D
   /* This is the port where the USB bus is connected. When you configure it to
    * "B", the registers PORTB, PINB and DDRB will be used.
    */
 
-#define USB_CFG_DMINUS_BIT      3
+#define USB_CFG_DMINUS_BIT      0
 /* This is the bit number in USB_CFG_IOPORT where the USB D- line is connected.
  * This may be any bit in the port.
  * USB- has a 1.5k pullup resistor to indicate a low-speed device.
  */
-#define USB_CFG_DPLUS_BIT       6
+#define USB_CFG_DPLUS_BIT       1
 /* This is the bit number in USB_CFG_IOPORT where the USB D+ line is connected.
  * This may be any bit in the port, but must be configured as a pin change interrupt.
  */
@@ -69,27 +69,13 @@
 
 
 // setup interrupt for Pin Change for D+
-
-// This is configured for PORTB.
-
-#define USB_INTR_CFG            PCMSK1 // Pin interrupt enable register
+#define USB_INTR_CFG            PCMSK2
 #define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
 #define USB_INTR_CFG_CLR        0
-#define USB_INTR_ENABLE         PCICR // Global interrupt enable register
-#define USB_INTR_ENABLE_BIT     PCIE1 // Bit position in global interrupt enable register
-#define USB_INTR_PENDING        PCIFR // Register to read interrupt flag
-#define USB_INTR_PENDING_BIT    PCIF1 // Bit position in register to read interrupt flag
-
-/* Configuration for PORTA */
-/*
-#define USB_INTR_CFG            PCMSK0
-#define USB_INTR_CFG_SET        (1 << USB_CFG_DPLUS_BIT)
-#define USB_INTR_CFG_CLR        0
-#define USB_INTR_ENABLE         PCICR
-#define USB_INTR_ENABLE_BIT     PCIE0
-#define USB_INTR_PENDING        PCIFR
-#define USB_INTR_PENDING_BIT    PCIF0
-*/
+#define USB_INTR_ENABLE         GIMSK
+#define USB_INTR_ENABLE_BIT     PCIE2
+#define USB_INTR_PENDING        GIFR
+#define USB_INTR_PENDING_BIT    PCIF2
 
 /* ------------------------------------------------------------------------- */
 /*       Configuration relevant to the CPU the bootloader is running on      */
@@ -97,8 +83,13 @@
 
 // how many milliseconds should host wait till it sends another erase or write?
 // needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
+
 #define MICRONUCLEUS_WRITE_SLEEP 5
 
+// ATtiny84 does not know WDTCR
+#ifndef WDTCR
+#define WDTCR WDTCSR
+#endif
 
 /* ---------------------- feature / code size options ---------------------- */
 /*               Configure the behavior of the bootloader here               */
@@ -114,16 +105,6 @@
  *  ENTRY_ALWAYS        Always activate the bootloader after reset. Requires the least
  *                      amount of code.
  *
- *  ENTRY_POWER_ON      Activate the bootloader after power on. This is what you need
- *                      for normal development with Digispark boards.
- *                      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
- *                      Since the reset flags are no longer cleared by micronucleus
- *                      you must clear them with "MCUSR = 0;" in your setup() routine
- *                      after saving or evaluating them to make this mode work.
- *                      If you do not reset the flags, the bootloader will be entered even
- *                      after reset, since the power on reset flag in MCUSR is still set.
- *                      Adds 18 bytes.
- *
  *  ENTRY_WATCHDOG      Activate the bootloader after a watchdog reset. This can be used
  *                      to enter the bootloader from the user program.
  *                      Adds 22 bytes.
@@ -132,7 +113,7 @@
  *                      pulling the reset pin low. It may be necessary to add an external
  *                      pull-up resistor to the reset pin if this entry method appears to
  *                      behave unreliably.
- *                      Adds 24 bytes.
+ *                      Adds 22 bytes.
  *
  *  ENTRY_JUMPER        Activate the bootloader when a specific pin is pulled low by an
  *                      external jumper.
@@ -150,7 +131,7 @@
  *
  */
 
-#define JUMPER_PIN    PB0
+#define JUMPER_PIN    PB6
 #define JUMPER_PORT   PORTB
 #define JUMPER_DDR    DDRB
 #define JUMPER_INP    PINB
@@ -164,7 +145,7 @@
 #define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  6
 #define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 7
 
-#define ENTRYMODE ENTRY_ALWAYS
+#define ENTRYMODE ENTRY_JUMPER
 
 #if ENTRYMODE==ENTRY_ALWAYS
   #define bootLoaderInit()
@@ -173,32 +154,16 @@
 #elif ENTRYMODE==ENTRY_WATCHDOG
   #define bootLoaderInit()
   #define bootLoaderExit()
-  #define bootLoaderStartCondition() (MCUSR & _BV(WDRF))
+  #define bootLoaderStartCondition() (MCUSR&_BV(WDRF))
 #elif ENTRYMODE==ENTRY_EXT_RESET
   #define bootLoaderInit()
   #define bootLoaderExit()
-// On my ATtiny167 I have always 0x07 BORF | EXTRF | PORF after power on.
-// After reset only EXTRF is NEWLY set.
-// So we must reset at least BORF and PORF flag ALWAYS after checking for entry condition,
-// otherwise this entry condition will NEVER be true if application does not reset PORF.
-  #define bootLoaderStartCondition() (MCUSR == _BV(EXTRF)) // Adds 18 bytes
+  #define bootLoaderStartCondition() (MCUSR&_BV(EXTRF))
 #elif ENTRYMODE==ENTRY_JUMPER
   // Enable pull up on jumper pin and delay to stabilize input
   #define bootLoaderInit()   {JUMPER_DDR &= ~_BV(JUMPER_PIN);JUMPER_PORT |= _BV(JUMPER_PIN);_delay_ms(1);}
   #define bootLoaderExit()   {JUMPER_PORT &= ~_BV(JUMPER_PIN);}
-  #define bootLoaderStartCondition() (!(JUMPER_INP & _BV(JUMPER_PIN)))
-#elif ENTRYMODE==ENTRY_POWER_ON
-  #define bootLoaderInit()
-  #define bootLoaderExit()
-  #define bootLoaderStartCondition() (MCUSR&_BV(PORF))
-#elif ENTRYMODE==ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON
-  #define bootLoaderInit()
-  #define bootLoaderExit()
-  #define bootLoaderStartCondition()  ((USBIN & USBIDLE) && (MCUSR & _BV(PORF)))
-#elif ENTRYMODE==ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET
-  #define bootLoaderInit()
-  #define bootLoaderExit()
-  #define bootLoaderStartCondition() ((USBIN & USBIDLE) && (MCUSR == _BV(EXTRF)))
+  #define bootLoaderStartCondition() (!(JUMPER_INP&_BV(JUMPER_PIN)))
 #else
    #error "No entry mode defined"
 #endif
@@ -220,27 +185,25 @@
  */
 
 #define SAVE_MCUSR
-
 /*
  * Define bootloader timeout value.
  *
  *  The bootloader will only time out if a user program was loaded.
  *
- *  FAST_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected after the initial 300 ms disconnect and connect.
+ *  FAST_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected.
  *                             Set to < 120 to disable.
- *                             Adds 8 bytes.
- *                             (This will wait for FAST_EXIT_NO_USB_MS milliseconds for an USB SE0 reset from the host, otherwise exit)
+ *                             Adds ~6 bytes.
+ *                             (This will wait for an USB SE0 reset from the host)
  *
- *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication from the host tool was received.
+ *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
+ *                             from the host tool was received.
  *                             Set to 0 to disable -> never leave the bootloader except on receiving an exit command by USB.
  *
  *  All values are approx. in milliseconds
  */
 
-// I observed 2 resets. First is 100 ms after initial connecting to USB lasting 65 ms and the second 90 ms later and also 65 ms.
-// On my old HP laptop I have different timing: First reset is 220 ms after initial connecting to USB lasting 300 ms and the second is missing.
-#define FAST_EXIT_NO_USB_MS       0 // Values below 120 are ignored. Effective timeout is 300 + FAST_EXIT_NO_USB_MS.
-#define AUTO_EXIT_MS           6000
+#define FAST_EXIT_NO_USB_MS    0
+#define AUTO_EXIT_MS           0
 
  /*
  *  Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
@@ -259,6 +222,10 @@
  *  OSCCAL_HAVE_XTAL          Set this to '1' if you have an external crystal oscillator. In this case no attempt
  *                            will be made to calibrate the oscillator. You should deactivate both options above
  *                            if you use this to avoid redundant code.
+ *
+ *  OSCCAL_SLOW_PROGRAMMING   Setting this to '1' will set OSCCAL back to the factory calibration during programming to make
+ *                            sure correct timing is used for the flash writes. This is needed if the micronucleus clock
+ *                            speed significantly deviated from the default clock. E.g. 12 Mhz on ATtiny841 vs. 8Mhz default.
  *
  *  If both options are selected, OSCCAL_RESTORE_DEFAULT takes precedence.
  *
@@ -284,11 +251,11 @@
  *
  */
 
-#define LED_MODE    NONE
+#define LED_MODE    ACTIVE_HIGH
 
 #define LED_DDR     DDRB
 #define LED_PORT    PORTB
-#define LED_PIN     PB1
+#define LED_PIN     PB7
 
 /*
  *  This is the implementation of the LED code. Change the configuration above unless you want to
