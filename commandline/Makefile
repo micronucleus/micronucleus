@@ -1,5 +1,6 @@
 # Makefile initially writen for Little-Wire by Omer Kilic <omerkilic@gmail.com>
 # Later on modified by ihsan Kehribar <ihsan@kehribar.me> for Micronucleus bootloader application.
+# 2021-07-25: Modified by Toby Thain <toby@telegraphics.com.au> for OS X Homebrew libusb packages.
 
 SHELL := /bin/bash
 
@@ -14,15 +15,29 @@ ifeq ($(shell uname), Linux)
 	EXE_SUFFIX =
 	OSFLAG = -D LINUX
 else ifeq ($(shell uname), Darwin)
-	USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
-	EXE_SUFFIX =
-	OSFLAG = -D MAC_OS
-	USBLIBS = /usr/local/opt/libusb-compat/lib/libusb.a
-	USBLIBS += /usr/local/opt/libusb/lib/libusb-1.0.a
-	USBLIBS += -framework CoreFoundation
-	USBLIBS += -framework IOKit
-	# Uncomment these to create a dual architecture binary:
-	# OSFLAG += -arch x86_64 -arch i386
+	# if pkg-config is available, use it
+	# This assumes libusb (and pkg-config if necessary) have been
+	# installed by `brew install pkg-config libusb libusb-compat`
+	# Tested with OS X Mojave 10.14.6
+	ifneq ($(shell which pkg-config), "")
+		# Unfortunately, Homebrew does not install the .pc file
+		# in a version independent location
+		PCPATH = $(shell dirname `brew list libusb | grep libusb-1.0.pc`)
+		USBFLAGS += $(shell PKG_CONFIG_PATH=$(PCPATH) pkg-config --cflags libusb)
+		USBLIBS += $(shell PKG_CONFIG_PATH=$(PCPATH) pkg-config --libs libusb libusb-1.0)
+		EXE_SUFFIX =
+		OSFLAG = -D MAC_OS -D MAC_OS_PKGCONFIG
+	else
+		USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
+		EXE_SUFFIX =
+		OSFLAG = -D MAC_OS
+		USBLIBS = /usr/local/opt/libusb-compat/lib/libusb.a
+		USBLIBS += /usr/local/opt/libusb/lib/libusb-1.0.a
+		USBLIBS += -framework CoreFoundation
+		USBLIBS += -framework IOKit
+		# Uncomment these to create a dual architecture binary:
+		# OSFLAG += -arch x86_64 -arch i386
+	endif
 else ifeq ($(shell uname), OpenBSD)
 	USBFLAGS=$(shell libusb-config --cflags || libusb-legacy-config --cflags)
 	USBLIBS=$(shell libusb-config --libs || libusb-legacy-config --libs)

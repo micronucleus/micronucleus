@@ -8,7 +8,11 @@ If you're on linux and don't want a static binary, use 'make STATIC=' instead.
 If you get the error "usb.h: No such file or directory" you must run "sudo apt-get install libusb-dev".
 
 Building on windows requires mingw32+msys with lib-winusb32. Possibly it can also
-be built with mingw64. 
+be built with mingw64.
+
+If building on Mac, you can choose to use Homebrew packages for libusb.
+To do this, first run `brew install pkg-config libusb libusb-compat`,
+then `make` (tested with OS X Mojave 10.14.6).
 
 Usage on Ubuntu:
   sudo micronucleus --run name_of_the_file.hex
