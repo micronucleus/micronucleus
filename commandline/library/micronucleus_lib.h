@@ -63,6 +63,17 @@ typedef struct _micronucleus_version {
 
 #define MICRONUCLEUS_COMMANDLINE_VERSION ("micronucleus-cli version: 2.5 from " __DATE__)
 
+// Definitions for bootloader_feature_flags below. Must be the same as used in all bootloaderconfig.h files.
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
+#define ENTRY_JUMPER    3
+#define ENTRY_POWER_ON  4
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  5
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 6
+#define FAST_EXIT_FEATURE_FLAG 0x10
+#define SAVE_MCUSR_FEATURE_FLAG 0x20
+
 // handle representing one micronucleus device
 typedef struct _micronucleus {
   usb_dev_handle *device;
@@ -76,6 +87,8 @@ typedef struct _micronucleus {
   unsigned int erase_sleep; // milliseconds
   unsigned char signature1; // only used in protocol v2
   unsigned char signature2; // only used in protocol v2
+  unsigned char bootloader_feature_flags; // additions to protocol v2
+  unsigned char application_version; // additions to protocol v2
 } micronucleus;
 
 typedef void (*micronucleus_callback)(float progress);

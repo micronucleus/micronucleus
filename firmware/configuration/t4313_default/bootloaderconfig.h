@@ -11,7 +11,6 @@
  *       LED    :   PB7, Active Low
  *       OSCCAL :   Revert to precalibrated value (8 MHz)
  * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny84A
- * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -82,14 +81,9 @@
 /* ------------------------------------------------------------------------- */
 
 // how many milliseconds should host wait till it sends another erase or write?
-// needs to be above 4.5 (and a whole integer) as avr freezes for 4.5ms
-
+// needs to be above 4.5 (and a whole integer) as avr freezes maximum for 4.5ms
+// while writing a FLASH page (even for 128 byte page size:-))
 #define MICRONUCLEUS_WRITE_SLEEP 5
-
-// ATtiny84 does not know WDTCR
-#ifndef WDTCR
-#define WDTCR WDTCSR
-#endif
 
 /* ---------------------- feature / code size options ---------------------- */
 /*               Configure the behavior of the bootloader here               */
@@ -104,6 +98,16 @@
  *
  *  ENTRY_ALWAYS        Always activate the bootloader after reset. Requires the least
  *                      amount of code.
+ *
+ *  ENTRY_POWER_ON      Activate the bootloader after power on. This is what you need
+ *                      for normal development with Digispark boards.
+ *                      !!! If SAVE_MCUSR (below) is NOT defined !!!
+ *                      Since the reset flags are no longer cleared by micronucleus
+ *                      you must clear them with "MCUSR = 0;" in your setup() routine
+ *                      after saving or evaluating them to make this mode work.
+ *                      If you do not reset the flags, the bootloader will be entered even
+ *                      after reset, since the "power on reset flag" PORF in MCUSR is still set.
+ *                      Adds 18 bytes.
  *
  *  ENTRY_WATCHDOG      Activate the bootloader after a watchdog reset. This can be used
  *                      to enter the bootloader from the user program.
@@ -136,14 +140,15 @@
 #define JUMPER_DDR    DDRB
 #define JUMPER_INP    PINB
 
-// These definitions are only required for the #if #elif's below.
-#define ENTRY_ALWAYS    1
-#define ENTRY_WATCHDOG  2
-#define ENTRY_EXT_RESET 3
-#define ENTRY_JUMPER    4
-#define ENTRY_POWER_ON  5
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  6
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 7
+// These definitions are only required for the #if #elif's below and the USB configuration reply.
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
+#define ENTRY_JUMPER    3
+#define ENTRY_POWER_ON  4
+// some useful combinations with ENTRY_D_MINUS_PULLUP_ACTIVATED
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  5
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 6
 
 #define ENTRYMODE ENTRY_JUMPER
 
@@ -165,7 +170,7 @@
   #define bootLoaderExit()   {JUMPER_PORT &= ~_BV(JUMPER_PIN);}
   #define bootLoaderStartCondition() (!(JUMPER_INP&_BV(JUMPER_PIN)))
 #else
-   #error "No entry mode defined"
+   #error "No valid entry mode defined"
 #endif
 
 /*
@@ -190,29 +195,32 @@
  *
  *  The bootloader will only time out if a user program was loaded.
  *
- *  FAST_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected.
+ *  FAST_EXIT_NO_USB_MS        The bootloader will exit after this delay if no USB is connected after the initial 300 ms disconnect and connect.
  *                             Set to < 120 to disable.
- *                             Adds ~6 bytes.
- *                             (This will wait for an USB SE0 reset from the host)
+ *                             Adds 8 bytes.
+ *                             (This will wait for FAST_EXIT_NO_USB_MS milliseconds for an USB SE0 reset from the host, otherwise exit)
  *
- *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication
- *                             from the host tool was received.
+ *  AUTO_EXIT_MS               The bootloader will exit after this delay if no USB communication from the host tool was received.
  *                             Set to 0 to disable -> never leave the bootloader except on receiving an exit command by USB.
  *
  *  All values are approx. in milliseconds
  */
 
-#define FAST_EXIT_NO_USB_MS    0
-#define AUTO_EXIT_MS           0
+// I observed 2 resets. First is 100 ms after initial connecting to USB lasting 65 ms and the second 90 ms later and also 65 ms.
+// On my old HP laptop I have different timing: First reset is 220 ms after initial connecting to USB lasting 300 ms and the second is missing.
+#define FAST_EXIT_NO_USB_MS       0 // Values below 120 are ignored. Effective timeout is 300 + FAST_EXIT_NO_USB_MS.
+#define AUTO_EXIT_MS           6000
+
+/* ----------------------- Optional Timeout Config ------------------------ */
 
  /*
  *  Defines the setting of the RC-oscillator calibration after quitting the bootloader. (OSCCAL)
  *
- *  OSCCAL_RESTORE_DEFAULT    Set this to '1' to revert to OSCCAL factore calibration after bootloader exit.
- *                            This is 8 MHz +/-2% on most devices or 16 MHz on the ATtiny 85 with activated PLL.
+ *  OSCCAL_RESTORE_DEFAULT    Set this to '1' to revert to OSCCAL factory calibration after bootloader exit.
+ *                            This is 8 MHz +/-2% on most devices for 16 MHz on the ATtiny 85 with activated PLL.
  *                            Adds ~14 bytes.
  *
- *  OSCCAL_SAVE_CALIB         Set this to '1' to save the OSCCAL calibration during program upload.
+ *  OSCCAL_SAVE_CALIB         Set this to '1' to save the OSCCAL calibration during program upload in FLASH.
  *                            This value will be reloaded after reset and will also be used for the user
  *                            program unless "OSCCAL_RESTORE_DEFAULT" is active. This allows calibrate the internal
  *                            RC oscillator to the F_CPU target frequency +/-1% from the USB timing. Please note
@@ -251,7 +259,11 @@
  *
  */
 
-#define LED_MODE    ACTIVE_HIGH
+#define NONE        0
+#define ACTIVE_HIGH 1
+#define ACTIVE_LOW  2
+
+#define LED_MODE    NONE
 
 #define LED_DDR     DDRB
 #define LED_PORT    PORTB
@@ -266,10 +278,6 @@
  *  LED_MACRO                 Called in the main loop with the idle counter as parameter.
  *                            Use to define pattern.
 */
-
-#define NONE        0
-#define ACTIVE_HIGH 1
-#define ACTIVE_LOW  2
 
 #if LED_MODE==ACTIVE_HIGH
   #define LED_INIT(x)   LED_DDR |= _BV(LED_PIN);
