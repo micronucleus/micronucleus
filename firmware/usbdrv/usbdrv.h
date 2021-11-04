@@ -195,22 +195,10 @@ USB_PUBLIC usbMsgLen_t usbFunctionSetup(uchar data[8]);
  * requested data to the driver. There are two ways to transfer this data:
  * (1) Set the global pointer 'usbMsgPtr' to the base of the static RAM data
  * block and return the length of the data in 'usbFunctionSetup()'. The driver
- * will handle the rest. Or (2) return USB_NO_MSG in 'usbFunctionSetup()'. The
- * driver will then call 'usbFunctionRead()' when data is needed. See the
- * documentation for usbFunctionRead() for details.
- *
- * If the SETUP indicates a control-out transfer, the only way to receive the
- * data from the host is through the 'usbFunctionWrite()' call. If you
- * implement this function, you must return USB_NO_MSG in 'usbFunctionSetup()'
- * to indicate that 'usbFunctionWrite()' should be used. See the documentation
- * of this function for more information. If you just want to ignore the data
- * sent by the host, return 0 in 'usbFunctionSetup()'.
- *
- * Note that calls to the functions usbFunctionRead() and usbFunctionWrite()
- * are only done if enabled by the configuration in usbconfig.h.
+ * will handle the rest. Or (2) return USB_NO_MSG in 'usbFunctionSetup()'. Not implemented.
  */
 
-extern uchar usbRxToken;    /* may be used in usbFunctionWriteOut() below */
+//extern uchar usbRxToken;    /* may be used in usbFunctionWriteOut() below */
 #ifdef USB_CFG_PULLUP_IOPORTNAME
 #define usbDeviceConnect()      ((USB_PULLUP_DDR |= (1<<USB_CFG_PULLUP_BIT)), \
                                   (USB_PULLUP_OUT |= (1<<USB_CFG_PULLUP_BIT)))

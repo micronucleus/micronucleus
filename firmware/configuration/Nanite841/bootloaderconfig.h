@@ -11,7 +11,6 @@
  *       LED    :   PB2, Active Low
  *       OSCCAL :   Revert to precalibrated value (8 MHz)
  * Note: can use 12 MHz V-USB without PLL due to stable RC-osc in ATTiny841
- * Last Change:     June 5,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -138,9 +137,9 @@
   Internal implementation, don't change this unless you want to add an entrymode.
 */
 
-#define ENTRY_ALWAYS    1
-#define ENTRY_WATCHDOG  2
-#define ENTRY_EXT_RESET 3
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
 #define ENTRY_JUMPER    4
 
 #if ENTRYMODE==ENTRY_ALWAYS
@@ -161,7 +160,7 @@
   #define bootLoaderExit()   {JUMPER_PORT &= ~_BV(JUMPER_PIN);}
   #define bootLoaderStartCondition() (!(JUMPER_INP&_BV(JUMPER_PIN)))
 #else
-   #error "No entry mode defined"
+   #error "No valid entry mode defined"
 #endif
 
 /*

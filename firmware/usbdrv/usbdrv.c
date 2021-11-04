@@ -24,38 +24,41 @@
 #include "oddebug.h"
 
 /*
-General Description:
-This module implements the C-part of the USB driver. See usbdrv.h for a
-documentation of the entire driver.
-*/
+ General Description:
+ This module implements the C-part of the USB driver. See usbdrv.h for a
+ documentation of the entire driver.
+ */
 
 /* ------------------------------------------------------------------------- */
 
 /* raw USB registers / interface to assembler code: */
-uchar usbRxBuf[2*USB_BUFSIZE];  /* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
-uchar       usbInputBufOffset;  /* offset in usbRxBuf used for low level receiving */
-uchar       usbDeviceAddr;      /* assigned during enumeration, defaults to 0 */
-uchar       usbNewDeviceAddr;   /* device ID which should be set after status phase */
-uchar       usbConfiguration;   /* currently selected configuration. Administered by driver, but not used */
-volatile schar usbRxLen;        /* = 0; number of bytes in usbRxBuf; 0 means free, -1 for flow control */
-uchar       usbCurrentTok;      /* last token received or endpoint number for last OUT token if != 0 */
-uchar       usbRxToken;         /* token for data we received; or endpont number for last OUT */
-volatile uchar usbTxLen;   /* number of bytes to transmit with next IN token or handshake token */
-uchar       usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbTxLen contains handshake token */
+uchar usbRxBuf[2 * USB_BUFSIZE]; /* raw RX buffer: PID, 8 bytes data, 2 bytes CRC */
+uchar usbInputBufOffset; /* offset in usbRxBuf used for low level receiving */
+uchar usbDeviceAddr; /* assigned during enumeration, defaults to 0 */
+uchar usbNewDeviceAddr; /* device ID which should be set after status phase */
+uchar usbConfiguration; /* currently selected configuration. Administered by driver, but not used */
+volatile schar usbRxLen; /* = 0; number of bytes in usbRxBuf; 0 means free, -1 for flow control */
+uchar usbCurrentTok; /* last token received or endpoint number for last OUT token if != 0 */
+uchar usbRxToken; /* token for data we received; or endpont number for last OUT */
+volatile uchar usbTxLen; /* number of bytes to transmit with next IN token or handshake token */
+uchar usbTxBuf[USB_BUFSIZE];/* data to transmit with next IN, free if usbTxLen contains handshake token */
 
 /* USB status registers / not shared with asm code */
-usbMsgPtr_t         usbMsgPtr;      /* data to transmit next -- ROM or RAM address */
-static usbMsgLen_t  usbMsgLen; /* remaining number of bytes */
+usbMsgPtr_t usbMsgPtr; /* data to transmit next -- ROM or RAM address */
+#if defined(STORE_CONFIGURATION_REPLY_IN_RAM)
+uchar usbMsgPtrIsRAMAddress = 0; /* true if RAM address */
+#endif
+static usbMsgLen_t usbMsgLen; /* remaining number of bytes */
 
 #define USB_FLG_USE_USER_RW     (1<<7)
 
 /*
-optimizing hints:
-- do not post/pre inc/dec integer values in operations
-- assign value of USB_READ_FLASH() to register variables and don't use side effects in arg
-- use narrow scope for variables which should be in X/Y/Z register
-- assign char sized expressions to variables to force 8 bit arithmetics
-*/
+ optimizing hints:
+ - do not post/pre inc/dec integer values in operations
+ - assign value of USB_READ_FLASH() to register variables and don't use side effects in arg
+ - use narrow scope for variables which should be in X/Y/Z register
+ - assign char sized expressions to variables to force 8 bit arithmetics
+ */
 
 /* -------------------------- String Descriptors --------------------------- */
 
@@ -65,8 +68,8 @@ optimizing hints:
 #undef USB_CFG_DESCR_PROPS_STRING_0
 #define USB_CFG_DESCR_PROPS_STRING_0    sizeof(usbDescriptorString0)
 PROGMEM const char usbDescriptorString0[] = { /* language descriptor */
-    4,          /* sizeof(usbDescriptorString0): length of descriptor in bytes */
-    3,          /* descriptor type */
+    4, /* sizeof(usbDescriptorString0): length of descriptor in bytes */
+    3, /* descriptor type */
     0x09, 0x04, /* language index (0x0409 = US-English) */
 };
 #endif
@@ -74,7 +77,7 @@ PROGMEM const char usbDescriptorString0[] = { /* language descriptor */
 #if USB_CFG_DESCR_PROPS_STRING_VENDOR == 0 && USB_CFG_VENDOR_NAME_LEN
 #undef USB_CFG_DESCR_PROPS_STRING_VENDOR
 #define USB_CFG_DESCR_PROPS_STRING_VENDOR   sizeof(usbDescriptorStringVendor)
-PROGMEM const int  usbDescriptorStringVendor[] = {
+PROGMEM const int usbDescriptorStringVendor[] = {
     USB_STRING_DESCRIPTOR_HEADER(USB_CFG_VENDOR_NAME_LEN),
     USB_CFG_VENDOR_NAME
 };
@@ -83,7 +86,7 @@ PROGMEM const int  usbDescriptorStringVendor[] = {
 #if USB_CFG_DESCR_PROPS_STRING_PRODUCT == 0 && USB_CFG_DEVICE_NAME_LEN
 #undef USB_CFG_DESCR_PROPS_STRING_PRODUCT
 #define USB_CFG_DESCR_PROPS_STRING_PRODUCT   sizeof(usbDescriptorStringDevice)
-PROGMEM const int  usbDescriptorStringDevice[] = {
+PROGMEM const int usbDescriptorStringDevice[] = {
     USB_STRING_DESCRIPTOR_HEADER(USB_CFG_DEVICE_NAME_LEN),
     USB_CFG_DEVICE_NAME
 };
@@ -105,24 +108,23 @@ PROGMEM const int usbDescriptorStringSerialNumber[] = {
 #if USB_CFG_DESCR_PROPS_DEVICE == 0
 #undef USB_CFG_DESCR_PROPS_DEVICE
 #define USB_CFG_DESCR_PROPS_DEVICE  sizeof(usbDescriptorDevice)
-PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
-    18,         /* sizeof(usbDescriptorDevice): length of descriptor in bytes */
-    USBDESCR_DEVICE,        /* descriptor type */
-    0x10, 0x01,             /* USB version supported */
-    USB_CFG_DEVICE_CLASS,
-    USB_CFG_DEVICE_SUBCLASS,
-    0,                      /* protocol */
-    8,                      /* max packet size */
-    /* the following two casts affect the first byte of the constant only, but
-     * that's sufficient to avoid a warning with the default values.
-     */
-    (char)USB_CFG_VENDOR_ID,/* 2 bytes */
-    (char)USB_CFG_DEVICE_ID,/* 2 bytes */
-    USB_CFG_DEVICE_VERSION, /* 2 bytes */
-    USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0,         /* manufacturer string index */
-    USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0,        /* product string index */
-    USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0,  /* serial number string index */
-    1,          /* number of configurations */
+PROGMEM const char usbDescriptorDevice[] = { /* USB device descriptor */
+18, /* sizeof(usbDescriptorDevice): length of descriptor in bytes */
+USBDESCR_DEVICE, /* descriptor type */
+0x10, 0x01, /* USB version supported */
+USB_CFG_DEVICE_CLASS,
+USB_CFG_DEVICE_SUBCLASS, 0, /* protocol */
+8, /* max packet size */
+/* the following two casts affect the first byte of the constant only, but
+ * that's sufficient to avoid a warning with the default values.
+ */
+(char) USB_CFG_VENDOR_ID,/* 2 bytes */
+(char) USB_CFG_DEVICE_ID,/* 2 bytes */
+USB_CFG_DEVICE_VERSION, /* 2 bytes */
+USB_CFG_DESCR_PROPS_STRING_VENDOR != 0 ? 1 : 0, /* manufacturer string index */
+USB_CFG_DESCR_PROPS_STRING_PRODUCT != 0 ? 2 : 0, /* product string index */
+USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER != 0 ? 3 : 0, /* serial number string index */
+1, /* number of configurations */
 };
 #endif
 
@@ -131,52 +133,29 @@ PROGMEM const char usbDescriptorDevice[] = {    /* USB device descriptor */
 #if USB_CFG_DESCR_PROPS_CONFIGURATION == 0
 #undef USB_CFG_DESCR_PROPS_CONFIGURATION
 #define USB_CFG_DESCR_PROPS_CONFIGURATION   sizeof(usbDescriptorConfiguration)
-PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration descriptor */
-    9,          /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
-    USBDESCR_CONFIG,    /* descriptor type */
-    18, 0,
-                /* total length of data returned (including inlined descriptors) */
-    1,          /* number of interfaces in this configuration */
-    1,          /* index of this configuration */
-    0,          /* configuration name string index */
-    (1 << 7),                           /* attributes */
-    USB_CFG_MAX_BUS_POWER/2,            /* max USB current in 2mA units */
+PROGMEM const char usbDescriptorConfiguration[] = { /* USB configuration descriptor */
+9, /* sizeof(usbDescriptorConfiguration): length of descriptor in bytes */
+USBDESCR_CONFIG, /* descriptor type */
+18, 0,
+/* total length of data returned (including inlined descriptors) */
+1, /* number of interfaces in this configuration */
+1, /* index of this configuration */
+0, /* configuration name string index */
+(1 << 7), /* attributes */
+USB_CFG_MAX_BUS_POWER / 2, /* max USB current in 2mA units */
 /* interface descriptor follows inline: */
-    9,          /* sizeof(usbDescrInterface): length of descriptor in bytes */
-    USBDESCR_INTERFACE, /* descriptor type */
-    0,          /* index of this interface */
-    0,          /* alternate setting for this interface */
-    0, /* endpoints excl 0: number of endpoint descriptors to follow */
-    USB_CFG_INTERFACE_CLASS,
-    USB_CFG_INTERFACE_SUBCLASS,
-    USB_CFG_INTERFACE_PROTOCOL,
-    0,          /* string index for interface */
+9, /* sizeof(usbDescrInterface): length of descriptor in bytes */
+USBDESCR_INTERFACE, /* descriptor type */
+0, /* index of this interface */
+0, /* alternate setting for this interface */
+0, /* endpoints excl 0: number of endpoint descriptors to follow */
+USB_CFG_INTERFACE_CLASS,
+USB_CFG_INTERFACE_SUBCLASS,
+USB_CFG_INTERFACE_PROTOCOL, 0, /* string index for interface */
 };
 #endif
 
 /* ------------------ utilities for code following below ------------------- */
-
-/* Use defines for the switch statement so that we can choose between an
- * if()else if() and a switch/case based implementation. switch() is more
- * efficient for a LARGE set of sequential choices, if() is better in all other
- * cases.
- */
-#if USB_CFG_USE_SWITCH_STATEMENT
-#   define SWITCH_START(cmd)       switch(cmd){{
-#   define SWITCH_CASE(value)      }break; case (value):{
-#   define SWITCH_CASE2(v1,v2)     }break; case (v1): case(v2):{
-#   define SWITCH_CASE3(v1,v2,v3)  }break; case (v1): case(v2): case(v3):{
-#   define SWITCH_DEFAULT          }break; default:{
-#   define SWITCH_END              }}
-#else
-#   define SWITCH_START(cmd)       {uchar _cmd = cmd; if(0){
-#   define SWITCH_CASE(value)      }else if(_cmd == (value)){
-#   define SWITCH_CASE2(v1,v2)     }else if(_cmd == (v1) || _cmd == (v2)){
-#   define SWITCH_CASE3(v1,v2,v3)  }else if(_cmd == (v1) || _cmd == (v2) || _cmd == (v3)){
-#   define SWITCH_DEFAULT          }else{
-#   define SWITCH_END              }}
-#endif
-
 #ifndef USB_RX_USER_HOOK
 #define USB_RX_USER_HOOK(data, len)
 #endif
@@ -200,30 +179,29 @@ PROGMEM const char usbDescriptorConfiguration[] = {    /* USB configuration desc
 
 /* usbDriverDescriptor() is used internally for all types of descriptors.
  */
-static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq)
-{
-usbMsgLen_t len = 0;
-    SWITCH_START(rq->wValue.bytes[1])
-    SWITCH_CASE(USBDESCR_DEVICE)    /* 1 */
-        GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_DEVICE, usbDescriptorDevice)
-    SWITCH_CASE(USBDESCR_CONFIG)    /* 2 */
-        GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_CONFIGURATION, usbDescriptorConfiguration)
-    SWITCH_CASE(USBDESCR_STRING)    /* 3 */
-        SWITCH_START(rq->wValue.bytes[0])
-        SWITCH_CASE(0)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_0, usbDescriptorString0)
-        SWITCH_CASE(1)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_VENDOR, usbDescriptorStringVendor)
-        SWITCH_CASE(2)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_PRODUCT, usbDescriptorStringDevice)
-        SWITCH_CASE(3)
-            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
-        SWITCH_DEFAULT
-        SWITCH_END
-    SWITCH_DEFAULT
-    SWITCH_END
+static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq) {
+    usbMsgLen_t len = 0;
+    {
+        uchar _cmd = rq->wValue.bytes[1];
+        if (_cmd == (USBDESCR_DEVICE)) { /* 1 */
+            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_DEVICE, usbDescriptorDevice)
+        } else if (_cmd == (USBDESCR_CONFIG)) { /* 2 */
+            GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_CONFIGURATION, usbDescriptorConfiguration)
+        } else if (_cmd == (USBDESCR_STRING)) { /* 3 */
 
-//    flags=flags;  // Make compiler shut up about unused variable -> leads to another warning :-(
+            uchar _cmd = rq->wValue.bytes[0];
+            if (_cmd == (0)) {
+                GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_0, usbDescriptorString0)
+            } else if (_cmd == (1)) {
+                GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_VENDOR, usbDescriptorStringVendor)
+            } else if (_cmd == (2)) {
+                GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_PRODUCT, usbDescriptorStringDevice)
+            } else if (_cmd == (3)) {
+                GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
+            }
+        }
+    }
+
     return len;
 }
 
@@ -232,35 +210,35 @@ usbMsgLen_t len = 0;
 /* usbDriverSetup() is similar to usbFunctionSetup(), but it's used for
  * standard requests instead of class and custom requests.
  */
-static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq)
-{
-usbMsgLen_t len = 0;
-uchar   *dataPtr = usbTxBuf + 9;    /* there are 2 bytes free space at the end of the buffer */
-uchar   value = rq->wValue.bytes[0];
+static inline usbMsgLen_t usbDriverSetup(usbRequest_t *rq) {
+    usbMsgLen_t len = 0;
+    uchar *dataPtr = usbTxBuf + 9; /* there are 2 bytes free space at the end of the buffer */
+    uchar value = rq->wValue.bytes[0];
     dataPtr[0] = 0; /* default reply common to USBRQ_GET_STATUS and USBRQ_GET_INTERFACE */
-    SWITCH_START(rq->bRequest)
-    SWITCH_CASE(USBRQ_GET_STATUS)           /* 0 */
-        dataPtr[1] = 0;
-        len = 2;
-    SWITCH_CASE(USBRQ_SET_ADDRESS)          /* 5 */
-        usbNewDeviceAddr = value;
-        USB_SET_ADDRESS_HOOK();
-    SWITCH_CASE(USBRQ_GET_DESCRIPTOR)       /* 6 */
-        len = usbDriverDescriptor(rq);
-        goto skipMsgPtrAssignment;
-    SWITCH_CASE(USBRQ_GET_CONFIGURATION)    /* 8 */
-        dataPtr = &usbConfiguration;  /* send current configuration value */
-        len = 1;
-    SWITCH_CASE(USBRQ_SET_CONFIGURATION)    /* 9 */
-        usbConfiguration = value;
-    SWITCH_CASE(USBRQ_GET_INTERFACE)        /* 10 */
-        len = 1;
-    SWITCH_DEFAULT                          /* 7=SET_DESCRIPTOR, 12=SYNC_FRAME */
-        /* Should we add an optional hook here? */
-    SWITCH_END
-    usbMsgPtr = (usbMsgPtr_t)dataPtr;
-skipMsgPtrAssignment:
-    return len;
+    {
+        uchar tRequest = rq->bRequest;
+        if (tRequest == (USBRQ_GET_STATUS)) { /* 0 */
+            dataPtr[1] = 0;
+            len = 2;
+        } else if (tRequest == (USBRQ_SET_ADDRESS)) { /* 5 */
+            usbNewDeviceAddr = value;
+            USB_SET_ADDRESS_HOOK();
+        } else if (tRequest == (USBRQ_GET_DESCRIPTOR)) { /* 6 */
+            len = usbDriverDescriptor(rq);
+            goto skipMsgPtrAssignment;
+        } else if (tRequest == (USBRQ_GET_CONFIGURATION)) { /* 8 */
+            dataPtr = &usbConfiguration; /* send current configuration value */
+            len = 1;
+        } else if (tRequest == (USBRQ_SET_CONFIGURATION)) { /* 9 */
+            usbConfiguration = value;
+        } else if (tRequest == (USBRQ_GET_INTERFACE)) { /* 10 */
+            len = 1;
+        } else { /* 7=SET_DESCRIPTOR, 12=SYNC_FRAME */
+            /* Should we add an optional hook here? */
+        }
+    }
+    usbMsgPtr = (usbMsgPtr_t) dataPtr;
+    skipMsgPtrAssignment: return len;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -269,34 +247,33 @@ skipMsgPtrAssignment:
  * routine. It distinguishes between SETUP and DATA packets and processes
  * them accordingly.
  */
-static inline void usbProcessRx(uchar *data, uchar len)
-{
-usbRequest_t    *rq = (void *)data; // data is constant value usbRxBuf + 1 and optimized out
+static inline void usbProcessRx(uchar *data, uchar len) {
+    usbRequest_t *rq = (void*) data; // data is constant value usbRxBuf + 1 and optimized out
 
-/* usbRxToken can be:
- * 0x2d 00101101 (USBPID_SETUP for setup data)
- * 0xe1 11100001 (USBPID_OUT: data phase of setup transfer)
- * 0...0x0f for OUT on endpoint X
- */
+    /* usbRxToken can be:
+     * 0x2d 00101101 (USBPID_SETUP for setup data)
+     * 0xe1 11100001 (USBPID_OUT: data phase of setup transfer)
+     * 0...0x0f for OUT on endpoint X
+     */
     DBG2(0x10 + (usbRxToken & 0xf), data, len + 2); /* SETUP=1d, SETUP-DATA=11, OUTx=1x */
     USB_RX_USER_HOOK(data, len)
-    if(usbRxToken == (uchar)USBPID_SETUP){
-        if(len != 8)    /* Setup size must be always 8 bytes. Ignore otherwise. */
+    if (usbRxToken == (uchar) USBPID_SETUP) {
+        if (len != 8) /* Setup size must be always 8 bytes. Ignore otherwise. */
             return;
         usbMsgLen_t replyLen;
-        usbTxBuf[0] = USBPID_DATA0;         /* initialize data toggling */
-        usbTxLen = USBPID_NAK;              /* abort pending transmit */
+        usbTxBuf[0] = USBPID_DATA0; /* initialize data toggling */
+        usbTxLen = USBPID_NAK; /* abort pending transmit */
         uchar type = rq->bmRequestType & USBRQ_TYPE_MASK; // masking is essential here
-        if(type != USBRQ_TYPE_STANDARD){    /* standard requests are handled by driver */
+        if (type != USBRQ_TYPE_STANDARD) { /* standard requests are handled by driver */
             replyLen = usbFunctionSetup(data); // for USBRQ_TYPE_CLASS or USBRQ_TYPE_VENDOR
-        }else{
+        } else {
             replyLen = usbDriverSetup(rq);
         }
-        if(sizeof(replyLen) < sizeof(rq->wLength.word)){ /* help compiler with optimizing */
-            if(!rq->wLength.bytes[1] && replyLen > rq->wLength.bytes[0])    /* limit length to max */
+        if (sizeof(replyLen) < sizeof(rq->wLength.word)) { /* help compiler with optimizing */
+            if (!rq->wLength.bytes[1] && replyLen > rq->wLength.bytes[0]) /* limit length to max */
                 replyLen = rq->wLength.bytes[0];
-        }else{
-            if(replyLen > rq->wLength.word)     /* limit length to max */
+        } else {
+            if (replyLen > rq->wLength.word) /* limit length to max */
                 replyLen = rq->wLength.word;
         }
         usbMsgLen = replyLen;
@@ -305,22 +282,33 @@ usbRequest_t    *rq = (void *)data; // data is constant value usbRxBuf + 1 and o
 
 /* ------------------------------------------------------------------------- */
 
-/* This function is similar to usbFunctionRead(), but it's also called for
- * data handled automatically by the driver (e.g. descriptor reads).
+/* This function is only called from usbBuildTxBlock for data handled
+ * automatically by the driver (e.g. descriptor reads).
  */
-static uchar usbDeviceRead(uchar *data, usbMsgLen_t len)
-{
-    if(len > 0){    /* don't bother app with 0 sized reads */
+static void usbDeviceRead(uchar *data, usbMsgLen_t len) {
+    if (len > 0) { /* don't bother app with 0 sized reads */
         uchar i = len;
         usbMsgPtr_t r = usbMsgPtr;
-            do{
-                uchar c = USB_READ_FLASH(r);    /* assign to char size variable to enforce byte ops */
+#if defined(STORE_CONFIGURATION_REPLY_IN_RAM)
+        if (usbMsgPtrIsRAMAddress) {
+            // RAM data
+            do {
+                *data++ = *((uchar*) r);
+                r++;
+            } while (--i);
+            usbMsgPtrIsRAMAddress = 0;
+        } else {
+#endif
+            do {
+                uchar c = USB_READ_FLASH(r); /* assign to char size variable to enforce byte ops */
                 *data++ = c;
                 r++;
-            }while(--i);
+            } while (--i);
+#if defined(STORE_CONFIGURATION_REPLY_IN_RAM)
+        }
+#endif
         usbMsgPtr = r;
     }
-    return len;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -328,29 +316,22 @@ static uchar usbDeviceRead(uchar *data, usbMsgLen_t len)
 /* usbBuildTxBlock() is called when we have data to transmit and the
  * interrupt routine's transmit buffer is empty.
  */
-static inline void usbBuildTxBlock(void)
-{
-usbMsgLen_t wantLen;
-uchar       len;
+static inline void usbBuildTxBlock(void) {
 
-    wantLen = usbMsgLen;
-    if(wantLen > 8) {
+    usbMsgLen_t wantLen = usbMsgLen;
+    if (wantLen > 8) {
         wantLen = 8;
     }
     usbMsgLen -= wantLen;
     usbTxBuf[0] ^= USBPID_DATA0 ^ USBPID_DATA1; /* DATA toggling */
-    len = usbDeviceRead(usbTxBuf + 1, wantLen);
-    if(len <= 8){           /* valid data packet */
-        usbCrc16Append(&usbTxBuf[1], len);
-        len += 4;           /* length including sync byte */
-        if(len < 12) {       /* a partial package identifies end of message */
-            usbMsgLen = USB_NO_MSG;
-        }
-    }else{
-        len = USBPID_STALL;   /* stall the endpoint */
+    usbDeviceRead(usbTxBuf + 1, wantLen);
+    usbCrc16Append(&usbTxBuf[1], wantLen);
+    wantLen += 4; /* length including sync byte */
+    if (wantLen < 12) { /* a partial package identifies end of message */
         usbMsgLen = USB_NO_MSG;
     }
-    usbTxLen = len;
+
+    usbTxLen = wantLen;
     DBG2(0x20, usbTxBuf, len-1);
 }
 
@@ -360,10 +341,10 @@ uchar       len;
 static inline void usbHandleResetHook(uchar notResetState)
 {
 
-static uchar    wasReset;
-uchar           isReset = !notResetState;
+    static uchar wasReset;
+    uchar isReset = !notResetState;
 
-    if(wasReset != isReset){
+    if(wasReset != isReset) {
         USB_RESET_HOOK(isReset);
         wasReset = isReset;
     }
@@ -407,11 +388,9 @@ uchar           isReset = !notResetState;
 //isNotReset:
 //    usbHandleResetHook(i);
 //}
-
 /* ------------------------------------------------------------------------- */
 
-USB_PUBLIC void usbInit(void)
-{
+USB_PUBLIC void usbInit(void) {
     usbTxLen = USBPID_NAK;
     usbMsgLen = USB_NO_MSG;
 

@@ -11,7 +11,6 @@
  *       LED    :   None
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16.5 MHz V-USB implementation with PLL
- * Last Change:     Jun 16,2020
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -75,6 +74,15 @@
 #define USB_INTR_PENDING        GIFR  // Register to read interrupt flag
 #define USB_INTR_PENDING_BIT    PCIF  // Bit position in register to read interrupt flag
 
+// Theoretical this should work, but I get "Starting to upload ... >> Flash write error: Input/output error has occured" when a application is still loaded
+//#define USB_INTR_CFG            MCUCR // requires 4 bit extra code size since sbi is not possible for MCUCR
+//#define USB_INTR_CFG_SET        (1 << ISC00)
+//#define USB_INTR_CFG_CLR        0
+//#define USB_INTR_ENABLE         GIMSK
+//#define USB_INTR_ENABLE_BIT     INT0
+//#define USB_INTR_PENDING        GIFR
+//#define USB_INTR_PENDING_BIT    INTF0
+
 /* ------------------------------------------------------------------------- */
 /*       Configuration relevant to the CPU the bootloader is running on      */
 /* ------------------------------------------------------------------------- */
@@ -101,7 +109,7 @@
  *
  *  ENTRY_POWER_ON      Activate the bootloader after power on. This is what you need
  *                      for normal development with Digispark boards.
- *                      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *                      !!! If SAVE_MCUSR (below) is NOT defined !!!
  *                      Since the reset flags are no longer cleared by micronucleus
  *                      you must clear them with "MCUSR = 0;" in your setup() routine
  *                      after saving or evaluating them to make this mode work.
@@ -131,7 +139,7 @@
  *  ENTRY_D_MINUS_PULLUP_ACTIVATED
  *                      Activate the bootloader if the D- pin is high, i.e. a pullup resistor
  *                      is attached and powered. Useful if the pullup is powered by USB V+
- *                      and NOT ATtiny VCC to save power.
+ *                      and NOT by ATtiny VCC to save power.
  *
  */
 
@@ -140,14 +148,15 @@
 #define JUMPER_DDR    DDRB
 #define JUMPER_INP    PINB
 
-// These definitions are only required for the #if #elif's below.
-#define ENTRY_ALWAYS    1
-#define ENTRY_WATCHDOG  2
-#define ENTRY_EXT_RESET 3
-#define ENTRY_JUMPER    4
-#define ENTRY_POWER_ON  5
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  6
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 7
+// These definitions are only required for the #if #elif's below and the USB configuration reply.
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
+#define ENTRY_JUMPER    3
+#define ENTRY_POWER_ON  4
+// some useful combinations with ENTRY_D_MINUS_PULLUP_ACTIVATED
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  5
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 6
 
 #define ENTRYMODE ENTRY_ALWAYS
 
@@ -169,6 +178,7 @@
   #define bootLoaderStartCondition() (MCUSR == _BV(EXTRF)) // Adds 18 bytes
 #elif ENTRYMODE==ENTRY_JUMPER
   // Enable pull up on jumper pin and delay to stabilize input
+  // delay can be omitted to save memory, if external capacitance at the jumper pin is low
   #define bootLoaderInit()   {JUMPER_DDR &= ~_BV(JUMPER_PIN); JUMPER_PORT |= _BV(JUMPER_PIN); _delay_ms(1);}
   #define bootLoaderExit()   {JUMPER_PORT &= ~_BV(JUMPER_PIN);}
   #define bootLoaderStartCondition() (!(JUMPER_INP & _BV(JUMPER_PIN)))
@@ -185,7 +195,7 @@
   #define bootLoaderExit()
   #define bootLoaderStartCondition() ((USBIN & USBIDLE) && (MCUSR == _BV(EXTRF))) // Adds 22 bytes
 #else
-   #error "No entry mode defined"
+   #error "No valid entry mode defined"
 #endif
 
 /*

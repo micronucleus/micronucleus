@@ -11,7 +11,6 @@
  *       LED    :   Active High on PB1
  *       OSCCAL :   No change due to external crystal
  * Note: Uses 16 MHz V-USB implementation.
- * Last Change:     JUn 15,2015
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -116,7 +115,7 @@
  *
  *  ENTRY_POWER_ON      Activate the bootloader after power on. This is what you need
  *                      for normal development with Digispark boards.
- *                      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+ *                      !!! If SAVE_MCUSR (below) is NOT defined !!!
  *                      Since the reset flags are no longer cleared by micronucleus
  *                      you must clear them with "MCUSR = 0;" in your setup() routine
  *                      after saving or evaluating them to make this mode work.
@@ -146,7 +145,7 @@
  *  ENTRY_D_MINUS_PULLUP_ACTIVATED
  *                      Activate the bootloader if the D- pin is high, i.e. a pullup resistor
  *                      is attached and powered. Useful if the pullup is powered by USB V+
- *                      and NOT ATtiny VCC to save power.
+ *                      and NOT by ATtiny VCC to save power.
  *
  */
 
@@ -155,14 +154,14 @@
 #define JUMPER_DDR    DDRB
 #define JUMPER_INP    PINB
 
-// These definitions are only required for the #if #elif's below.
-#define ENTRY_ALWAYS    1
-#define ENTRY_WATCHDOG  2
-#define ENTRY_EXT_RESET 3
-#define ENTRY_JUMPER    4
-#define ENTRY_POWER_ON  5
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  6
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 7
+// These definitions are only required for the #if #elif's below and the USB configuration reply.
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
+#define ENTRY_JUMPER    3
+#define ENTRY_POWER_ON  4
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  5
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 6
 
 #define ENTRYMODE ENTRY_ALWAYS
 
@@ -200,7 +199,7 @@
   #define bootLoaderExit()
   #define bootLoaderStartCondition() ((USBIN & USBIDLE) && (MCUSR == _BV(EXTRF)))
 #else
-   #error "No entry mode defined"
+   #error "No valid entry mode defined"
 #endif
 
 /*

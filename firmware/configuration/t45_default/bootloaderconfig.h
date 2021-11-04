@@ -11,7 +11,6 @@
  *       LED    :   None
  *       OSCCAL :   Stays at 16 MHz
  * Note: Uses 16.5 MHz V-USB implementation with PLL
- * Last Change:     Mar 16,2014
  *
  * License: GNU GPL v2 (see License.txt
  */
@@ -130,14 +129,14 @@
 #define JUMPER_DDR    DDRB
 #define JUMPER_INP    PINB
 
-// These definitions are only required for the #if #elif's below.
-#define ENTRY_ALWAYS    1
-#define ENTRY_WATCHDOG  2
-#define ENTRY_EXT_RESET 3
-#define ENTRY_JUMPER    4
-#define ENTRY_POWER_ON  5
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  6
-#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 7
+// These definitions are only required for the #if #elif's below and the USB configuration reply.
+#define ENTRY_ALWAYS    0
+#define ENTRY_WATCHDOG  1
+#define ENTRY_EXT_RESET 2
+#define ENTRY_JUMPER    3
+#define ENTRY_POWER_ON  4
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_POWER_ON  5
+#define ENTRY_D_MINUS_PULLUP_ACTIVATED_AND_ENTRY_EXT_RESET 6
 
 #define ENTRYMODE ENTRY_ALWAYS
 
@@ -159,7 +158,7 @@
   #define bootLoaderExit()   {JUMPER_PORT &= ~_BV(JUMPER_PIN);}
   #define bootLoaderStartCondition() (!(JUMPER_INP&_BV(JUMPER_PIN)))
 #else
-   #error "No entry mode defined"
+   #error "No valid entry mode defined"
 #endif
 
 /*
