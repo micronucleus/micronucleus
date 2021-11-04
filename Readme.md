@@ -1,4 +1,4 @@
-# Micronucleus V2.5
+# Micronucleus V2.6
 
 Micronucleus is a bootloader designed for AVR ATtiny microcontrollers with a minimal usb interface, cross platform libusb-based program upload tool, and a strong emphasis on bootloader compactness. To the authors knowledge this is, by far, the smallest USB bootloader for AVR ATtiny
 
@@ -165,10 +165,16 @@ In addition, we'd like you to consider these points if you intend to sell produc
       that led to issues when micronucleus was operated on an USB hub together with other
       low-speed USB devices.
     
+* v2.6 November 5th, 2021
+    - Added compile flag `STORE_CONFIGURATION_REPLY_IN_RAM`.
+    - Added 2 bytes USB config data for Bootloader feature flags and application version.
+    - Added `--info` flag for micronucleus executable.
+    - Swapped D+ and D- and set `OSCCAL_HAVE_XTAL`for t88 to support MH-ET LIVE Tiny88 boards.
+    
 # Credits
 
 Firmware:
- * Micronucleus V2.5             (c) 2021 Current maintainers: @ArminJo, @cpldcpu
+ * Micronucleus V2.6             (c) 2021 Current maintainers: @ArminJo, @cpldcpu
  * Micronucleus V2.04            (c) 2019 Current maintainers: @cpldcpu, @AHorneffer
  * Micronucleus V2.0x            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
                                  (c) 2014 Shay Green
