@@ -32,6 +32,9 @@ BOOTLOADER_ADDRESS = 7A00
 
 FUSEOPT = -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xfd:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x59:m -U efuse:w:0xfd:m
+# With brownout detection disabled
+#FUSEOPT = -U lfuse:w:0xff:m -U hfuse:w:0xd9:m -U efuse:w:0xff:m
+#FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x59:m -U efuse:w:0xff:m
 
 #---------------------------------------------------------------------
 # ATmega328p
@@ -67,8 +70,14 @@ FUSEOPT_DISABLERESET = -U lfuse:w:0xff:m -U hfuse:w:0x59:m -U efuse:w:0xfd:m
 #        +-------------------- RSTDISBL (disable external reset -> reset is disabled)
 #
 # Fuse extended byte:
-# 0xff = - - - -   - 1 0 1
+# 0xfd = - - - -   - 1 0 1
 #        ^ ^ ^ ^   ^ \-+-/
-#        \---------/   +------ BODLEVEL 2..0 (brownout trigger level -> brownout detection at 2.7 V)
+#        \---------/   +------ BODLEVEL 2,1,0 (brownout trigger level -> brownout detection at 2.7 V)
+#             +--------------- Unused
+#
+# Fuse extended byte:
+# 0xff = - - - -   - 1 1 1
+#        ^ ^ ^ ^   ^ \-+-/
+#        \---------/   +------ BODLEVEL 2,1,0 (brownout detection disabled)
 #             +--------------- Unused
 ###############################################################################
