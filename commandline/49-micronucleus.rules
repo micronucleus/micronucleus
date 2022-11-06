@@ -5,6 +5,9 @@
 #   or
 # /lib/udev/rules.d/49-micronucleus.rules    (req'd on some broken systems)
 #
+# To install, type this command in a terminal:
+#   sudo cp 49-micronucleus.rules /etc/udev/rules.d/49-micronucleus.rules
+#
 # After this file is copied, physically unplug and reconnect the board.
 #
 SUBSYSTEMS=="usb", ATTRS{idVendor}=="16d0", ATTRS{idProduct}=="0753", MODE:="0666"
