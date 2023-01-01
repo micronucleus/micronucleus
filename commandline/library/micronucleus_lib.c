@@ -298,7 +298,7 @@ int micronucleus_writeFlash(micronucleus* deviceHandle, unsigned int program_siz
                USB_ENDPOINT_OUT| USB_TYPE_VENDOR | USB_RECIP_DEVICE,
                1,
                page_length, address,
-               page_buffer, page_length,
+               (char*)page_buffer, page_length,
                MICRONUCLEUS_USB_TIMEOUT);
       } else if (deviceHandle->version.major >= 2) {
         // Firmware rev.2 uses individual set up packets to transfer data
