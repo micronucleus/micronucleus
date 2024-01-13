@@ -6,9 +6,7 @@ Before contributing, please keep in mind the following:
    https://github.com/micronucleus/micronucleus/tree/testing
  
  - Please commit contributions as a pull request to "testing" so there is less
-   trouble with merging. Alternatively, if you only have small changes, just
-   open an issue and one of the maintainers will add it manually.
-   https://github.com/micronucleus/micronucleus/issues
+   trouble with merging. 
    
  - Have a look at License.txt
 
