@@ -32,12 +32,12 @@ typedef unsigned char boolean;
 #define multiplyDecimal(a,b) (((a) * (b)) / 256)
 
 // set a pin on DDRB to be an input or an output - i.e. becomeOutput(pin(3));
-#define inputs(pinmap) DDRB &= ~(pinmap)
+#define inputs(pinmap) DDRB &= (unsigned int)~(pinmap)
 #define outputs(pinmap) DDRB |= (pinmap)
 
 // turn some pins on or off
 #define pinsOn(pinmap) PORTB |= (pinmap)
-#define pinsOff(pinmap) PORTB &= ~(pinmap)
+#define pinsOff(pinmap) PORTB &= (unsigned int)~(pinmap)
 #define pinsToggle(pinmap) PORTB ^= pinmap
 
 // turn a single pin on or off
