@@ -336,11 +336,13 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
         if ((currentAddress.b[0] % SPM_PAGESIZE) == 0) {
             command = cmd_write_page; // ask main loop to write our page
         }
+#ifdef WINUSB
     } else if (rq->bRequest == cmd_get_ms_descriptor) {
         if (rq->wIndex.word == 0x0004) {
             usbMsgPtr = (usbMsgPtr_t)&msExtCompatDescriptor;
             return sizeof(msExtCompatDescriptor);
         }
+#endif /* WINUSB */
     } else {
         // Handle cmd_erase_application and cmd_exit
         command = rq->bRequest & 0x3f;

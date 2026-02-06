@@ -208,8 +208,10 @@ static inline usbMsgLen_t usbDriverDescriptor(usbRequest_t *rq) {
                 GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_PRODUCT, usbDescriptorStringDevice)
             } else if (_cmd == (3)) {
                 GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER, usbDescriptorStringSerialNumber)
+#ifdef WINUSB
             } else if (_cmd == (0xee)) {
                 GET_DESCRIPTOR(USB_CFG_DESCR_PROPS_STRING_OS_STRING, usbDescriptorStringOsString)
+#endif /* WINUSB */
             }
         }
     }
