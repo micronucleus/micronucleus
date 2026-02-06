@@ -151,6 +151,12 @@ int main(int argc, char **argv) {
             fprintf(stderr, "Unrecognized option: %s\n", argv[arg_pointer]);
             return EXIT_FAILURE;
         } else {
+            if (file != NULL) {
+                fputs(MICRONUCLEUS_COMMANDLINE_VERSION, stderr);
+                fputs("", stderr);
+                fputs(usage, stderr);
+                return EXIT_FAILURE;
+            }
             file = argv[arg_pointer];
         }
 
