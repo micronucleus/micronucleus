@@ -99,8 +99,8 @@
  * obdev's free shared VID/PID pair. See the file USB-IDs-for-free.txt for
  * details.
  */
-//#define USB_CFG_DEVICE_NAME 0x00B5,'B'
-//#define USB_CFG_DEVICE_NAME_LEN 2
+//#define USB_CFG_DEVICE_NAME 'M', 'i', 'c', 'r', 'o', 'n', 'u', 'c', 'l', 'e', 'u', 's', ' ', 'B', 'o', 'o', 't', 'l', 'o', 'a', 'd', 'e', 'r'
+//#define USB_CFG_DEVICE_NAME_LEN 23
 /* Same as above for the device name. If you don't want a device name, undefine
  * the macros. See the file USB-IDs-for-free.txt before you assign a name if
  * you use a shared VID/PID.
@@ -114,14 +114,17 @@
  * to fine tune control over USB descriptors such as the string descriptor
  * for the serial number.
  */
+#define USB_CFG_OS_STRING 'M', 'S', 'F', 'T', '1', '0', '0', GET_MS_DESCRIPTOR
+#define USB_CFG_OS_STRING_LEN 8
+#define GET_MS_DESCRIPTOR 5 /* command for requesting the OS feature descriptor */
+ /* OS String Descriptor for Windows WinUSB driver.
+ */
 #define USB_CFG_DEVICE_CLASS        0xff    /* set to 0 if deferred to interface */
 #define USB_CFG_DEVICE_SUBCLASS     0
-//#define USB_CFG_DEVICE_CLASS    0xFE /* application specific */
-//#define USB_CFG_DEVICE_SUBCLASS 0x01 /* device firmware upgrade */
 /* See USB specification if you want to conform to an existing device class.
  * Class 0xff is "vendor specific".
  */
-#define USB_CFG_INTERFACE_CLASS     0   /* define class here if not at device level */
+#define USB_CFG_INTERFACE_CLASS     0xff   /* define class here if not at device level */
 #define USB_CFG_INTERFACE_SUBCLASS  0
 #define USB_CFG_INTERFACE_PROTOCOL  0
 /* See USB specification if you want to conform to an existing device class or
@@ -172,11 +175,16 @@
 
 #define USB_CFG_DESCR_PROPS_DEVICE                  0
 #define USB_CFG_DESCR_PROPS_CONFIGURATION           0
-#define USB_CFG_DESCR_PROPS_STRINGS                 1
+#ifdef WINUSB
+    #define USB_CFG_DESCR_PROPS_STRINGS                 0
+#else
+    #define USB_CFG_DESCR_PROPS_STRINGS                 1
+#endif /* WINUSB */
 #define USB_CFG_DESCR_PROPS_STRING_0                0
 #define USB_CFG_DESCR_PROPS_STRING_VENDOR           0
 #define USB_CFG_DESCR_PROPS_STRING_PRODUCT          0
 #define USB_CFG_DESCR_PROPS_STRING_SERIAL_NUMBER    0
+#define USB_CFG_DESCR_PROPS_STRING_OS_STRING        0
 #define USB_CFG_DESCR_PROPS_UNKNOWN                 0
 
 #endif /* __usbconfig_h_included__ */

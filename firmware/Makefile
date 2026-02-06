@@ -105,7 +105,7 @@ main.hex:	main.bin
 	@avr-size main.hex
 #   if you don't have python installed, you can comment out the next three lines and use the two above
 	@avr-size -A -t main.hex >size.txt
-	@python CalculateSize.py <size.txt
+	@python3 CalculateSize.py <size.txt
 	@rm size.txt
 
 disasm:	main.bin upgrade.bin

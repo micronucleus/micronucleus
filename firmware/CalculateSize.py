@@ -1,3 +1,4 @@
+#!/usr/bin/python3
 # calculate bootloader location and free userspace
 
 import sys

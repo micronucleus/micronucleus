@@ -1,6 +1,7 @@
 /*
  * Project: Micronucleus -  v2.5
  *
+ * WinUSB                        (c) 2018 Marius Greuel
  * Micronucleus V2.5             (c) 2020 Armin Joachimsmeyer armin.joachimsmeyer@gmail.com
  * Micronucleus V2.04            (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
  * Micronucleus V2.3             (c) 2016 Tim Bo"scke - cpldcpu@gmail.com
@@ -83,6 +84,32 @@
 #warning "Values below 120 ms are not possible for FAST_EXIT_NO_USB_MS"
 #endif
 
+typedef struct {
+  uint32_t dwLength;
+  uint16_t bcdVersion;
+  uint16_t wIndex;
+  uint8_t bCount;
+  uint8_t reserved[7];
+} ExtCompatHeader_t;
+
+typedef struct {
+  ExtCompatHeader_t header;
+  uint8_t bFirstInterfaceNumber;
+  uint8_t reserved1;
+  char compatibleID[8];
+  char subCompatibleID[8];
+  uint8_t reserved2[6];
+} ExtCompatDescriptor_t;
+
+PROGMEM const ExtCompatDescriptor_t msExtCompatDescriptor =
+{
+  { sizeof(ExtCompatDescriptor_t), 0x0100, 0x0004, 1 },
+  0,
+  1,
+  "WINUSB",
+  ""
+};
+
 // Device configuration reply
 // Length: 6 bytes
 //   Byte 0:  User program memory size, high byte
@@ -150,6 +177,7 @@ enum {
     cmd_erase_application = 2,
     cmd_write_data = 3,
     cmd_exit = 4,
+    cmd_get_ms_descriptor = GET_MS_DESCRIPTOR,
     cmd_write_page = 64  // internal commands start at 64
 };
 register uint8_t command asm("r3");  // bind command to r3
@@ -308,6 +336,13 @@ static uint8_t usbFunctionSetup(uint8_t data[8]) {
         if ((currentAddress.b[0] % SPM_PAGESIZE) == 0) {
             command = cmd_write_page; // ask main loop to write our page
         }
+#ifdef WINUSB
+    } else if (rq->bRequest == cmd_get_ms_descriptor) {
+        if (rq->wIndex.word == 0x0004) {
+            usbMsgPtr = (usbMsgPtr_t)&msExtCompatDescriptor;
+            return sizeof(msExtCompatDescriptor);
+        }
+#endif /* WINUSB */
     } else {
         // Handle cmd_erase_application and cmd_exit
         command = rq->bRequest & 0x3f;
