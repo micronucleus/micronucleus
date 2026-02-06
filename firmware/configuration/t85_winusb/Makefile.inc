@@ -17,8 +17,7 @@ DEVICE = attiny85
 # - The available size for user program is (BOOTLOADER_ADDRESS - POSTSCRIPT_SIZE) with POSTSCRIPT_SIZE = 4 or 6
 # - For data size from 1470 up to 1536 the address is 1A00 (6650 free),
 # - for 1538 to 1600 it is 19C0 (6586 free), for 1602 to 1664 it is 1980 (6522 free)
-# - The WinUSB feature descriptor takes a whopping 1716 bytes! So it needs 1940 (6458 free) - this is a bit much.
-BOOTLOADER_ADDRESS = 1940
+BOOTLOADER_ADDRESS = 1980
 
 FUSEOPT = -U lfuse:w:0xe1:m -U hfuse:w:0xdd:m -U efuse:w:0xfe:m
 FUSEOPT_DISABLERESET = -U lfuse:w:0xe1:m -U efuse:w:0xfe:m -U hfuse:w:0x5d:m
