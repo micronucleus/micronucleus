@@ -15,7 +15,7 @@ jobs:
           - name: compute branch name
             id: compute-branch
             run: echo "${{ github.ref }}" | sed "s,^refs/heads/,::set-output name=RELEASE_BRANCH::,"
-          - uses: dev-drprasad/delete-tag-and-release@v0.1.2
+          - uses: dev-drprasad/delete-tag-and-release@v0.2.0
             if: startswith(github.ref, 'refs/heads/')
             with:
                 delete_release: true # default: false
